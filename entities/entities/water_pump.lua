@@ -10,7 +10,7 @@ ENT.Spawnable = false
 if CLIENT then return end
 
 function ENT:Initialize()
-	self:SetModel( "models/props_wasteland/gaspump001a.mdl" )
+	self:SetModel( "models/props_interiors/sinkkitchen01a.mdl" )
 	self:PhysicsInit( SOLID_VPHYSICS )
 	self:SetMoveType( MOVETYPE_NONE )
 	self:SetUseType( SIMPLE_USE )
