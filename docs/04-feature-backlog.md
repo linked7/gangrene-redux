@@ -16,6 +16,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
+| Workplace accidents (from the original's machines: operator error, misuse, rust, haunting, waste spills) | `idea` | Raised 2026-10-17 by the analysis session. Proposed slice: rust plus accidents on the ration press, sanitar upkeep that pays bones. Haunting waits for ghost Suffering (Deferred 4), and the factory cards wait for the foreman (Deferred 7). Their suggestion that slaves be immune conflicts with Slave parity. Original refs: entities/entities/machine_*.lua, machine_gears.lua:681. |
 | Rank gates on fates (who may take Kaiser etc.) | `idea` | Raised 2026-10-17. User will choose later; for now no gate above Friend. |
 
 ## Accepted
@@ -38,6 +39,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | Construction: storage crates only; no player-built production | `accepted → Step 11.1`, Dropped | 2026-10-17 |
 | Map layouts, with `rp_slumtown` as the core map from the original's positions | `accepted → Step 4` | 2026-10-17 |
 | Client UI (HUD, F2, TAB, F1, economy panel) recorded as built | `accepted → Step 15` | 2026-10-17 |
+| Rendering line: fleshgrowths, water barrels, hopper/valve-boiler/press, crew stamps and split pay; replaces the ration press | `accepted → Step 11.1` (also Steps 4, 6, 8, 9, 10, Dropped) | 2026-10-17 |
 
 ## Decisions log
 
@@ -63,5 +65,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Construction | Only the storage crate: 35 bones, 8 items, lockable, a 30 s pry reported as theft, cleared at round reset. Factory sites and any player-built presses are dropped. | User: building more production that easily is a no-go. Food scarcity depends on fixed presses. |
 | 2026-10-17 | Core map | `rp_slumtown`. Its layout is converted from the original's map file: fate stations, `machine_lunch` → ration press, `faucet` → pump candidates. Staff place the stockpile, the slave station and the sanitation station. | User's choice. The old file already holds the positions. |
 | 2026-10-17 | Plan matches code | Map layouts go in Step 4, and the client UI becomes Step 15 (done before Step 14's playtest with people). | Rewrite built both, so the plan should record them. |
+| 2026-10-17 | Factory system (replaces the single-person ration press) | One rendering line per map at the old `machine_lunch` room. **Gathering:** fleshgrowth nodes (cleaver, 15 s, regrow 8 min) drop mass sacks. **Water:** blue plastic `water_barrel`s fill on touching map water and pour 4 cycles into the hopper on touch; the map spawns a few, proles build more (15 bones, cap 8). **Posts:** the hopper (load on touch); the boiler, whose drifting pressure is kept at 40–70 with a turnable valve (stalls under 40, scalding vent over 90); the press (held use). A 30 s cycle: mass + water makes a ration, water makes clean water. Crates carry a crew stamp, and delivery splits the pay across the crew; a non-crew deliverer is paid but reported for theft. Pumps are for drinking only. A **Give bones** action lets players pay each other. Corpses are never an input. | User: novel gathering and a multi-step process that needs several people working together. The valve and barrels are the user's design. |
+| 2026-10-17 | Rewrite's rp_slumtown layout choices | Confirmed: 2 pumps enabled (town centre and arms break room), the other 2 are staff-enabled candidates. Missing stations warn on load. The 2 ration plus 2 clean-water presses are a stopgap until the rendering line replaces them. | User's yes. |
 | 2026-10-17 | War | Dropped. The nations stay as lore and possible races. Rot/Doom stay deferred. | The user wants several simple pressures instead of a war. |
 | 2026-10-17 | Fates kept | Kaiser, Sanitar, Prole, Korpsman, plus Slave; Ghost as the dead/lobby state | User's choice |

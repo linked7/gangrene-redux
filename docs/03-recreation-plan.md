@@ -112,11 +112,12 @@
   - Replaces `purpose_in_life`. Its key value is the fate id, and it can only be used by ghosts.
   - On use it calls `CanTake`, then charges stem cells, then calls `Apply`.
   - Potentials are **dropped**.
-- **Map layouts:** each round places the world entities (fate stations, `state_stockpile`, `ration_press`, `water_pump`, `sanitation_station`) from a per-map layout.
+- **Map layouts:** each round places the world entities from a per-map layout. These are the fate stations, `state_stockpile`, the rendering line's posts (`line_hopper`, `line_boiler`, `line_press`), `fleshgrowth` nodes, loose `water_barrel`s, `water_pump`, and `sanitation_station`.
   - The layout source, in priority order: a staff-saved `data/gangrene/layouts/<map>.json`, then a shipped `gamemode/layouts/<map>.lua`, then a fallback ring around the first spawn. Staff edit it with `gr_layout_add/remove/save/list`.
   - **The core map is `rp_slumtown`.** Its shipped layout is converted from the original's `gamemode/liverfailure-modules/maps/list/rp_slumtown.lua`, which holds the old positions. Entries commented out there stay out.
     - `purpose_in_life` entries for the kept fates become `fate_station`s: `kommandant` → kaiser, `sanitator` → sanitar, `korpsman` → korpsman, `proletariat` → prole.
-    - The `machine_lunch` positions become `ration_press`es.
+    - The `machine_lunch` positions (all in one room) become the rendering line's posts (step 11.1).
+    - Staff place the `fleshgrowth` nodes (about 8, spread across the city away from the line) and 4 loose `water_barrel`s.
     - The `faucet` positions are the candidates for `water_pump`. Only as many as step 8 allows are enabled.
     - The old file has no position for the stockpile, the slave station or the sanitation station. Staff place those with `gr_layout_add`, then save.
     - Every other class in the old file (loot, gangs, war and machines) is ignored.
@@ -160,7 +161,7 @@
 - **One scheduled job:** `Needs.Tick` runs once a second per player and applies rates and threshold effects.
 - **Despair at 100:** heart attack, death, −1 stem cell (kept from the original).
 - **Food and drink** are items whose `Use` calls `Needs.Add`.
-  - **Food is scarce by design.** There are no free food spawns. Rations only exist because a prole or slave made them (step 11.1). The only free drink is dirty water from the pump (step 8).
+  - **Food is scarce by design.** There are no free food spawns. Rations only exist because a prole or slave made them (step 11.1). The only free drink is dirty water from the pump (step 8). Clean water only comes from the rendering line.
 - **Done when:** the needs rise on their own, eating lowers Emptiness, and despair at 100 kills and costs a stem cell. Hunger and thirst never reduce HP directly. A bot with no food or water gets steadily slower and weaker from about minute 12, and its Pox starts rising once Dryness hits 100.
 
 ### Step 7: Damage, downed, death, corpse
@@ -203,7 +204,7 @@
   - Carry limit = base + `fate.CarryBonus` + items' `CarryAdd`.
 - **Persistence:** inventory is not persistent, as in the original. It belongs to the character's life and drops to the corpse on death.
 - **Starting set:** about 10 items to start: ration, clean water, dirty water, scrap, medical tools, the baton, the pistol and permits.
-- **`water_pump` entity:** one or two per map, usable by anyone. Each use gives one dirty water, with a short per-player cooldown. Dirty water lowers Dryness less than clean water and has a 25% chance to add Pox. Clean water is only sold from the stockpile (step 9).
+- **`water_pump` entity:** one or two per map, usable by anyone. Each use gives one dirty water, with a short per-player cooldown. Dirty water lowers Dryness less than clean water and has a 25% chance to add Pox. Clean water is only sold from the stockpile (step 9). Pumps are for personal drinking only. The factory's water comes from barrels (step 11.1).
 - **Done when:** pick up, drop and use work, the weight limit holds, and the corpse holds the dead player's items. The pump gives dirty water, and drinking it sometimes adds Pox.
 
 ### Step 9: Economy (fixed bone supply, treasury, stockpile, prices)
@@ -236,6 +237,7 @@
 - **Kaiser actions** (step 11.4):
   - **Set:** one validated receiver, `nKaiserEcon(key, value)`, checks the key and value against the schema. The same one-receiver pattern as R3.
   - **Grant:** pay any amount from the treasury to any living player.
+  - **Give bones** (anyone, not only the Kaiser): a context action that hands bones to a living player within 100 units. It is a validated receiver, and it is how players pay each other (e.g. a crew paying a gatherer).
   - **Fine:** take any amount from a player into the treasury, capped at what they carry. It uses the same target checks as Sentence.
   - **Ledger:** `Econ.Transfer` logs every movement with its source. The Kaiser's panel shows the treasury, stock levels, money in and out over the last 5 minutes broken down by source, and the most recent transfers. The panel shows this next to each setting, so the Kaiser can see what each change does.
 - **Bad settings hurt on their own:**
@@ -268,7 +270,7 @@
   - Same faction and lower authority than the victim → big stem penalty (and −666 for killing your own leader).
   - Victim is a citizen → "murder", death-wanted for 300 s, −1 stem cell, +30 despair.
 - **`Crime.Report(ply, act, ctx)`** judges crimes that aren't kills. It uses the same rules-table form as `Crime.Judge`. The theft rules:
-  - **Theft, unseen:** delivering or opening a crate stamped as made by someone else adds *theft* evidence (300 s).
+  - **Theft, unseen:** delivering or opening a crate whose crew stamp doesn't include you adds *theft* evidence (300 s).
   - **Theft, caught in the act:** if any police can see the player at that moment (the same prefiltered trace as wanted expiry), they become torment-wanted for 180 s, with the reason "theft from the People".
   - **Stockpile break-in:** finishing a stockpile pry (step 11.1) makes the player judgment-wanted for 300 s. Starting one sends an alarm on the `"state"` radio channel with the stockpile's location.
 - **Done when:** each rule fires in a scripted bot scenario, and wanted status counts down only while out of sight. Each theft rule also fires in a bot scenario.
@@ -279,24 +281,46 @@ Build them in this order, so each one has something to act on.
 
 1. **Prole**: the economic base.
    - Kit: `permit_tool` and a random scrap item. Worse aim (`AccuracyMulti 1.25`, `RecoilMulti 1.3`).
-   - **Work loop (food is the product):**
-     - Using a `ration_press` work station is a timed action (rule 6, about 30 s). When it finishes, a physical **ration crate** entity (`ent_crate`, kind `ration` or `clean_water`) appears next to the station.
-     - Each crate carries a SERVER-only `MadeBy` stamp (the maker's SteamID).
-     - Each station allows at most 3 crates waiting in the world, so the map can't fill with entities.
+   - **Work loop: the rendering line.** Food and clean water come from one multi-step factory that needs several people working together. It replaces the single-person press.
+     - **Gathering: the city grows meat.** `fleshgrowth` nodes are fleshy tumours placed by the map layout. Harvesting one is a timed action (about 15 s) that needs a `cleaver` (in the Prole kit). It drops a **mass sack**, and the node regrows after about 8 minutes. This is not cannibalism: corpses are never an input (see 00, "Things to leave behind").
+     - **Water: barrels.** A `water_barrel` is a physics prop using the blue plastic barrel model (`models/props_borealis/bluebarrel001.mdl`).
+       - An empty barrel fills over a few seconds while it touches map water (its `WaterLevel() > 0`).
+       - A full barrel touching the hopper pours all its water in (4 cycles' worth) and becomes empty.
+       - Full barrels are carried like crates (below). Empty ones are light.
+       - Barrels live in a registry checked once a second by the scheduler, never `FindByClass`.
+       - The map layout spawns a few loose ones. Proles can build more (Construction).
+     - **The posts.** The line has three posts, and their state is PUBLIC on the entities:
+       - **Hopper:** holds mass and water. Anyone loads it instantly by touching it with a mass sack or a full barrel.
+       - **Boiler:** has a pressure gauge (0–100) that drifts by itself, slowly creeping up with random wobble (a scheduled job). A **turnable valve** sits beside it. Turning it is a 1–2 s use (vent or build), through a validated, rate-limited receiver.
+         - **40–70 (green):** the line can run.
+         - **Under 40:** the line stalls.
+         - **Over 90:** the boiler vents scalding steam. Everyone near it takes damage, and the line stops until the pressure is back below 70.
+         - It needs a check about every 30–60 s, not constant holding.
+       - **Press:** someone has to hold use on it for the whole cycle (a timed action, rule 6). The press operator picks the output.
+     - **A cycle** (about 30 s) only advances while the press is crewed, the boiler is in the green and the hopper has the inputs:
+       - 1 mass + 1 water makes a **ration crate**.
+       - 1 water, boiled, makes a **clean-water crate**.
+       - Because the press needs constant holding and the boiler needs regular checks, one person can't run the line alone. It takes at least two, plus haulers for mass and water.
+       - At most 3 finished crates can wait at the line. When that's full, the line stalls.
+     - **Crew stamp:** each crate (`ent_crate`, kind `ration` or `clean_water`) carries a SERVER-only stamp listing everyone who worked the press or turned the valve during its cycle.
      - **Crates are heavy physical objects.** A crate is a real prop of about 30 kg, just under GMod's player pickup limit, carried with GMod's own physics pickup (+use). It stays a physics object while carried: it bumps doorframes and swings on stairs.
        - **Both hands are full:** the carrier's weapon is holstered while they carry.
        - **Walk only:** a carrier can't run. This is one modifier in the step 5 speed function, which caps run speed at walk speed. There is no other slowdown multiplier.
        - **It drops** where it is when the carrier takes damage, is downed or jumps. Anyone can then pick it up.
        - It can also be pushed along the ground without lifting it: slow and noisy, but possible for a weak or starving player.
-     - Touching a crate to the `state_stockpile` delivers it: the crate is removed, the count goes up, and the **deliverer** is paid that good's buy price (step 9). So crates left lying around are worth stealing.
+     - Touching a crate to the `state_stockpile` delivers it: the crate is removed and the count goes up.
+       - If the deliverer is on the crew stamp, the good's buy price (step 9) is **split evenly across the crew**.
+       - If not, the deliverer is paid the whole price, so crates left lying around are worth stealing.
+     - Gatherers and haulers aren't paid by the state unless they also crewed. Crews pay them with **Give bones** (step 9).
      - A crate can also be opened on the spot, which gives its contents to the person who opened it.
-     - Delivering or opening a crate someone else made goes through `Crime.Report(ply, "theft", …)` (step 10).
+     - Delivering or opening a crate whose crew stamp doesn't include you goes through `Crime.Report(ply, "theft", …)` (step 10).
    - **Stockpile pry:** anyone without `StockpileAccess` can pry the stockpile open. This is a 60 s timed action, cancelled by moving away or taking damage. It sends the step 10 alarm when it starts, and when it finishes it drops 3 rations and runs the break-in rule.
-   - **Construction:** the C-menu `Build` places a **storage crate** (35 bones, paid to the treasury through `Econ.Transfer`). Validate placement range on the server.
-     - It holds 8 items, and the builder can lock it.
-     - Anyone else can pry it open: a 30 s timed action that is reported through `Crime.Report(ply, "theft", …)`.
-     - Its contents drop when it is removed, and it is cleared when the round resets.
-     - **Players can't build production.** There are no player-built factory sites or presses. Food production is limited to the presses the map layout places (step 4).
+   - **Construction:** the C-menu `Build` places a **storage crate** (35 bones) or a **water barrel** (15 bones; at most 8 barrels in the world, and building is refused at the cap). The cost goes to the treasury through `Econ.Transfer`. Validate placement range on the server.
+     - The storage crate:
+       - It holds 8 items, and the builder can lock it.
+       - Anyone else can pry it open: a 30 s timed action that is reported through `Crime.Report(ply, "theft", …)`.
+       - Its contents drop when it is removed, and it is cleared when the round resets.
+     - **Players can't build production.** There are no player-built lines, posts or growths. A barrel is equipment, not production. Production is limited to the one line the map layout places (step 4).
    - Unions and WorkTitles are deferred.
 2. **Korpsman**: the revive and healing loop.
    - Regenerates 3× faster.
@@ -350,7 +374,7 @@ Build them in this order, so each one has something to act on.
        - If the freed slave is alive, they stay a Slave until they die. On the ghost screen they can then pick any fate (no forced kill, unlike the original's ascend).
    - Banishing is dropped. Kicking and banning are admin tools (step 14).
 - **Done when:** a 4-player session (Kaiser, Sanitar, Korpsman, Prole) can play one full loop:
-  1. The prole makes a ration crate, hauls it to the stockpile and is paid the buy price. Someone buys a ration at the counter.
+  1. Two proles gather mass from a fleshgrowth and fill a barrel at map water, then run the rendering line together (one on the press, one on the valve). They haul the ration crate to the stockpile, the pay is split between them, and they pay a third player with Give bones. Someone buys a ration at the counter. Letting the pressure pass 90 vents steam and stops the line.
   2. The Kaiser changes a price, grants bones to the korpsman, fines a player, and sentences the prole. The ledger shows each movement.
   3. The sanitar executes the prole and earns Teeth.
   4. The korpsman revives someone for a fee.
@@ -427,7 +451,8 @@ These are ordered by how much they add to the feel compared with their cost:
 
 - `fedhoria`, gprofiler, `replicate` and the old module loader.
 - Hogmode, `SpawnerThink` and copy-pasted resource spawners.
-- Player-built factory sites and production. Production comes only from the presses the map layout places.
+- Player-built factory sites and production. Production comes only from the rendering line the map layout places.
+- Using corpses as a factory input.
 - Hard-coded SteamIDs.
 - Text-file persistence.
 - mysqloo.
