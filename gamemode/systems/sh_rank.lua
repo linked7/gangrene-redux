@@ -126,7 +126,7 @@ end
 function Rank.SurvivedRound( ply )
 	if not ply:Alive() or ply:IsGhost() or not isSlave( ply ) then return false end
 	local _, rec = Corpse.Of( ply )
-	if rec and rec.state == "bleedout" then return false end
+	if rec and rec.state == "downed" then return false end
 	return ply:GetSlaveTime() >= Config.SlaveMinRoundTime
 end
 

@@ -321,7 +321,8 @@ hook.Add( "GR_PlayerDowned", "gr_inventory", function( ply, rag )
 	end
 end )
 
-hook.Add( "GR_PlayerRevived", "gr_inventory", function( ply, rag )
+-- Revived or got up on their own: either way the body's things come back.
+hook.Add( "GR_PlayerRestored", "gr_inventory", function( ply, rag )
 	local corpse = rag and rag.GR_Corpse
 	if not corpse or not corpse.inventory then return end
 	Inventory.GiveAll( ply, corpse.inventory )

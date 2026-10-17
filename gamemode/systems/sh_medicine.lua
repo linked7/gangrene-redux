@@ -31,9 +31,15 @@ end
 -- need( ply, target ) -> why-not and done( ply, target ) for a success.
 Medicine.PROCEDURES = {
 	{
+		-- Also treats Injured (step 7): the cap on max health comes off, then the wounds are stitched.
 		id = "heal", label = "Surgery: stitch wounds", duration = 8, fail = 0.15,
-		need = function( _, t ) if t:Health() >= Medicine.MaxHealth( t ) then return "They have no wounds to stitch." end end,
-		done = function( _, t ) t:SetHealth( Medicine.MaxHealth( t ) ) end,
+		need = function( _, t )
+			if t:Health() >= Medicine.MaxHealth( t ) and not t:GetInjured() then return "They have no wounds to stitch." end
+		end,
+		done = function( _, t )
+			if t:GetInjured() then Corpse.SetInjured( t, false ) end
+			t:SetHealth( Medicine.MaxHealth( t ) )
+		end,
 	},
 	{
 		id = "pox", label = "Surgery: cut out the pox", duration = 12, fail = 0.3,
@@ -141,8 +147,9 @@ end )
 
 -- Revive fee ---------------------------------------------------------------------------------
 
--- The patient's carried bones are on the corpse until sv_econ's GR_PlayerRevived hook hands them
--- back; hook order isn't fixed, so the fee is taken from wherever they are now (corpse first).
+-- Only a revive pays a fee; getting up on your own (GR_PlayerGotUp) doesn't. sh_corpse.lua runs
+-- GR_PlayerRestored (sv_econ hands the body's bones back) before this, but the fee is taken from
+-- wherever the bones are now (corpse first), so it doesn't depend on that order.
 hook.Add( "GR_PlayerRevived", "gr_medicine", function( ply, rag, doctor )
 	if not IsValid( doctor ) or not doctor:IsPlayer() or doctor == ply or not doctor:FateHas( "ReviveFee" ) then return end
 	local rec = Corpse.Get( rag ) or rag.GR_Corpse

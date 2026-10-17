@@ -227,9 +227,10 @@ hook.Add( "GR_PlayerDowned", "gr_econ", function( ply, rag )
 	if not ok then Log.Warn( "econ", "downed %s: bones stay on the player (%s)", ply:Nick(), why ) end
 end )
 
-hook.Add( "GR_PlayerRevived", "gr_econ", function( ply, rag )
+-- Revived or got up on their own (how): the bones on the body go back to its owner.
+hook.Add( "GR_PlayerRestored", "gr_econ", function( ply, rag, how )
 	local rec = corpseRecord( rag )
-	if rec then Econ.Transfer( rag, ply, rec.bones or 0, "revived" ) end
+	if rec then Econ.Transfer( rag, ply, rec.bones or 0, how == "getup" and "got up" or "revived" ) end
 end )
 
 local function sweepCorpse( rag )

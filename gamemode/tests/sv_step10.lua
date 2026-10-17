@@ -187,9 +187,9 @@ return function( T )
 	T.WaitUntil( function() return p1:Alive() end, 6, "p1 respawns" )
 	T.Check( not p1:IsWanted() and not Crime.Evidence( p1 ).theft, "a new life is clean" )
 
-	-- The corpse contract: finishing off a downed player is judged.
-	hook.Run( "GR_FinishedOff", p2, p3, NULL )
-	T.Equal( p3:GetWantedReason(), "murder", "GR_FinishedOff runs Crime.Judge" )
+	-- The corpse contract: a kill (finish off or bleed out) is judged.
+	hook.Run( "GR_PlayerKilled", p2, p3, NULL, "finished off" )
+	T.Equal( p3:GetWantedReason(), "murder", "GR_PlayerKilled runs Crime.Judge" )
 	reset()
 
 	-- Last, because the despair is a heart attack: a sanitar kills their own Kaiser.

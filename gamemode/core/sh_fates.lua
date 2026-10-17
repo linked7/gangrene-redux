@@ -196,7 +196,11 @@ function GM:PlayerSetHandsModel( ply, hands )
 	hands:SetBodyGroups( info.body or "0000000" )
 end
 
--- Changes `ply`'s fate in one synchronous pass. opts.reason: "spawn", "pick", "revive", "admin".
+-- Whether a fate entry continues the same life (a revive, or getting up from a wounded down):
+-- needs, kit and inventory carry over instead of starting fresh.
+function Fates.SameLife( reason ) return reason == "revive" or reason == "getup" end
+
+-- Changes `ply`'s fate in one synchronous pass. opts.reason: "spawn", "pick", "revive", "getup", "admin".
 -- opts.identity = { name, look } keeps a character's name and body (a revive) instead of rolling new ones.
 function Fates.Apply( ply, id, opts )
 	local f = byId[ id ] or list[ id ]

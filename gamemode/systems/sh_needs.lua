@@ -104,6 +104,7 @@ function Needs.ApplyPox( ply )
 	local f = ply:GetFateDef()
 	local base = f and f.Health or 100
 	local max = math.max( 1, math.floor( base * ( 1 - Needs.Get( ply, "Pox" ) / 200 ) ) )
+	if ply:GetInjured() then max = math.min( max, Config.InjuredMaxHealth ) end -- step 7
 	ply:SetMaxHealth( max )
 	if ply:Health() > max then ply:SetHealth( max ) end
 end
@@ -143,14 +144,14 @@ function Needs.Tick( ply )
 end
 Sched.EachPlayer( "needs", 1, function( ply ) Needs.Tick( ply ) end )
 
--- Every new life starts with empty needs; ghosts have none. A revive keeps the old life's needs.
+-- Every new life starts with empty needs; ghosts have none. A revive or get-up keeps the old life's needs.
 hook.Add( "GR_FateEnter", "gr_needs", function( ply, f, reason )
 	ply.GR_HeartAttackAt = nil
 	if f.index == FATE_GHOST then
 		ply.GR_Needs = nil
 		return
 	end
-	if reason ~= "revive" or not ply.GR_Needs then
+	if not Fates.SameLife( reason ) or not ply.GR_Needs then
 		ply.GR_Needs = {}
 		for _, name in ipairs( order ) do ply.GR_Needs[ name ] = 0 end
 	end

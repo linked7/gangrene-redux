@@ -1,7 +1,7 @@
 -- Crime and police (step 10). Two rules tables decide what an act is worth, so the law reads as
 -- data instead of nested ifs (R12):
 --
---   Crime.Judge( attacker, victim )   a kill; the corpse system calls it via GR_FinishedOff
+--   Crime.Judge( attacker, victim )   a kill; the corpse system calls it via GR_PlayerKilled
 --   Crime.Report( ply, act, ctx )     everything else: "theft" (ctx.madeBy), "pry_start" (ctx.pos), "pry_done"
 --
 -- Each rule is { name, when = fn, crime, wanted | evidence, duration, stem, despair, teeth, alarm, say }.
@@ -276,9 +276,11 @@ function Crime.Report( ply, act, ctx )
 	return out
 end
 
--- The corpse system (step 7) fires this when a downed player is finished off.
-hook.Add( "GR_FinishedOff", "gr_crime", function( victim, attacker )
-	Crime.Judge( attacker, victim )
+-- The corpse system (step 7) fires this in exactly two places: a downed player is finished off
+-- (killer = who did it), or a dying player bleeds out (killer = who downed them). Getting up
+-- from a wounded down is never judged.
+hook.Add( "GR_PlayerKilled", "gr_crime", function( victim, killer )
+	Crime.Judge( killer, victim )
 end )
 
 -- Once a second per player: wanted time counts down only while no police can see them,
