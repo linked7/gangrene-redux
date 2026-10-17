@@ -49,7 +49,7 @@ if SERVER then
 		line_boiler = { "line_boiler", function( b ) return Lunch.HandlePos( b, "vent" ) end },
 		boiler_build = { "line_boiler", function( b ) return Lunch.HandlePos( b, "build" ) end },
 		boiler_dial = { "line_boiler", centre, false, 110 },
-		state_stockpile = { "state_stockpile" },
+		state_stockpile = { "state_stockpile", centre, true, 80 },
 		water_barrel = { "water_barrel", centre, true, 50 },
 		bone_capsule = { "bone_capsule", centre, true, 50 },
 		meat_chunk = { "meat_chunk", centre, true, 50 },
