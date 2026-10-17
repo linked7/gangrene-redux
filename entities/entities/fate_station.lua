@@ -15,6 +15,7 @@ function ENT:KeyValue( key, value )
 end
 
 if CLIENT then
+	Fates.Stations = Fates.Stations or {}
 	function ENT:Draw()
 		-- Only the dead see purposes; the living walk past them.
 		if LocalPlayer():IsGhost() then self:DrawModel() end
