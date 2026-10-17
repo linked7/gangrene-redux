@@ -124,7 +124,7 @@
 - **Map layouts:** each round places the world entities from a per-map layout. These are the fate stations, `state_stockpile`, the lunch machine's posts (`lunch_machine`, `line_boiler`), `capsule_spawn` points, loose `water_barrel`s, `water_pump`, `sanitation_station`, and `trash_pile`s.
   - The layout source, in priority order: a staff-saved `data/gangrene/layouts/<map>.json`, then a shipped `gamemode/layouts/<map>.lua`, then a fallback ring around the first spawn. Staff edit it with `gr_layout_add/remove/save/list`.
   - **The core map is `rp_slumtown`.** Its shipped layout is converted from the original's `gamemode/liverfailure-modules/maps/list/rp_slumtown.lua`, which holds the old positions. Entries commented out there stay out.
-    - `purpose_in_life` entries for the kept fates become `fate_station`s: `kommandant` → kaiser, `sanitator` → sanitar, `korpsman` → korpsman, `proletariat` → prole.
+    - `purpose_in_life` entries for the kept fates become `fate_station`s: `kommandant` → kaiser, `korpsman` → korpsman, `proletariat` → prole. The `sanitator` station is dropped: the Kaiser recruits sanitars (step 11.4).
     - One of the `machine_lunch` positions (all in one room) becomes the `lunch_machine`. The shipped layout puts the `line_boiler` beside it (step 11.1).
     - The 12 `GM.Capsules` positions become `capsule_spawn` points. The shipped layout puts 4 loose `water_barrel`s in the lunch hall.
     - The `faucet` positions are the candidates for `water_pump`. Only as many as step 8 allows are enabled.
@@ -226,7 +226,8 @@
   - **`rotten_food` (new item):** eating it lowers Emptiness a little and adds Pox.
   - **Cost:** +2 Pox; a 1/6 chance of a random parasite; a 1/8 chance of AAT red *"NAME slices their hand open on something sharp!"* and 10–20 damage. Nobody is exempt.
   - **UI:** crosshair text: the name, then *"Use to dumpster dive.\nIt isn't healthy to do, and you'll probably catch something nasty."* or *"You must wait before there is more to take."*
-- **Done when:** pick up, drop and use work, the weight limit holds, and the corpse holds the dead player's items. The pump gives dirty water, and drinking it sometimes adds Pox. A trash search drops 1–3 items, adds 2 Pox and empties the pile; a second search says "There is nothing." until it refills.
+- **Wasteland water (1:1 port of `sv_player.lua:3421-3437`):** the map layout may set a `Wasteland` box (rp_slumtown: `Vector(1667,-1529,1276)` to `Vector(12122,7142,-809)`). Every 1 s, a living non-ghost player with `WaterLevel() > 0` inside the box takes `WaterLevel()` damage and gains `WaterLevel()` Pox (no Pox with a Respirator or race Outsider). The `aquatic` quirk is exempt. Wading slows ×0.7 (level 1–2) / ×0.55 (level 3) through the speed modifier (`sh_player.lua:1316`). Leeches stay out.
+- **Done when:** pick up, drop and use work, the weight limit holds, and the corpse holds the dead player's items. The pump gives dirty water, and drinking it sometimes adds Pox. A trash search drops 1–3 items, adds 2 Pox and empties the pile; a second search says "There is nothing." until it refills. A bot standing waist-deep in wasteland water loses 2 HP and gains 2 Pox each second; with a Respirator it only loses HP; city water does nothing.
 
 ### Step 9: Economy (fixed bone supply, treasury, stockpile, prices)
 
@@ -417,6 +418,8 @@ Build them in this order, so each one has something to act on.
      - Both are validated receivers: target valid, alive, not a ghost, in range or visible.
      - Forgiving a theft costs 300. The forgiven player pays it to the treasury through `Econ.Transfer`, and the forgiveness fails if they can't afford it.
    - **Upgrades:** **one** receiver `nKaiserUpgrade(targetFate)` reading a data table `{prole = 125, korpsman = 150}` (R3). It is paid from the treasury, and the bones are held in an upgrade fund that is part of the step 9 invariant. They are not destroyed.
+   - **Recruit as Sanitar:** a context-menu action on a living Prole within 100 units. Validated receiver (sender is Kaiser and alive, target in range, a sanitar slot is free). The target gets a yes/no prompt; on yes they become a Sanitar at no stem-cell cost. There is no sanitar fate station.
+   - **XOMBOKOM:** `/xombokom <text>` (alias `/xk`), Kaiser only, max 120 characters, 30 s cooldown. Every client shows the text upper case in large red (180,0,0) at top centre for about 8 s, then it fades; a new one replaces it. A random `kidneydagger/broadcast1-7.wav` plays globally at pitch 80–120. Nothing goes to chat (original: `sh_chat.lua:1380`).
    - **On death:** the `Economy` table goes back to its defaults, with a global announcement and a 600 s cooldown for the role.
 5. **Slave**: probation for new players. It has **full parity with Prole**: build it as a variant of the Prole definition, `Fates.Define("slave", {Base = "prole", ...})`, that only overrides presentation and who may take it.
    - **Who:** every Foolish-rank player, and only them. Cost 0, unlimited slots, a short death cooldown (15 s, like Prole).
@@ -476,10 +479,17 @@ Build them in this order, so each one has something to act on.
 - **Rounds:** the round is the unit of play. Keep it simpler than the original, which only ended a round through Doom.
   - `Round.Start` happens on map load. It seeds the treasury with `bones_supply`, sets the prices to their defaults and empties the stockpile (step 9). Everyone starts the round with 0 bones.
   - `Round.End(reason)` fires when the round timer (`round_length`, default 60 min) runs out or an admin ends it. It frees surviving slaves, flushes the DB, shows an end screen, then changes level.
+  - **Round flow:**
+    - At 10 min every `fate_station` is removed. Ghosts after that can only join as migrants.
+    - Every 1 min a migrant wave spawns in the wasteland: each waiting ghost spawns as a Migrant (a Prole variant, race Outsider) carrying a `papers` item.
+    - At the city gate (rp_slumtown: the "Gates of Gangrene" by the gatehouse, about 1400 -64 64; the layout holds a `city_gate` entry), using the gate with `papers` swaps them for a `passport` and opens a list of city fates under their cap. The pick is permanent for the round. Korpsman cap after 10 min = korpsmen lost this round. Kaiser is never listed.
+    - New players still start as Slave (step 11.5); slaves skip the migrant path.
+    - Original refs: `ref_proletariat_wasteland.lua`, `ref_korpsman_wasteland.lua`, `items/list/permit_passport.lua`.
   - Only stem cells, rank and playtime carry over to the next round.
   - The Kaiser's fall may trigger `Round.End` later. There is no Doom or war end state.
 - **Done when:**
   - A new player starts as a Slave and is freed either by commendation or by surviving to `Round.End`.
+  - At 10 min the stations are gone; a ghost spawns as a migrant within 1 min, walks to the gate, trades papers for a passport and becomes a Prole. A korpsman slot is offered only after a korpsman died.
   - Once freed, the player can take any fate, Kaiser included, with stem cells alone.
 
 ### Step 15: Client UI

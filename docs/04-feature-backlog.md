@@ -26,6 +26,10 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Plan location | Date |
 |---|---|---|
+| Round flow (stations gone at 10 min, migrant waves, papers → passport at the gate) | `accepted` | Step 13. |
+| Kaiser recruits sanitars (context menu); sanitar station dropped | `accepted` | Steps 4, 11.4. |
+| Deadly wasteland water (1:1 port: damage + Pox by water level) | `accepted` | Step 8. |
+| XOMBOKOM as big red screen text | `accepted` | Step 11.4. |
 | Korpsman loop remake | `accepted` | Step 11.2 ported from the original: revive (3 presses) promotes to lovebox (blood/Pox/parasite modes, HP cost); surgery is a timed action with per-procedure time, tool %, fail roll and costs. |
 | Shop goods from the stockpile | `accepted` | Step 9: loaf = ration at sell.ration; beer/spirits/knife seeded stock (shop_stock 10), sold out until next round. |
 | Slave fate: new players are slaves until they survive a round or are commended | Step 11 item 5, Step 13 (Rounds) | 2026-10-17 |
@@ -100,3 +104,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Shop stock | Shop goods come out of the stockpile; Soylent Loaf is the ration; other goods get a fixed per-round stock. | User: tie shop goods into the stockpile. |
 | 2026-10-17 | Trash piles | Port as-is to Step 8; loot mostly bone capsules, rare rotten food or clean water; no white mold; no exemption; original rp_slumtown spots. | User agreed. |
 | 2026-10-17 | Weather | Port original cycle and four weathers to Step 5; ritual and area weathers later. | User agreed. |
+| 2026-10-17 | Round flow | Fate stations removed at 10 min; migrant wave every 1 min with `papers`; passport and permanent fate pick at the "Gates of Gangrene"; korpsman cap = korpsmen lost. | User agreed. |
+| 2026-10-17 | Sanitar recruiting | Kaiser's "Recruit as Sanitar" context action; no sanitar station. | User agreed. |
+| 2026-10-17 | Wasteland water | 1:1 port of the original wade damage and Pox in the wasteland box. | User: the water should be horrible in the wasteland. |
+| 2026-10-17 | XOMBOKOM | Kaiser broadcast as large red top-centre text plus sound, not chat; 120 chars, 30 s cooldown. | User's choice. |

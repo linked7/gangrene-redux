@@ -69,6 +69,7 @@ return {
 		"cl_scoreboard.lua",
 		"cl_help.lua",
 		"sv_soak.lua",
+		"sv_wastewater.lua",
 		"sh_storage.lua",
 		"sh_uitour.lua",
 		"sh_locks.lua",
