@@ -50,5 +50,6 @@ return {
 		"sh_econ.lua",
 		"sv_econ.lua",
 		"sh_crime.lua",
+		"sh_interact.lua",
 	},
 }
