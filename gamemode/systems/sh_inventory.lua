@@ -271,7 +271,7 @@ Sched.Every( "inventory_net", State.NET_INTERVAL, function()
 		-- A client that isn't ready yet keeps its pending set until it is.
 		if ply.GR_Ready then
 			local d = Inventory.Collect( ply )
-			if d and not ply:IsBot() then send( ply, d ) end
+			if d and Net.IsClient( ply ) then send( ply, d ) end
 		end
 	end
 end )

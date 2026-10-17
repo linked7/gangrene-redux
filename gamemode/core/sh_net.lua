@@ -79,6 +79,35 @@ function Net.Receive( name, opts, fn )
 	end )
 end
 
+-- Outgoing traffic (server): Net.stats counts every message sent and its bytes times the number of
+-- recipients, so the soak can report bytes per second. Net.IsClient( ply ) says whether per-client
+-- updates (state, world, inventory) go to `ply`: bots run no client Lua, so they are skipped unless
+-- Net.BotsAsClients is set (the soak sets it so 30 bots cost what 30 clients would).
+if SERVER then
+	Net.stats = Net.stats or { messages = 0, bytes = 0 }
+	Net.BotsAsClients = Net.BotsAsClients or false
+
+	function Net.IsClient( ply ) return Net.BotsAsClients or not ply:IsBot() end
+
+	local function recipients( to )
+		if istable( to ) then return #to end
+		if isentity( to ) then return 1 end
+		if to and to.GetCount then return to:GetCount() end
+		return 1
+	end
+
+	local function count( n )
+		Net.stats.messages = Net.stats.messages + n
+		Net.stats.bytes = Net.stats.bytes + net.BytesWritten() * n
+	end
+
+	-- Wrap once, even when this file is reloaded.
+	Net.rawSend = Net.rawSend or net.Send
+	Net.rawBroadcast = Net.rawBroadcast or net.Broadcast
+	function net.Send( to ) count( recipients( to ) ) return Net.rawSend( to ) end
+	function net.Broadcast() count( player.GetCount() ) return Net.rawBroadcast() end
+end
+
 -- Ready handshake: the client says when it has finished loading, and the server runs
 -- hook GR_PlayerReady(ply) exactly once. Anything that must reach a fresh client waits for it.
 -- Bots run no client Lua, so they count as ready one tick after their first spawn.

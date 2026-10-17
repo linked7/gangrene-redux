@@ -85,7 +85,7 @@ end
 local function readyClients()
 	local out = {}
 	for _, ply in player.Iterator() do
-		if ply.GR_Ready and not ply:IsBot() then table.insert( out, ply ) end
+		if ply.GR_Ready and Net.IsClient( ply ) then table.insert( out, ply ) end
 	end
 	return out
 end
@@ -100,5 +100,5 @@ end
 Sched.Every( "world_net", WorldState.NET_INTERVAL, WorldState.NetTick )
 
 hook.Add( "GR_PlayerReady", "gr_world_snapshot", function( ply )
-	if not ply:IsBot() then send( { ply }, table.GetKeys( values ) ) end
+	if Net.IsClient( ply ) then send( { ply }, table.GetKeys( values ) ) end
 end )

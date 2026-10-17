@@ -193,7 +193,7 @@ function State.NetTick()
 	State.stats.ticks = State.stats.ticks + 1
 	if not next( dirty ) then return end
 	for _, ply in player.Iterator() do
-		if ply.GR_Ready and not ply:IsBot() then send( ply, State.Collect( ply ) ) end
+		if ply.GR_Ready and Net.IsClient( ply ) then send( ply, State.Collect( ply ) ) end
 	end
 	dirty = {}
 end
@@ -201,7 +201,7 @@ end
 Sched.Every( "state_net", State.NET_INTERVAL, State.NetTick )
 
 hook.Add( "GR_PlayerReady", "gr_state_snapshot", function( ply )
-	if not ply:IsBot() then send( ply, State.Collect( ply, true ) ) end
+	if Net.IsClient( ply ) then send( ply, State.Collect( ply, true ) ) end
 end )
 
 -- A new player's fields reach everyone on the next tick, overwriting whatever the previous
