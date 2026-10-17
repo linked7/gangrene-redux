@@ -383,15 +383,28 @@ end )
 -- The shop (step 9) ------------------------------------------------------------------------
 
 Econ.SHOP_SOUNDS = { "placenta/coinkeeper1.wav", "placenta/coinkeeper2.wav", "placenta/coinkeeper3.wav", "placenta/coinkeeper4.wav" }
-Econ.SHOP_DROP = 40   -- the bought item lands this far in front of the buyer
+Econ.PORT_DROP = 40 -- bought goods come out this far in front of the stockpile port
 
--- Buys one `good` from the C-menu shop: the sell price goes to the treasury, the stock count
--- falls by one and the item appears in front of the buyer. The loaf obeys the reserve and the
+local function isPort( port ) return IsValid( port ) and port:GetClass() == "state_stockpile" end
+
+-- Spawns `count` of `id` in front of the port and plays the till.
+local function portSpawn( port, id, count )
+	local pos = port:WorldSpaceCenter() + port:GetForward() * Econ.PORT_DROP
+	local tr = util.TraceLine( { start = port:WorldSpaceCenter(), endpos = pos, filter = port } )
+	if tr.Hit then pos = tr.HitPos + tr.HitNormal * 8 end
+	local ent = Items.Spawn( id, count, pos, Angle( 0, port:GetAngles().y, 0 ) )
+	port:EmitSound( Econ.SHOP_SOUNDS[ math.random( #Econ.SHOP_SOUNDS ) ] )
+	return ent
+end
+
+-- Buys one `good` at the stockpile `port` (the shop): the sell price goes to the treasury, the
+-- stock count falls by one and the item appears at the port. The loaf obeys the reserve and the
 -- ration limit as at the counter. Returns ok, the reason when refused (told to the player) and
 -- the spawned gr_item on success.
-function Econ.ShopBuy( ply, good )
+function Econ.ShopBuy( ply, good, port )
 	local function refuse( why ) Notify( ply, why ) return false, why end
 	if not Econ.CanShop( ply ) then return false, "dead" end
+	if not isPort( port ) then return false, "not a port" end
 	if not Econ.SHOP_SET[ good ] or not Items.Get( good ) then return refuse( "The shop doesn't sell that." ) end
 	local reserve = good == Econ.BREAD and Econ.Setting( "reserve." .. good ) or 0
 	if Econ.Stock( good ) <= reserve then return refuse( "That is sold out." ) end
@@ -410,21 +423,47 @@ function Econ.ShopBuy( ply, good )
 	if bought then table.insert( bought, CurTime() ) end
 	addStock( good, -1 )
 
-	local fwd = ply:GetForward()
-	fwd.z = 0
-	fwd:Normalize()
-	local pos = ply:GetPos() + fwd * Econ.SHOP_DROP + Vector( 0, 0, 40 )
-	local tr = util.TraceLine( { start = ply:EyePos(), endpos = pos, filter = ply } )
-	if tr.Hit then pos = tr.HitPos + tr.HitNormal * 8 end
-	local ent = Items.Spawn( good, 1, pos, Angle( 0, ply:EyeAngles().y, 0 ) )
-	ply:EmitSound( Econ.SHOP_SOUNDS[ math.random( #Econ.SHOP_SOUNDS ) ] )
+	local ent = portSpawn( port, good, 1 )
 	hook.Run( "GR_ShopBuy", ply, good, ent )
 	return true, nil, ent
 end
 
-Net.Receive( "nShopBuy", { rate = 4, alive = true }, function( ply )
-	local good = Net.ReadString()
-	if good then Econ.ShopBuy( ply, good ) end
+Net.Receive( "nShopBuy", { rate = 4, alive = true, target = "entity", range = Econ.COUNTER_RANGE }, function( ply, port )
+	local good = Net.ReadString( 32 )
+	if good then Econ.ShopBuy( ply, good, port ) end
+end )
+
+-- The stockpile port's materials ------------------------------------------------------------
+
+-- Buys `qty` of material `m` at the stockpile `port`: qty times the sell price goes to the
+-- treasury, the stock falls by qty and one stack appears at the port. Returns ok, the reason
+-- when refused (told to the player) and the spawned gr_item on success.
+function Econ.PortBuyMaterial( ply, port, m, qty )
+	local function refuse( why ) Notify( ply, why ) return false, why end
+	if not Econ.CanShop( ply ) then return false, "dead" end
+	if not isPort( port ) then return false, "not a port" end
+	if not isstring( m ) or not Econ.MATERIAL_SET[ m ] then return refuse( "The port doesn't sell that." ) end
+	local price = Econ.MaterialPrice( m )
+	if not price then return refuse( "The port doesn't sell " .. m .. " yet." ) end
+	if not isnumber( qty ) or qty ~= math.floor( qty ) or qty < 1 or qty > Econ.MATERIAL_MAX then
+		return refuse( "That isn't a count the port can fill." )
+	end
+	if Econ.MaterialAvailable( m ) < qty then return refuse( "There isn't that much " .. m .. " in stock." ) end
+	local cost = price * qty
+	if not Econ.Transfer( ply, Econ.TREASURY, cost, "port" ) then
+		return refuse( string.format( "You can't afford that. It costs %d bones.", cost ) )
+	end
+	addStock( m, -qty )
+
+	local ent = portSpawn( port, m, qty )
+	hook.Run( "GR_PortBuyMaterial", ply, m, qty, ent )
+	return true, nil, ent
+end
+
+Net.Receive( "nShopBuyMaterial", { rate = 4, alive = true, target = "entity", range = Econ.COUNTER_RANGE }, function( ply, port )
+	local m = Net.ReadString( 32 )
+	local qty = net.ReadUInt( 8 )
+	if m then Econ.PortBuyMaterial( ply, port, m, qty ) end
 end )
 
 -- Wages ------------------------------------------------------------------------------------

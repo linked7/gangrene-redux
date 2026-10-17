@@ -28,6 +28,27 @@ for _, good in ipairs( Econ.SHOP ) do Econ.SHOP_SET[ good ] = true end
 -- The bread line hands out this good.
 Econ.BREAD = "ration"
 
+-- The stockpile port's materials side section: bought in bulk from stock at the material's sell
+-- price. A material is on sale only once it is an item and has a `sell.<m>` setting; until then
+-- its row reads "not sold" and the server refuses it.
+Econ.MATERIALS = { "wood", "biomass", "biofuel", "scrap", "ore", "water", "meat", "seeds" }
+Econ.MATERIAL_SET = {}
+for _, m in ipairs( Econ.MATERIALS ) do Econ.MATERIAL_SET[ m ] = true end
+Econ.MATERIAL_MAX = 255 -- one purchase at most; sent as an 8-bit count
+
+-- The price of one `m`, or nil when the port doesn't sell it.
+function Econ.MaterialPrice( m )
+	if not Econ.MATERIAL_SET[ m ] or not Items.Get( m ) then return nil end
+	if not Econ.SchemaByKey[ "sell." .. m ] then return nil end
+	return Econ.Setting( "sell." .. m )
+end
+
+-- How many `m` the port can sell: the stock less any reserve.
+function Econ.MaterialAvailable( m )
+	local reserve = Econ.SchemaByKey[ "reserve." .. m ] and Econ.Setting( "reserve." .. m ) or 0
+	return math.max( 0, Econ.Stock( m ) - reserve )
+end
+
 -- The Economy table schema. Values are whole numbers between min and max; max = nil means
 -- bones_supply. These are sanity checks only, never balance clamps: the Kaiser may set anything sane.
 Econ.Schema = {}      -- ordered list of { key, type, min, max, default }
@@ -74,23 +95,10 @@ function Econ.CanShop( ply )
 	return IsValid( ply ) and ply:Alive() and not ply:IsGhost()
 end
 
-if SERVER then return end
+-- The server tells a player who used a stockpile to open its port panel.
+Net.Pool( "gr_port_open" )
 
--- Adds the shop's Buy submenu to an open context menu (sh_interact.lua builds the menu).
-function Econ.AddShopMenu( menu )
-	local sub = menu:AddSubMenu( "Buy" )
-	for _, good in ipairs( Econ.SHOP ) do
-		local def = Items.Get( good )
-		local n = Econ.Stock( good )
-		local text = string.format( "%s - %d bones (%s)", def and def.Name or good, Econ.Setting( "sell." .. good ),
-			n > 0 and n .. " left" or "sold out" )
-		sub:AddOption( text, function()
-			net.Start( "nShopBuy" )
-			net.WriteString( good )
-			net.SendToServer()
-		end )
-	end
-end
+if SERVER then return end
 
 -- Until the counter has a UI: `gr_counter <buy|take|free> [good]` while looking at a stockpile.
 local ACTIONS = { buy = Econ.COUNTER_BUY, take = Econ.COUNTER_TAKE, free = Econ.COUNTER_FREE }
@@ -104,4 +112,84 @@ concommand.Add( "gr_counter", function( ply, _, args )
 	net.WriteUInt( action, 2 )
 	net.WriteString( args[ 2 ] or Econ.BREAD )
 	net.SendToServer()
+end )
+
+-- The stockpile port's panel, which is the whole shop: the dealer-style Buy list of shop goods on
+-- the left, the materials side section beside it (one text row per material with a count slider,
+-- 1 to what's in stock, and a Buy button). The server decides; this only asks.
+function Econ.OpenPort( port )
+	if IsValid( Econ.PortFrame ) then Econ.PortFrame:Remove() end
+	local f = vgui.Create( "DFrame" )
+	Econ.PortFrame = f
+	f:SetTitle( "Stockpile port" )
+	f:SetSize( 760, 60 + math.max( #Econ.MATERIALS, #Econ.SHOP ) * 30 )
+	f:Center()
+	f:MakePopup()
+	f.Think = function( self )
+		if not IsValid( port ) or LocalPlayer():GetPos():DistToSqr( port:GetPos() ) > 214 ^ 2 then self:Remove() end -- counter range plus slack
+	end
+	local shop = vgui.Create( "DScrollPanel", f )
+	shop:Dock( LEFT )
+	shop:SetWide( 280 )
+	shop:DockMargin( 0, 0, 10, 0 )
+	for _, good in ipairs( Econ.SHOP ) do
+		local def = Items.Get( good )
+		local n = Econ.Stock( good )
+		local b = shop:Add( "DButton" )
+		b:Dock( TOP )
+		b:SetTall( 26 )
+		b:DockMargin( 0, 2, 0, 2 )
+		b:SetText( string.format( "%s - %d bones (%s)", def and def.Name or good, Econ.Setting( "sell." .. good ),
+			n > 0 and n .. " left" or "sold out" ) )
+		b:SetEnabled( n > 0 )
+		b.DoClick = function()
+			net.Start( "nShopBuy" )
+			net.WriteEntity( port )
+			net.WriteString( good )
+			net.SendToServer()
+			f:Remove()
+		end
+	end
+	for _, m in ipairs( Econ.MATERIALS ) do
+		local row = vgui.Create( "DPanel", f )
+		row:Dock( TOP )
+		row:SetTall( 26 )
+		row:DockMargin( 0, 2, 0, 2 )
+		row.Paint = nil
+		local price, avail = Econ.MaterialPrice( m ), math.min( Econ.MaterialAvailable( m ), Econ.MATERIAL_MAX )
+		local label = vgui.Create( "DLabel", row )
+		label:Dock( LEFT )
+		label:SetWide( 170 )
+		if not price then
+			label:SetText( m .. ": not sold" )
+		elseif avail < 1 then
+			label:SetText( string.format( "%s: sold out (%d bones)", m, price ) )
+		else
+			label:SetText( string.format( "%s: %d in stock, %d bones", m, avail, price ) )
+			local buy = vgui.Create( "DButton", row )
+			buy:Dock( RIGHT )
+			buy:SetWide( 60 )
+			buy:SetText( "Buy" )
+			local slider = vgui.Create( "DNumSlider", row )
+			slider:Dock( FILL )
+			slider:SetText( "" )
+			slider:SetMin( 1 )
+			slider:SetMax( avail )
+			slider:SetDecimals( 0 )
+			slider:SetValue( 1 )
+			buy.DoClick = function()
+				net.Start( "nShopBuyMaterial" )
+				net.WriteEntity( port )
+				net.WriteString( m )
+				net.WriteUInt( math.Clamp( math.Round( slider:GetValue() ), 1, Econ.MATERIAL_MAX ), 8 )
+				net.SendToServer()
+				f:Remove()
+			end
+		end
+	end
+end
+
+Net.Receive( "gr_port_open", nil, function()
+	local port = net.ReadEntity()
+	if IsValid( port ) then Econ.OpenPort( port ) end
 end )
