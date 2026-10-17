@@ -243,6 +243,7 @@
   - Anyone can buy at the counter for that good's sell price, and the bones go to the treasury. Purchases follow the ration limit and the reserve below.
   - Withdrawing for free needs `FateHas("StockpileAccess")` (Kaiser, Sanitar). It ignores the limit and the reserve.
 - **The shop (for the time being).** A `Buy` list in the C menu, in the style of the original dealer's buy menu, open to every living fate. It stands in for a shop entity for now.
+  - **Imports:** anything no factory produces reaches the stockpile only by Kaiser import. The Kaiser orders it from the panel and pays from the treasury, and the goods arrive as a crate at the gate for someone to haul to the stockpile.
   - **Every shop item comes out of the stockpile.** A sale takes one from the `state_stockpile` count, and a count of 0 means sold out. The shop is a second counter on the same stock, not a source of goods.
     - **Soylent Loaf is the ration.** It is the lunch machine's ration (step 11.1), sold at `sell.ration` and under the ration limit and reserve, so buying one competes with the bread line.
     - **Fear Beer 35, Spirits 85, Knife 40** (original prices). Nothing in the city makes these yet, so `Round.Start` seeds the stockpile with a fixed stock of each (`shop_stock`, default 10). When they sell out, they're gone until next round. Holders of `StockpileAccess` can withdraw them for free, as with rations.
@@ -509,7 +510,7 @@ Build them in this order, so each one has something to act on.
     - **WINTER:** adds a `cold` need that drains outdoors, faster each stage.
       - Stage 1 chill. Stage 2 water drains cold fast. Stage 3 water is lethal within seconds. Stage 4 outdoors alone kills an unprotected player.
       - Warmth sources stack: near a map fire (`env_fire` or fire layout spots), indoors (no sky trace up), taking burn damage, being well fed (hunger above 70%), and wearing a coat.
-      - Coat: a `coat` clothing item sold at the counter. Wearing it sets the fate model's coat bodygroup and cuts cold drain. Proles start without one (their default bodygroup has the coat off).
+      - Coat: a `coat` clothing item sold at the counter. No factory makes coats, so the counter only has them after the Kaiser imports them (see Imports in Step 9). Wearing it sets the fate model's coat bodygroup and cuts cold drain. Proles start without one (their default bodygroup has the coat off).
   - Only stem cells, rank and playtime carry over to the next round.
   - The Kaiser's fall may trigger `Round.End` later. There is no Doom or war end state.
 - **Done when:**

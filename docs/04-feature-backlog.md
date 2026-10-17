@@ -124,3 +124,4 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Rocket turret | Re-added as an optimized port: throttled search, cached client trace, single sound. | User asked; cheap hazard that respects permits. |
 | 2026-10-17 | Round timer start | Timer and 10 min marks count from the first Kaiser spawn, not map load. | User asked. |
 | 2026-10-17 | Maladies | Random per round, sometimes none; stages climb daily only after the Kaiser arrives. WINTER warmed by fires, indoors, burn damage, food, coats; Proles start coatless. | User asked. |
+| 2026-10-17 | Imports | Anything no factory makes (coats, etc.) enters the stockpile only by Kaiser import: paid from the treasury, delivered as a crate at the gate. | User asked. |
