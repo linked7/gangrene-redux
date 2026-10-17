@@ -38,6 +38,7 @@ return {
 		"sh_ghost.lua",
 		"sh_needs.lua",
 		"cl_atmosphere.lua",
+		"sh_weather.lua",
 		"sv_damage.lua",
 		"sh_actions.lua",
 		"sh_corpse.lua",
