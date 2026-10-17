@@ -23,6 +23,7 @@ Fates.Define( "prole", {
 	Cost = 1,
 	DeathCooldown = 15,
 	Citizen = true,
+	Proletariat = true, -- builds munitionizers (sh_build.lua), as the original's proletariatConstructs
 	CarryBonus = 5, -- workers haul; slaves inherit it
 	-- Each entry is an item id, or a list to pick one from at random.
 	Kit = { "permit_tool", { "scrap", "scrap_pipe", "scrap_gear" } },

@@ -171,6 +171,11 @@ P.ration_press = function( ent, ply, ct )
 	table.insert( ct, { text = "Ration Press" } )
 	small( ct, "Use it to work. It makes " .. ( def and def.Name or "rations" ) .. "." )
 end
+P.munitionizer = function( ent, ply, ct )
+	table.insert( ct, { text = "Munitionizer" } )
+	small( ct, "Use to purchase ammunition." )
+	small( ct, "You can check your reserve ammo at any time by pressing E and R." )
+end
 P.state_stockpile = function( ent, ply, ct )
 	table.insert( ct, { text = "State Stockpile" } )
 	small( ct, "The city's food is kept here. Deliver crates to it." )

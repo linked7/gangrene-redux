@@ -84,5 +84,6 @@ return {
 		"cl_music.lua",
 		"sh_parity.lua",
 		"sh_guns.lua",
+		"sh_munitionizer.lua",
 	},
 }
