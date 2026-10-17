@@ -42,5 +42,6 @@ return {
 		"sh_actions.lua",
 		"sh_corpse.lua",
 		"sh_consciousness.lua",
+		"sh_chat.lua",
 	},
 }
