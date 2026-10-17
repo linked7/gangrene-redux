@@ -2,21 +2,18 @@
 -- Storage.CAPACITY items. Items move between it and the inventory (sh_inventory.lua) one at a time
 -- through the C menu: Store... lists what you carry (the item in hand first), Take... lists what
 -- is inside. It starts locked; while locked only its builder can open it, and the builder can
--- Lock / Unlock it. Anyone else can pry it: a Storage.PRY_TIME action, stopped by moving or by
--- being hurt, which unlocks it and is reported as theft (Crime.Report). Removing it drops the
--- contents as items, except at round reset (sh_build.lua removes built things then).
+-- Lock / Unlock it. Anyone else can beat the lock open (sh_locks.lua): Storage.BreakOpen then
+-- unlocks it and reports theft (Crime.Report). Locking it again makes a whole new lock. Removing
+-- it drops the contents as items, except at round reset (sh_build.lua removes built things then).
 --
 --   Storage.CanOpen( ply, box )                  shared
 --   Storage.Contents( box ) -> { id -> n }       shared (clients read the networked mirror)
 --   Storage.Put( ply, box, id ) / Storage.Take( ply, box, id ) -> ok
 --   Storage.SetLocked( ply, box, locked ) -> ok  builder only
---   Storage.StartPry( ply, box ) -> ok, Storage.FinishPry( ply, box ), Storage.Spill( box )
+--   Storage.BreakOpen( ply, box ), Storage.Spill( box )
 Storage = Storage or {}
 
 Storage.CAPACITY = 8
-Storage.PRY_TIME = 30
-Storage.PRY_RANGE = 120
-Storage.PRY_MOVE = 24 -- units a prier may drift before the pry stops
 
 local function isBox( ent ) return IsValid( ent ) and ent:GetClass() == "storage_crate" end
 local function living( ply ) return IsValid( ply ) and ply:Alive() and not ply:IsGhost() end
@@ -96,15 +93,6 @@ Interact.Add( "storage_lock", {
 	run = function( ply, ent ) Storage.SetLocked( ply, ent, not ent:GetLocked() ) end,
 } )
 
-Interact.Add( "storage_pry", {
-	label = "Pry the crate open",
-	range = Storage.PRY_RANGE,
-	show = function( ply, ent )
-		return isBox( ent ) and not ply:IsGhost() and ent:GetLocked() and not Build.IsBuilder( ply, ent )
-	end,
-	run = function( ply, ent ) Storage.StartPry( ply, ent ) end,
-} )
-
 if CLIENT then return end
 
 -- Mirror the contents to clients as "id=n,id=n" (at most CAPACITY entries, so it stays short).
@@ -167,34 +155,14 @@ function Storage.SetLocked( ply, box, locked )
 		return false
 	end
 	box:SetLocked( locked and true or false )
+	if locked then Locks.Reset( box ) end -- a fresh lock, whatever was done to the last one
 	Notify( ply, locked and "You lock the crate." or "You unlock the crate." )
 	return true
 end
 
-function Storage.StartPry( ply, box )
-	if not living( ply ) or not isBox( box ) then return false end
-	if not box:GetLocked() or Build.IsBuilder( ply, box ) then
-		Notify( ply, "You can just open it." )
-		return false
-	end
-	local from = ply:GetPos()
-	local ok = Actions.Start( ply, "storage_pry", box, Storage.PRY_TIME, {
-		label = "Prying the crate open",
-		range = Storage.PRY_RANGE,
-		cancelOnDamage = true,
-		canContinue = function( p )
-			if p:GetPos():DistToSqr( from ) <= Storage.PRY_MOVE * Storage.PRY_MOVE then return true end
-			Notify( p, "You moved." )
-			return false
-		end,
-		onDone = function( p, b ) Storage.FinishPry( p, b ) end,
-	} )
-	if not ok then Notify( ply, "You are busy." ) end
-	return ok
-end
-
--- The pry ended: the crate is open to anyone, and breaking into someone's crate is theft.
-function Storage.FinishPry( ply, box )
+-- Its lock was beaten off (sh_locks.lua): the crate is open to anyone, and breaking into someone's
+-- crate is theft.
+function Storage.BreakOpen( ply, box )
 	if not isBox( box ) then return false end
 	box:SetLocked( false )
 	Crime.Report( ply, "theft", { madeBy = box.GR_BuiltBy, pos = box:GetPos() } )

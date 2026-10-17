@@ -1,6 +1,6 @@
 -- Step 11.1: the prole. Kit and aim as fate data, the work loop (press -> crate -> carry ->
 -- stockpile, paid the buy price), theft of someone else's crate, opening, the 3-crate cap,
--- the stockpile pry, and construction paid into the treasury.
+-- and construction paid into the treasury. (The stockpile's lock is step16d.)
 return function( T )
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t11a_%'" )
 
@@ -24,9 +24,8 @@ return function( T )
 		table.insert( delivered, { ply = ply, crate = crate, kind = crate.GR_Kind } )
 	end )
 
-	local saved = { press = Crates.PRESS_TIME, pry = Crates.PRY_TIME }
+	local saved = { press = Crates.PRESS_TIME }
 	Crates.PRESS_TIME = 0.5
-	Crates.PRY_TIME = 0.5
 
 	local function bot( name, fate, rank )
 		local b = player.CreateNextBot( "t11a_" .. name )
@@ -197,43 +196,8 @@ return function( T )
 	T.WaitUntil( function() return Crates.Waiting( press ) == 3 end, 3, "the new crate fills the slot" )
 	for _, c in ipairs( made ) do if IsValid( c ) then c:Remove() end end
 
-	-- Pry ------------------------------------------------------------------------------------------------
-
-	local pry = Interact.Get( "stockpile_pry" )
-	T.Check( not pry.show( san, stockpile ), "fates with StockpileAccess aren't offered the pry" )
-	T.Check( pry.show( p2, stockpile ) and pry.show( sl, stockpile ), "proles and slaves are" )
-	T.Check( not Crates.StartPry( san, stockpile ), "a sanitar can't pry" )
-
-	-- Cancelled by damage.
-	T.Check( Crates.StartPry( p1, stockpile ), "p1 starts prying" )
-	p1:TakeDamage( 1 )
-	T.Check( Actions.Get( p1 ) == nil, "taking damage stops the pry" )
-	T.Check( not p1:IsWanted(), "a stopped pry is no break-in" )
-	-- Cancelled by walking away.
-	Crates.StartPry( p1, stockpile )
-	p1:SetPos( base + Vector( 600, 0, 0 ) )
-	T.WaitUntil( function() return Actions.Get( p1 ) == nil end, 1, "moving away stops the pry" )
-	p1:SetPos( base )
-
-	Econ.Deliver( nil, "ration" )
-	Econ.Deliver( nil, "ration" )
-	Econ.Deliver( nil, "ration" )
-	local stock = Econ.Stock( "ration" )
-	told = {}
-	T.Check( Crates.StartPry( p2, stockpile ), "p2 starts prying" )
-	T.Check( wasTold( san, "ALARM" ), "the alarm reaches the state radio at the start" )
-	T.Check( not p2:IsWanted(), "not yet wanted" )
-	T.WaitUntil( function() return p2:GetWanted() == WANTED_JUDGMENT end, 3, "a finished pry is a break-in" )
-	T.Equal( Econ.Stock( "ration" ), stock - 3, "three rations came out of the stock" )
-	local loose = 0
-	for _, e in ipairs( ents.FindInSphere( stockpile:GetPos(), 150 ) ) do
-		if e:GetClass() == "gr_item" and e:GetItemId() == "ration" then
-			loose = loose + e:GetCount()
-			e:Remove()
-		end
-	end
-	T.Equal( loose, 3, "and lie on the ground" )
-	Crime.ClearWanted( p2 )
+	-- The stockpile pry is gone: its lock is beaten open instead (step16d).
+	T.Check( Interact.Get( "stockpile_pry" ) == nil and Crates.StartPry == nil, "there is no timed pry" )
 
 	-- Build ------------------------------------------------------------------------------------------------
 
@@ -266,7 +230,7 @@ return function( T )
 
 	-- Cleanup
 	for _, e in ipairs( { box, press, stockpile } ) do if IsValid( e ) then e:Remove() end end
-	Crates.PRESS_TIME, Crates.PRY_TIME = saved.press, saved.pry
+	Crates.PRESS_TIME = saved.press
 	hook.Remove( "GR_CrateMade", "t11a" )
 	hook.Remove( "GR_CrateDelivered", "t11a" )
 	Notify = realNotify

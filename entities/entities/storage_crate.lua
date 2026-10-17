@@ -13,6 +13,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", 0, "Locked" )
 	self:NetworkVar( "String", 0, "BuiltBy" )
 	self:NetworkVar( "String", 1, "Contents" ) -- "id=n,id=n", for the Take menu
+	self:NetworkVar( "Int", 0, "Integrity" ) -- the lock, beaten down by others (sh_locks.lua)
 end
 
 if CLIENT then return end
@@ -26,6 +27,7 @@ function ENT:Initialize()
 	self:SetMoveType( MOVETYPE_VPHYSICS )
 	local phys = self:GetPhysicsObject()
 	if IsValid( phys ) then phys:Wake() end
+	Locks.Register( self )
 end
 
 function ENT:OnRemove()

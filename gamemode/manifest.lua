@@ -70,5 +70,6 @@ return {
 		"sv_soak.lua",
 		"sh_storage.lua",
 		"sh_uitour.lua",
+		"sh_locks.lua",
 	},
 }

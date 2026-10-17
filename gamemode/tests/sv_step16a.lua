@@ -1,6 +1,6 @@
 -- Step 16a: built things that do something. Factory sites are dropped (players can't build
 -- production), so only their absence is checked. Storage crates: store and take, the 8-item limit,
--- the lock refusing others, lock/unlock, the pry (cancelled by damage and by moving, then theft),
+-- the lock refusing others, lock/unlock, a broken lock (theft; the beating itself is step16d),
 -- the drop on removal, and the round reset.
 return function( T )
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t16a_%'" )
@@ -17,9 +17,6 @@ return function( T )
 		end
 		return false
 	end
-
-	local saved = { pry = Storage.PRY_TIME }
-	Storage.PRY_TIME = 0.5
 
 	local function bot( name, fate, rank )
 		local b = player.CreateNextBot( "t16a_" .. name )
@@ -99,36 +96,18 @@ return function( T )
 	T.Check( not box:GetLocked(), "unlocked" )
 	T.Check( Storage.Take( p2, box, "ration" ), "now anyone can take" )
 	T.Equal( Storage.Total( box ), 6, "six left" )
-	T.Check( not Interact.Get( "storage_pry" ).show( p2, box ), "an unlocked crate isn't offered for prying" )
+	T.Check( not Locks.HasLock( box ), "an unlocked crate has no lock to beat" )
 	T.Check( Interact.Run( p1, "storage_lock", box ), "the builder locks it again" )
 	T.Check( box:GetLocked(), "locked" )
 
-	-- Pry --------------------------------------------------------------------------------------------------
+	-- Breaking in -------------------------------------------------------------------------------------------
 
-	local pry = Interact.Get( "storage_pry" )
-	T.Check( not pry.show( p1, box ), "the builder isn't offered the pry" )
-	T.Check( not Storage.StartPry( p1, box ), "and can't pry their own crate" )
-	T.Check( pry.show( p2, box ), "others are" )
-
-	T.Check( Interact.Run( p2, "storage_pry", box ), "p2 starts prying" )
-	T.Equal( Actions.Get( p2 ) and Actions.Get( p2 ).kind, "storage_pry", "a timed action" )
-	p2:TakeDamage( 1 )
-	T.Check( Actions.Get( p2 ) == nil, "taking damage stops it" )
-	T.Check( box:GetLocked(), "still locked" )
-	p2:SetHealth( p2:GetMaxHealth() )
-
-	local p2pos = p2:GetPos()
-	T.Check( Storage.StartPry( p2, box ), "p2 starts again" )
-	p2:SetPos( p2pos + Vector( 0, -40, 0 ) )
-	T.WaitUntil( function() return Actions.Get( p2 ) == nil end, 1, "moving stops it" )
-	T.Check( box:GetLocked(), "still locked" )
-	T.Check( wasTold( p2, "moved" ), "the prier is told why" )
-	p2:SetPos( p2pos )
-
+	-- Beating the lock off is step16d; here the lock just gives way.
+	T.Check( Interact.Get( "storage_pry" ) == nil, "there is no timed pry any more" )
 	T.Check( not Crime.Evidence( p2 ).theft, "no theft yet" )
-	T.Check( Storage.StartPry( p2, box ), "p2 pries for real" )
-	T.WaitUntil( function() return not box:GetLocked() end, 3, "a finished pry unlocks the crate" )
-	T.Check( Crime.Evidence( p2 ).theft ~= nil, "prying someone's crate is reported as theft" )
+	Storage.BreakOpen( p2, box )
+	T.Check( not box:GetLocked(), "a broken lock leaves the crate unlocked" )
+	T.Check( Crime.Evidence( p2 ).theft ~= nil, "breaking into someone's crate is reported as theft" )
 	T.Check( Storage.Take( p2, box, "ration" ), "and its contents are there for the taking" )
 	T.Equal( Storage.Total( box ), 5, "five left" )
 	Crime.TakeEvidence( p2, "theft" )
@@ -166,6 +145,5 @@ return function( T )
 	T.Equal( ( Econ.Audit() ), 0, "no drift" )
 
 	-- Cleanup
-	Storage.PRY_TIME = saved.pry
 	Notify = realNotify
 end

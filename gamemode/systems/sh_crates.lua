@@ -10,23 +10,19 @@
 --                  state_stockpile delivers it (Econ.Deliver pays the deliverer the buy price);
 --                  opening it puts its contents in the opener's inventory. Either one, done to a
 --                  crate someone else made, is reported as theft (Crime.Report).
---   stockpile pry  anyone without StockpileAccess can pry the stockpile: a long action that alarms
---                  the state radio when it starts and drops rations from the stock when it ends.
+--   The stockpile's lock is beaten open, not pried (sh_locks.lua).
 --
 -- Server API (other systems rely on it):
 --   Crates.HeldBy( ply ) -> crate or nil         the crate `ply` is carrying
 --   crate.GR_MadeBy  (DB.Key of the maker), crate.GR_Kind  (the good)
 --   hook GR_CrateDelivered( ply, crate )          before the delivered crate is removed
 --   hook GR_CrateMade( ply, crate, station )      a press finished a crate
---   Crates.Spawn( kind, pos, maker, station ), Crates.Work, Crates.Deliver, Crates.Open, Crates.StartPry
+--   Crates.Spawn( kind, pos, maker, station ), Crates.Work, Crates.Deliver, Crates.Open
 Crates = Crates or {}
 
 Crates.PRESS_TIME = 30     -- seconds of work per crate
 Crates.PER_STATION = 3     -- crates a press may have waiting in the world
 Crates.CONTENTS = 2        -- items in an opened crate
-Crates.PRY_TIME = 60
-Crates.PRY_RANGE = 150
-Crates.PRY_LOOT = 3        -- rations a finished pry drops
 Crates.THROW_GRACE = 3     -- seconds a dropped or thrown crate still counts as its carrier's delivery
 Crates.STATIONS = Crates.STATIONS or {}  -- class -> true: entities that run the work loop
 Crates.STATIONS.ration_press = true
@@ -46,15 +42,6 @@ Interact.Add( "crate_open", {
 	range = 100,
 	show = function( ply, ent ) return isClass( ent, "ent_crate" ) and not ply:IsGhost() end,
 	run = function( ply, ent ) Crates.Open( ply, ent ) end,
-} )
-
-Interact.Add( "stockpile_pry", {
-	label = "Pry the stockpile open",
-	range = Crates.PRY_RANGE,
-	show = function( ply, ent )
-		return isClass( ent, "state_stockpile" ) and not ply:IsGhost() and not ply:FateHas( "StockpileAccess" )
-	end,
-	run = function( ply, ent ) Crates.StartPry( ply, ent ) end,
 } )
 
 if CLIENT then return end
@@ -248,36 +235,4 @@ function Crates.Open( ply, crate )
 		Notify( ply, "You can't carry all of it." )
 	end
 	return true
-end
-
--- Prying the stockpile --------------------------------------------------------------------------
-
-function Crates.StartPry( ply, stockpile )
-	if not living( ply ) or not isClass( stockpile, "state_stockpile" ) then return false end
-	if ply:FateHas( "StockpileAccess" ) then
-		Notify( ply, "You have a key. Use the counter." )
-		return false
-	end
-	local ok = Actions.Start( ply, "pry", stockpile, Crates.PRY_TIME, {
-		label = "Prying the stockpile open",
-		range = Crates.PRY_RANGE,
-		cancelOnDamage = true,
-		onDone = function( p, st ) Crates.FinishPry( p, st ) end,
-	} )
-	if not ok then
-		Notify( ply, "You are busy." )
-		return false
-	end
-	Crime.Report( ply, "pry_start", { pos = stockpile:GetPos() } )
-	return true
-end
-
--- The pry ended: up to PRY_LOOT rations tumble out of the stock, and it is a break-in.
-function Crates.FinishPry( ply, stockpile )
-	local n = Econ.TakeStock( Econ.BREAD, Crates.PRY_LOOT )
-	local base = stockpile:GetPos() + stockpile:GetForward() * 40 + Vector( 0, 0, 20 )
-	for i = 1, n do Items.Spawn( Econ.BREAD, 1, base + Vector( 0, ( i - 2 ) * 12, 0 ) ) end
-	if n == 0 then Notify( ply, "The stockpile is empty." ) end
-	Crime.Report( ply, "pry_done", { pos = stockpile:GetPos() } )
-	return n
 end

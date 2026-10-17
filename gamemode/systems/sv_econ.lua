@@ -272,7 +272,7 @@ function Econ.Deliver( ply, good )
 	return 0
 end
 
--- Takes up to `n` of a good out of the stock without paying (a stockpile pry, step 11.1).
+-- Takes up to `n` of a good out of the stock without paying (a stockpile break-in, step 11.1).
 -- Returns how many were taken.
 function Econ.TakeStock( good, n )
 	if not isGood( good ) then return 0 end
