@@ -308,6 +308,16 @@ Items.Define( "trade_permit", {
 	OnUse = showPermit,
 } )
 
+-- Taken by an autostitcher (sh_autostitcher.lua) instead of payment.
+Items.Define( "permit_medical", {
+	Name = "Medical Permit",
+	Description = "Stamped paper that pays for one autostitcher trip.",
+	Weight = 0,
+	Model = "models/props_c17/paper01.mdl",
+	Tags = { Permit = "medical" },
+	OnUse = showPermit,
+} )
+
 Items.Define( "sack", {
 	Name = "Sack",
 	Description = "A burlap sack. You can carry more with it.",

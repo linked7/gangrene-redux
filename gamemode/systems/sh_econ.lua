@@ -48,6 +48,7 @@ setting( "ration_limit", 0 )     -- counter purchases per player per 10 min; 0 =
 setting( "breadline", 0 )        -- minutes between free rations per player; 0 = off
 setting( "revive_fee", 50, 100 ) -- percent of a patient's carried bones (step 11.2)
 setting( "shop_stock", 10 )      -- shop goods (not the ration) seeded into the stockpile each round
+setting( "sales_tax", 0, 100 )   -- percent added to sales prices (the autostitcher reads it)
 
 function Econ.Supply() return WorldState.Get( "bones_supply", 0 ) end
 function Econ.Treasury() return WorldState.Get( "treasury", 0 ) end

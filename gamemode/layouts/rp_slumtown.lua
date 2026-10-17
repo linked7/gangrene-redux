@@ -51,6 +51,11 @@ return {
 	{ class = "water_barrel", pos = Vector( -2439, 610, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "water_barrel", pos = Vector( -2479, 610, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 
+	-- Autostitchers (the old autostitcher spawns): wall chargers, so not dropped.
+	{ class = "autostitcher", pos = Vector( -1168, 411, 60 ), ang = Angle( 0, 180, 0 ), kv = {} },
+	{ class = "autostitcher", pos = Vector( -908, -25, 60 ), ang = Angle( 0, 180, 0 ), kv = {} },
+	{ class = "autostitcher", pos = Vector( -908, -103, 60 ), ang = Angle( 0, 180, 0 ), kv = {} },
+
 	-- GM.Capsules: where bone capsules appear. Spawn points, not models, so they stay where they are.
 	{ class = "capsule_spawn", pos = Vector( -303, -80, 435 ), ang = Angle( 0, 0, 0 ), kv = {} },
 	{ class = "capsule_spawn", pos = Vector( -304, -208, 478 ), ang = Angle( 0, 0, 0 ), kv = {} },
