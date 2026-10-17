@@ -5,6 +5,7 @@ local function setup( ply, rank, stem )
 end
 
 return function( T )
+	Config.FateCosts = true -- these checks cover the stem-cell cost, which is off in play for now
 	Config.SlaveGating = true -- these checks cover the gate itself; it is off by default for now
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t4_%'" )
 

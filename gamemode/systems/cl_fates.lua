@@ -27,7 +27,7 @@ end
 
 local function costText( f )
 	local cost = f.Cost or 0
-	if cost == 0 then return "FREE" end
+	if cost == 0 or not Config.FateCosts then return "FREE" end
 	return cost .. " STEM CELLS"
 end
 

@@ -133,7 +133,7 @@ function Fates.CanTake( ply, id )
 	end
 	if f.MinRank and rank < f.MinRank then return false, "Your rank is too low for this purpose." end
 
-	if ply:GetStemCells() < ( f.Cost or 0 ) then
+	if Config.FateCosts and ply:GetStemCells() < ( f.Cost or 0 ) then
 		return false, string.format( "This purpose costs %d stem cells.", f.Cost )
 	end
 
@@ -256,7 +256,7 @@ function Fates.Take( ply, id )
 		return false, why
 	end
 	local f = byId[ id ]
-	if ( f.Cost or 0 ) > 0 then ply:SetStemCells( ply:GetStemCells() - f.Cost ) end
+	if Config.FateCosts and ( f.Cost or 0 ) > 0 then ply:SetStemCells( ply:GetStemCells() - f.Cost ) end
 	Fates.Apply( ply, id, { reason = "pick" } )
 	return true
 end
