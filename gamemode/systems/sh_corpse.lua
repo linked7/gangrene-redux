@@ -176,7 +176,8 @@ local function setDown( rec, down )
 	ply:SetWakeUntil( down == "wounded" and untilTime or 0 )
 end
 
--- HP 0: the player goes down. A hit without a noted overkill (ply:Kill(), a heart attack) is dying.
+-- HP 0: the player goes down. A hit without a noted overkill (ply:Kill()) is dying. A heart attack
+-- (ply.GR_DiesOutright) is dead at once.
 function Corpse.Down( ply, dmg, attacker )
 	local hit = ply.GR_LethalHit
 	ply.GR_LethalHit = nil
@@ -201,6 +202,11 @@ function Corpse.Down( ply, dmg, attacker )
 	Notify( ply, LAST_THOUGHTS[ math.random( #LAST_THOUGHTS ) ] )
 	hook.Run( "GR_PlayerDowned", ply, rag )
 	Log.Debug( "corpse", "%s is downed (%s, overkill %s)", ply:Nick(), rec.down, tostring( overkill ) )
+	-- Some deaths are outright (the despair heart attack): the body holds the inventory as usual,
+	-- but it is dead at once, with no one to judge.
+	local outright = ply.GR_DiesOutright
+	ply.GR_DiesOutright = nil
+	if outright then Corpse.Die( rag, outright ) end
 	return rag
 end
 

@@ -145,7 +145,10 @@ end
 function Needs.Tick( ply )
 	if ply.GR_HeartAttackAt and CurTime() >= ply.GR_HeartAttackAt then
 		ply.GR_HeartAttackAt = nil
-		if ply:Alive() then ply:Kill() end
+		if ply:Alive() then
+			ply.GR_DiesOutright = "heart attack" -- not downed: Corpse.Down sees this (step 7)
+			ply:Kill()
+		end
 		return
 	end
 	if not ply.GR_Needs or not ply:Alive() then return end

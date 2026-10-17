@@ -244,7 +244,8 @@ return function( T )
 	T.Equal( select( 2, Corpse.Of( v4 ) ).down, "dying", "v4 is dying" )
 	finishOff( v4, "dying" )
 
-	-- ply:Kill() (suicide, a heart attack) has no overkill to measure: dying.
+	T.Check( hook.Run( "CanPlayerSuicide", c ) == false, "no suicide" )
+	-- ply:Kill() has no overkill to measure: dying.
 	c:Kill()
 	T.Equal( select( 2, Corpse.Of( c ) ).down, "dying", "ply:Kill() is dying" )
 	Corpse.Die( Corpse.Of( c ), "test" )

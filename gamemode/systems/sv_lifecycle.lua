@@ -54,6 +54,7 @@ hook.Add( "GR_PlayerLoaded", "gr_lifecycle", function( ply )
 	end
 end )
 
+-- No suicide, for anyone (step 7).
 function GM:CanPlayerSuicide( ply )
-	return not ply:IsGhost()
+	return false
 end
