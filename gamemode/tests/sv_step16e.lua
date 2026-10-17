@@ -1,5 +1,5 @@
 -- Step 16e: chat parity (05 §8). Muffled ranges behind a wall, the commands' formats, thoughtcrime,
--- the dead and the downed, kill sentences, AutoGrammar, fate babble and voice chat being off.
+-- the dead and the downed, AutoGrammar, fate babble and voice chat being off.
 return function( T )
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t16e_%'" )
 
@@ -221,11 +221,13 @@ return function( T )
 	T.Equal( got and got.mode, "whisper", "and so is a yell" )
 	say( b, "/me bleeds" )
 	T.Equal( toldTo( "b" ), "You can't do this while dead.", "no /me on the ground" )
-	say( b, "mother of death, i call on thee" )
-	T.Check( got and got.mode == "whisper" and Chat.IsDowned( b ), "the kill sentence is case-sensitive" )
-	say( b, "MOTHER OF DEATH,I CALL ON THEE" )
-	T.Equal( toldTo( "b" ), "SO BE IT", "the kill sentence is answered" )
-	T.Check( got == nil and not Chat.IsDowned( b ) and Chat.IsDead( b ), "and the body is finished" )
+	T.Check( not Corpse.GiveUp( a ), "a living player can't give up" )
+	local _, rb = Corpse.Of( b )
+	rb.down = "wounded"
+	T.Check( not Corpse.GiveUp( b ) and Chat.IsDowned( b ), "a wounded player can't give up" )
+	rb.down = "dying"
+	T.Check( Corpse.GiveUp( b ) and not Chat.IsDowned( b ) and Chat.IsDead( b ), "a dying player gives up and the body is finished" )
+	T.Check( not Corpse.GiveUp( b ), "and can't give up twice" )
 	say( b, "hello" )
 	T.Equal( toldTo( "b" ), "Your tongue has all but rotted away.", "the dead body can't say" )
 	say( b, "/y hello" )
@@ -238,8 +240,7 @@ return function( T )
 
 	s:SetPos( base + Vector( 500, 500, 0 ) )
 	s:Kill()
-	say( s, "I GIVE MY SOUL ETERNALLY" )
-	T.Check( not Chat.IsDowned( s ) and Chat.IsDead( s ), "the other kill sentence works too" )
+	T.Check( Corpse.GiveUp( s ) and Chat.IsDead( s ), "s gives up too" )
 	T.WaitUntil( function() return s:IsGhost() end, 6, "s comes back as a ghost" )
 
 	-- Babble: each fate's ChatSounds (data), at the mode's level.

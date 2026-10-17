@@ -2,7 +2,7 @@
 -- GMod's own chat broadcast is replaced: GM:PlayerSay hands every line to Chat.Handle, the server
 -- picks the recipients and sends gr_chat to exactly those players. The client only formats.
 --
---   Chat.Handle( ply, text, teamChat )  the whole pipeline: kill sentences, thoughtcrime, parse, send
+--   Chat.Handle( ply, text, teamChat )  the whole pipeline: thoughtcrime, parse, send
 --   Chat.Send( speaker, mode, text )    one line in one mode -> recipients, or nil and the refusal
 --   Chat.Recipients( speaker, mode )    who would hear it (speaker included), or nil and why
 --   Chat.AutoGrammar( text, lower )     chat-speak corrected (Config.ChatStupidMistakes)
@@ -16,7 +16,7 @@
 --   * Dead speakers (ghosts, or bodies already dead) reach only the dead, so the living never hear
 --     ghosts. The dead may still hear the living nearby. Staff and private messages are exempt.
 --   * The downed (lying in their body, not yet dead) count as living: plain speech becomes a
---     whisper, and the kill sentences end them.
+--     whisper. (Giving up is a click, Corpse.GiveUp, not a sentence.)
 --   * Radio reach is data: /r goes to everyone whose fate's Radio list shares a channel (R9).
 --   * Races never change speech (user decision): no Accent, no RacialQuirks.
 --   * Voice chat is off on dedicated servers; this is text roleplay.
@@ -377,7 +377,7 @@ function Chat.AutoGrammar( arg, lower )
 	return arg
 end
 
--- Thoughtcrime and kill sentences -----------------------------------------------------------------
+-- Thoughtcrime -----------------------------------------------------------------------------------
 
 local UTF8_CHAR = "[%z\1-\127\194-\244][\128-\191]*"
 
@@ -396,14 +396,6 @@ function Chat.Thoughtcrime( text )
 	for _, s in ipairs( Config.ChatBadSentences ) do
 		if string.gsub( s, "%s+", "" ) == bare then return s end
 	end
-end
-
-function Chat.IsKillSentence( text )
-	local bare = string.gsub( Chat.Uncircumvent( text ), "%s+", "" )
-	for _, s in ipairs( Config.ChatKillSentences ) do
-		if string.gsub( s, "%s+", "" ) == bare then return true end
-	end
-	return false
 end
 
 -- Lines to one player ---------------------------------------------------------------------------
@@ -579,25 +571,6 @@ function Chat.PM( ply, body )
 	return target
 end
 
--- The kill sentence: said while downed, the head bursts and the body is finished.
-function Chat.BurstHead( ply )
-	local rag = Corpse.Of( ply )
-	if not IsValid( rag ) then return false end
-	Chat.Tell( ply, Color( 255, 0, 0 ), "SO BE IT" )
-	local bone = rag:LookupBone( "ValveBiped.Bip01_Head1" )
-	if bone then
-		rag:ManipulateBoneScale( bone, Vector( 0, 0, 0 ) )
-		local fx = EffectData()
-		fx:SetOrigin( rag:GetBonePosition( bone ) )
-		fx:SetScale( 0.4 )
-		util.Effect( "BloodImpact", fx )
-	end
-	rag:EmitSound( "placenta/head_explodie_0" .. math.random( 1, 4 ) .. ".ogg", 100, 100, 1 )
-	rag:EmitSound( "physics/flesh/flesh_squishy_impact_hard" .. math.random( 1, 4 ) .. ".wav", 100, 100, 1 )
-	Log.Info( "chat", "%s spoke the kill sentence", ply:Nick() )
-	return Corpse.FinishOff( rag )
-end
-
 -- Thoughtcrime: nothing is sent; the speaker is scared and shown the word, and the living are
 -- wanted and reported to staff.
 function Chat.Punish( ply, word )
@@ -614,10 +587,6 @@ function Chat.Handle( ply, text, teamChat )
 	text = string.Trim( text or "" )
 	if text == "" then return nil end
 
-	if Chat.IsDowned( ply ) and Chat.IsKillSentence( text ) then
-		Chat.BurstHead( ply )
-		return nil, "kill sentence"
-	end
 	if not isStaff( ply ) then
 		local word = Chat.Thoughtcrime( text )
 		if word then
