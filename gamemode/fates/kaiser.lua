@@ -4,6 +4,7 @@ Fates.Define( "kaiser", {
 	Name = "Witch Kaiser",
 	Description = "The most stressful job in Gangrene.",
 	Color = Color( 200, 0, 0 ),
+	ChatSounds = { "placenta/speech/kaiser1.wav", "placenta/speech/kaiser2.wav", "placenta/speech/kaiser3.wav", "placenta/speech/kaiser4.wav", "placenta/speech/kaiser5.wav", "placenta/speech/kaiser6.wav" },
 	Cost = 5,
 	-- No rank gate for now (plan, step 11.4): stem cells and the one slot decide. Gates are undecided.
 	Slots = 1,
