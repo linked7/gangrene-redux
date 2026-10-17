@@ -51,5 +51,8 @@ return {
 		"sv_econ.lua",
 		"sh_crime.lua",
 		"sh_interact.lua",
+		"sh_kit.lua",
+		"sh_crates.lua",
+		"sh_build.lua",
 	},
 }
