@@ -12,6 +12,7 @@ local MASS = 30 -- light enough for a hand pickup
 
 function ENT:SetupDataTables()
 	self:NetworkVar( "String", 0, "Kind" ) -- for labels; the server reads GR_Kind
+	self:NetworkVar( "Bool", 0, "Locked" ) -- sealed until a sanitar starts extraction (sh_sanitar.lua)
 end
 
 if CLIENT then return end
@@ -31,6 +32,7 @@ end
 function ENT:Use( activator )
 	if not IsValid( activator ) or not activator:IsPlayer() or not activator:Alive() or activator:IsGhost() then return end
 	if self:IsPlayerHolding() then return end
+	if self:GetLocked() then return Notify( activator, "The crate is sealed. A sanitar must start the extraction." ) end
 	activator:PickupObject( self )
 end
 

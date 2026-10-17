@@ -84,6 +84,7 @@ Lunch.STATUS_TEXT = {
 	low = "NO POWER",
 	overload = "OVERLOAD",
 	on = "RUNNING",
+	rusted = "RUSTED",
 }
 
 -- Where things are on the models (local coordinates), shared so the client draws what the server checks.
@@ -422,6 +423,7 @@ function Lunch.WorkOf( machine ) return machine.GR_Work or {} end
 
 -- Why the panel is lit or dark, as a Lunch.STATUS_TEXT key. "on" and "overload" are lit.
 function Lunch.Status( machine )
+	if Sanitar and Sanitar.Rusted( machine ) then return "rusted" end
 	local boiler = Lunch.BoilerOf( machine )
 	if not boiler then return "no_boiler" end
 	if Crates.Waiting( machine ) >= Crates.PER_STATION then return "full" end

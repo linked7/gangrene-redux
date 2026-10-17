@@ -38,7 +38,7 @@ end
 Interact.Add( "crate_open", {
 	label = "Open the crate",
 	range = 100,
-	show = function( ply, ent ) return isClass( ent, "ent_crate" ) and not ply:IsGhost() end,
+	show = function( ply, ent ) return isClass( ent, "ent_crate" ) and not ent:GetLocked() and not ply:IsGhost() end,
 	run = function( ply, ent ) Crates.Open( ply, ent ) end,
 } )
 
@@ -56,6 +56,15 @@ function Crates.Waiting( station )
 		if IsValid( crate ) and not crate.GR_Taken then n = n + 1 end
 	end
 	return n
+end
+
+-- The crates still waiting at a station.
+function Crates.WaitingList( station )
+	local list = {}
+	for crate in pairs( waiting[ station ] or {} ) do
+		if IsValid( crate ) and not crate.GR_Taken then table.insert( list, crate ) end
+	end
+	return list
 end
 
 -- The crew stamp for a list of players: { [DB.Key] = true }.
@@ -221,7 +230,7 @@ end
 -- Returns the bones `ply` was paid, or false if it wasn't a delivery.
 function Crates.Deliver( ply, crate, stockpile )
 	if not living( ply ) or not isClass( crate, "ent_crate" ) or not isClass( stockpile, "state_stockpile" ) then return false end
-	if crate.GR_Taken or not Econ.GOOD_DEFAULTS[ crate.GR_Kind ] then return false end
+	if crate.GR_Taken or crate:GetLocked() or not Econ.GOOD_DEFAULTS[ crate.GR_Kind ] then return false end
 	take( crate )
 	reportTheft( ply, crate )
 	local kind = crate.GR_Kind
@@ -250,7 +259,7 @@ end
 
 -- `ply` breaks a crate open on the spot. What doesn't fit falls on the ground.
 function Crates.Open( ply, crate )
-	if not living( ply ) or not isClass( crate, "ent_crate" ) or not take( crate ) then return false end
+	if not living( ply ) or not isClass( crate, "ent_crate" ) or crate:GetLocked() or not take( crate ) then return false end
 	reportTheft( ply, crate )
 	local kind, pos = crate.GR_Kind, crate:GetPos()
 	crate:Remove()

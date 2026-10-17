@@ -17,6 +17,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "String", 0, "Output" )
 	self:NetworkVar( "String", 1, "Status" )
 	for k = 1, 8 do self:NetworkVar( "Int", 1 + k, "Button" .. k ) end
+	self:NetworkVar( "Int", 10, "Rust" ) -- 0..Sanitar.RUST_MAX; at the max it stops (sh_sanitar.lua)
 end
 
 function ENT:GetButton( k ) return self[ "GetButton" .. k ]( self ) end
@@ -35,6 +36,9 @@ if CLIENT then
 	function ENT:CrossTexts( ply, ct )
 		table.insert( ct, { text = "Lunch Machine" } )
 		table.insert( ct, { text = "Feed it bone capsules and meat. Pull the lever, press the lit button.", font = HUD.Font( "LabelSmall" ) } )
+		if self:GetRust() > 0 then
+			table.insert( ct, { text = self:GetRust() .. "% rust" .. ( self:GetRust() >= Sanitar.RUST_MAX and ": seized. A sanitar must shoot it clean." or "" ), font = HUD.Font( "LabelSmall" ) } )
+		end
 	end
 
 	local function lit( self ) return self:GetStatus() == "on" or self:GetStatus() == "overload" end

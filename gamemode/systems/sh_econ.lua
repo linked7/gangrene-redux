@@ -48,6 +48,8 @@ end
 setting( "ration_limit", 0 )     -- counter purchases per player per 10 min; 0 = unlimited
 setting( "breadline", 0 )        -- minutes between free rations per player; 0 = off
 setting( "revive_fee", 50, 100 ) -- percent of a patient's carried bones (step 11.2)
+setting( "export_rations", 20 ) -- rations the Kaiser's train takes out per trip (sh_export.lua)
+setting( "train_trip", 180 )    -- seconds before the train comes back with the import
 setting( "shop_stock", 10 )      -- shop goods (not the ration) seeded into the stockpile each round
 
 function Econ.Supply() return WorldState.Get( "bones_supply", 0 ) end
