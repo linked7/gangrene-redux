@@ -52,7 +52,7 @@ return function( T )
 	T.Check( near, "the beer spawns at the port" )
 
 	-- Crate pay split.
-	local stockpile = ents.FindByClass( "state_stockpile" )[ 1 ]
+	local stockpile for _, e in ipairs( ents.GetAll() ) do if e:GetClass() == "state_stockpile" then stockpile = e break end end
 	local own = false
 	if not IsValid( stockpile ) then
 		stockpile = ents.Create( "state_stockpile" ) stockpile:SetPos( a:GetPos() + Vector( 300, 0, 0 ) ) stockpile:Spawn() own = true
