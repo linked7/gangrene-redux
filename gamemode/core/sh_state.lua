@@ -2,9 +2,9 @@
 -- with a wire type and a scope. Declarations must run in the same order on both realms (use sh_
 -- files), because a field's position is its wire id.
 --
---   State.Field( "Bones", "UInt", 24, State.OWNER, 0, { persist = "bones" } )
+--   State.Field( "StemCells", "UInt", 10, State.OWNER, 0, { persist = "stem_cells" } )
 --
--- generates ply:GetBones() on both realms and ply:SetBones( v ) on the server. Setters do nothing
+-- generates ply:GetStemCells() on both realms and ply:SetStemCells( v ) on the server. Setters do nothing
 -- when the value is unchanged; otherwise they mark the field dirty (and the DB row, with persist).
 -- Every NET_INTERVAL the server sends each ready client one message holding the dirty fields it
 -- may see: PUBLIC fields of everyone, OWNER fields of itself only. SERVER fields never leave.

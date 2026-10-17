@@ -20,6 +20,7 @@ local SCHEMA = {
 	DeathCooldown = { "number" },  -- seconds before this player may take it again after dying
 	Health = { "number" },
 	Armor = { "number" },
+	SpeedMulti = { "number" },     -- scales Config.WalkSpeed and Config.RunSpeed
 	Loadout = { "table" },         -- weapon classes
 	Radio = { "table" },           -- radio channel names
 	Appearance = { "table", "function" }, -- { model, skin, bodygroups = { name = value }, race = id }
@@ -155,6 +156,9 @@ local function applyBody( ply, f )
 	ply:SetMaxHealth( f.Health or 100 )
 	ply:SetHealth( f.Health or 100 )
 	ply:SetArmor( f.Armor or 0 )
+	local speed = f.SpeedMulti or 1
+	ply:SetWalkSpeed( Config.WalkSpeed * speed )
+	ply:SetRunSpeed( Config.RunSpeed * speed )
 
 	local look = f.Appearance
 	if isfunction( look ) then look = look( ply ) end

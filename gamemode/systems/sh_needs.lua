@@ -1,6 +1,6 @@
 -- Needs: one table of definitions, one mutator, one scheduled tick.
 --
---   Needs.Define( name, { rate, max, scope, thresholds = { [80] = "text" }, onTick, onMax } )
+--   Needs.Define( name, { rate, max, scope, thresholds = { [80] = "text" }, onTick, onChange, onMax } )
 --   Needs.Add( ply, name, amount, source )   the only way to change a need (R4)
 --   Needs.Modifiers                          functions ( ply, name, amount, source ) -> amount,
 --                                            applied in order; quirks and fates hook in here
@@ -31,23 +31,28 @@ function Needs.All() return order end
 function Needs.Def( name ) return defs[ name ] end
 
 -- The core needs ----------------------------------------------------------------------------
+-- Survival is meant to be hard: thirst fills in about 25 min and hunger in about 40, and either
+-- one at 100 drains HP until the player dies. A 60-minute round needs two meals and 2-3 drinks.
+
+local function starve( ply )
+	ply:TakeDamage( 1, game.GetWorld(), game.GetWorld() )
+end
 
 Needs.Define( "Emptiness", {
-	rate = 1 / 30,
-	thresholds = { [ 60 ] = "Your stomach growls.", [ 80 ] = "You are starving.", [ 99 ] = "Hunger is eating you alive." },
+	rate = 1 / 24,
+	thresholds = { [ 60 ] = "Your stomach growls.", [ 80 ] = "You are starving.", [ 100 ] = "Hunger is eating you alive." },
 	onTick = function( ply, v )
-		if v >= 99 then
-			ply:TakeDamage( 1, game.GetWorld(), game.GetWorld() )
-			if Needs.Get( ply, "Despair" ) < 90 then Needs.Add( ply, "Despair", 1, "starving" ) end
-		end
+		if v < 100 then return end
+		starve( ply )
+		if Needs.Get( ply, "Despair" ) < 90 then Needs.Add( ply, "Despair", 1, "starving" ) end
 	end,
 } )
 
 Needs.Define( "Dryness", {
-	rate = 1 / 24,
-	thresholds = { [ 60 ] = "Your mouth is dry.", [ 80 ] = "You are parched.", [ 99 ] = "Your throat cracks with thirst." },
+	rate = 1 / 15,
+	thresholds = { [ 60 ] = "Your mouth is dry.", [ 80 ] = "You are parched.", [ 100 ] = "Your throat cracks with thirst." },
 	onTick = function( ply, v )
-		if v >= 99 then ply:TakeDamage( 1, game.GetWorld(), game.GetWorld() ) end
+		if v >= 100 then starve( ply ) end
 	end,
 } )
 
@@ -55,6 +60,13 @@ Needs.Define( "Despair", {
 	rate = 0, -- rises from crimes, witnessing death and hunger; never on its own
 	thresholds = { [ 50 ] = "Everything feels heavy.", [ 80 ] = "Your chest is tight. You can't go on like this." },
 	onMax = function( ply ) Needs.HeartAttack( ply ) end,
+} )
+
+-- Pox: sickness from dirty water. It never rises on its own and lowers max HP, down to half at 100.
+Needs.Define( "Pox", {
+	rate = 0,
+	thresholds = { [ 30 ] = "Your skin itches and weeps.", [ 70 ] = "Sores cover your body." },
+	onChange = function( ply ) Needs.ApplyPox( ply ) end,
 } )
 
 if CLIENT then return end
@@ -82,9 +94,18 @@ function Needs.Add( ply, name, amount, source )
 	ply.GR_Needs[ name ] = new
 	ply[ "SetNeed_" .. name ]( ply, math.floor( new ) )
 
+	if def.onChange then def.onChange( ply, new, old ) end
 	local text = crossed( def, old, new )
 	if text then Notify( ply, text ) end
 	if new >= def.max and old < def.max and def.onMax then def.onMax( ply ) end
+end
+
+function Needs.ApplyPox( ply )
+	local f = ply:GetFateDef()
+	local base = f and f.Health or 100
+	local max = math.max( 1, math.floor( base * ( 1 - Needs.Get( ply, "Pox" ) / 200 ) ) )
+	ply:SetMaxHealth( max )
+	if ply:Health() > max then ply:SetHealth( max ) end
 end
 
 -- Despair at 100: a heart attack. The death lands two seconds later, as a timestamp the
@@ -105,7 +126,8 @@ function Needs.HeartAttack( ply )
 	Log.Debug( "needs", "%s has a heart attack", ply:Nick() )
 end
 
-Sched.EachPlayer( "needs", 1, function( ply )
+-- One second of needs for one player. The scheduler runs it once a second per player.
+function Needs.Tick( ply )
 	if ply.GR_HeartAttackAt and CurTime() >= ply.GR_HeartAttackAt then
 		ply.GR_HeartAttackAt = nil
 		if ply:Alive() then ply:Kill() end
@@ -118,7 +140,8 @@ Sched.EachPlayer( "needs", 1, function( ply )
 		if def.rate ~= 0 then Needs.Add( ply, name, def.rate, "tick" ) end
 		if def.onTick then def.onTick( ply, ply.GR_Needs[ name ] ) end
 	end
-end )
+end
+Sched.EachPlayer( "needs", 1, function( ply ) Needs.Tick( ply ) end )
 
 -- Every new life starts with empty needs; ghosts have none.
 hook.Add( "GR_FateEnter", "gr_needs", function( ply, f )

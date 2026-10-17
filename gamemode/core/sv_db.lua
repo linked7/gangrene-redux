@@ -11,7 +11,6 @@ local Q = sql.SQLStr
 local PLAYER_COLUMNS = {
 	stem_cells = 0,
 	rank = 0,
-	bones = 0,
 	playtime = 0,
 }
 
@@ -33,6 +32,19 @@ local MIGRATIONS = {
 		[[CREATE TABLE IF NOT EXISTS world (
 			key TEXT PRIMARY KEY,
 			value TEXT NOT NULL)]],
+	},
+	-- Bones became per-round state (step 9): only stem cells, rank and playtime persist.
+	[ 2 ] = {
+		[[CREATE TABLE players_v2 (
+			steamid TEXT PRIMARY KEY,
+			stem_cells INTEGER NOT NULL DEFAULT 0,
+			rank INTEGER NOT NULL DEFAULT 0,
+			playtime INTEGER NOT NULL DEFAULT 0,
+			created INTEGER NOT NULL,
+			last_seen INTEGER NOT NULL)]],
+		[[INSERT INTO players_v2 SELECT steamid, stem_cells, rank, playtime, created, last_seen FROM players]],
+		[[DROP TABLE players]],
+		[[ALTER TABLE players_v2 RENAME TO players]],
 	},
 }
 

@@ -5,6 +5,12 @@
 - **Four fates:** Kaiser, Sanitar, Prole, Korpsman.
 - **Plus Slave:** the probation fate for new players. It works like a Prole with restrictions. New players can only play Slave until they survive a round or another player commends them (step 11.5 and step 13).
 - **Ghost** stays as the dead/lobby state. It isn't a fate you pick.
+- **Round loop:** play is round-based (60 min). Each round the city has to feed itself from a fixed supply of bones, and every round starts fresh. A few simple pressures drive what players do:
+  - Hunger and thirst (step 6).
+  - Food that only exists because someone made it and hauled it to the stockpile (step 11.1).
+  - Three prices set by the Kaiser (step 9).
+  - Theft, and sanitars punishing it (steps 10 and 11.3).
+  - There is no war (see Dropped).
 - **Platform:** a Garry's Mod gamemode in Lua, with **SQLite** persistence through GMod's built-in `sql.*` library (replacing mysqloo).
 - **Background:** `01-systems.md` explains what each system did, and `02-pitfalls.md` explains why it is rebuilt differently. IDs like P1, R3 and S2 refer to `02-pitfalls.md`.
 
@@ -45,9 +51,10 @@
 ### Step 1: SQLite persistence
 
 - **Schema** (create it with `sql.Query` on Initialize, and version it with a `schema_version` table):
-  - `players(steamid TEXT PRIMARY KEY, stem_cells INT, rank INT, bones INT, playtime INT, created INT, last_seen INT)`
+  - `players(steamid TEXT PRIMARY KEY, stem_cells INT, rank INT, playtime INT, created INT, last_seen INT)`
   - `bans(steamid, until, reason, by)`
-  - `world(key TEXT PRIMARY KEY, value TEXT)` for the treasury and tax rates.
+  - `world(key TEXT PRIMARY KEY, value TEXT)` for the few values that outlive a round (e.g. the round number).
+  - **Only stem cells, rank and playtime persist between rounds.** Bones, the treasury, the stockpile and inventory are per-round state and never touch the DB (step 9).
 - **API:**
   - `DB.LoadPlayer(ply)` runs synchronously, because GMod's `sql` is synchronous and a single-row select is fast.
   - `DB.MarkDirty(ply, field)` and `DB.Flush()` (a transaction, every 60 s, plus `PlayerDisconnected` and `ShutDown`).
@@ -55,13 +62,14 @@
 - **Bans** are checked once in `CheckPassword`. They are not reloaded on a timer.
 - **Done when:**
   - Joining creates a row.
-  - Changing bones in memory and reconnecting keeps the value.
+  - Changing stem cells in memory and reconnecting keeps the value.
   - Killing the server between flushes loses at most 60 s of changes, and that loss is the accepted trade-off.
 
 ### Step 2: State registry and networking
 
 - **Declare fields once:**
-  - `State.Field("Bones", "UInt", 24, OWNER, 0, {persist="bones"})`
+  - `State.Field("StemCells", "UInt", 10, OWNER, 0, {persist="stem_cells"})`
+  - `State.Field("Bones", "UInt", 24, OWNER, 0)` (per-round, not persisted)
   - `State.Field("Fate", "UInt", 4, PUBLIC, FATE_GHOST)`
   - and so on.
 - **Generate** `ply:GetBones()` and `ply:SetBones(v)`. A setter does nothing if the value is unchanged, and marks the field dirty, plus DB-dirty if `persist` is set.
@@ -120,15 +128,19 @@
   - "No race shown" is `race = nil`, not a fake race (the original's `unimportant`).
   - Use the lore names in code. Don't use the old `liverman`, `arrhythmian` or `kidneystani` IDs.
 - **Name validation:** one shared `ValidateName` with a correct character whitelist (B12). Only needed if players get to name themselves.
-- **Done when:** a fate change shows the right model on every client with no flicker. Test with 2 clients and lag simulated with `net_fakelag`.
+- **Pace and atmosphere:** the remake should feel darker and slower than the original.
+  - Walk and run speeds come from one config table (slower than GMod defaults; start at walk 130, run 200). A fate may scale them with `SpeedMulti`, and nothing else sets speed.
+  - One client file, `cl_atmosphere.lua`, applies a desaturated colour correction and fog. It is presentation only and has no gameplay state.
+- **Done when:** a fate change shows the right model on every client with no flicker. Test with 2 clients and lag simulated with `net_fakelag`. Movement uses the configured speeds, and the atmosphere is visible on every client.
 
 ### Step 6: Needs component
 
 - **One table of definitions:**
   ```lua
-  Needs.Define("Emptiness", {rate = 1/30, max = 100, field = OWNER, onTick = ..., thresholds = {[80] = "starving"}})
+  Needs.Define("Emptiness", {rate = 1/24, max = 100, field = OWNER, onTick = ..., thresholds = {[80] = "starving"}})
   ```
-  - Core needs: **Emptiness, Dryness, Despair**. Pox is optional.
+  - Core needs: **Emptiness, Dryness, Despair, Pox**. Pox (lowers max HP) is core because dirty water causes it (step 8).
+  - **Pace:** survival is meant to be hard. Dryness fills in about 25 min (`rate = 1/15`) and Emptiness in about 40 min (`rate = 1/24`). At 100, either one drains HP until the player dies. In a 60-minute round a player has to eat about twice and drink two or three times.
   - **Dropped:** urine, parasites, organs and mutations.
 - **One mutator:** `Needs.Add(ply, name, amount, source)` with a fixed signature (R4).
   - Quirks and fates hook in through `Needs.Modifiers`: functions `(ply, name, amount, source) → amount`.
@@ -136,7 +148,8 @@
 - **One scheduled job:** `Needs.Tick` runs once a second per player and applies rates and threshold effects.
 - **Despair at 100:** heart attack, death, −1 stem cell (kept from the original).
 - **Food and drink** are items whose `Use` calls `Needs.Add`.
-- **Done when:** the needs rise on their own, eating lowers Emptiness, and despair at 100 kills and costs a stem cell.
+  - **Food is scarce by design.** There are no free food spawns. Rations only exist because a prole or slave made them (step 11.1). The only free drink is dirty water from the pump (step 8).
+- **Done when:** the needs rise on their own, eating lowers Emptiness, and despair at 100 kills and costs a stem cell. A bot with no food or water dies of thirst in about 30 minutes.
 
 ### Step 7: Damage, downed, death, corpse
 
@@ -168,20 +181,38 @@
   - Weight is cached and recalculated on add and remove.
   - Carry limit = base + `fate.CarryBonus` + items' `CarryAdd`.
 - **Persistence:** inventory is not persistent, as in the original. It belongs to the character's life and drops to the corpse on death.
-- **Starting set:** about 10 items to start: bread, water, scrap, medical tools, the baton, the pistol and permits.
-- **Done when:** pick up, drop and use work, the weight limit holds, and the corpse holds the dead player's items.
+- **Starting set:** about 10 items to start: ration, clean water, dirty water, scrap, medical tools, the baton, the pistol and permits.
+- **`water_pump` entity:** one or two per map, usable by anyone. Each use gives one dirty water, with a short per-player cooldown. Dirty water lowers Dryness less than clean water and has a 25% chance to add Pox. Clean water is only sold from the stockpile (step 9).
+- **Done when:** pick up, drop and use work, the weight limit holds, and the corpse holds the dead player's items. The pump gives dirty water, and drinking it sometimes adds Pox.
 
-### Step 9: Economy (bones, taxes, treasury)
+### Step 9: Economy (fixed bone supply, treasury, stockpile, prices)
 
-- **Bones** are a persistent OWNER field. `Econ.Pay(ply, amount, source)` and `Econ.Charge(ply, amount, source)` use the batched DB writes.
-- **Taxes:** `Econ.Tax(amount, kind, ply)` keeps the original's split (labor, sales, sanitar = 100 − avg).
-  - Tax goes into the treasury.
-  - Rates and the treasury are PUBLIC world state stored in the `world` table.
-  - Fix the precedence bug B11.
-  - Tax evasion is deferred.
-- **Treasury payouts** (scheduled every 30 s): 20% of the treasury goes to the Kaiser. If there is no Kaiser, it stays in the treasury.
-- **Sanitar pay:** every 300 s the Kaiser's Think pays sanitars from the treasury.
-- **Done when:** a prole sale moves bones into the treasury, the Kaiser receives payouts, and reconnecting keeps balances.
+- **A closed economy.** At round start (map load, later `Round.Start` in step 13) the treasury holds every bone that exists: `bones_supply` (convar, default 3000).
+  - After that, bones only move. Nothing creates or destroys them: no minting, no sinks, no NPC buyers.
+  - **Invariant:** players + corpses + disconnected holdings + upgrade fund + treasury = `bones_supply`, always. When a corpse despawns, its bones go to the treasury. `econ_audit` checks it on demand, and a scheduled job checks it every 60 s and logs any drift.
+- **Bones** are a per-round OWNER field, not persisted (step 1).
+  - There is one primitive: `Econ.Transfer(from, to, amount, source)`. `from` and `to` are each a player, a corpse or `TREASURY`. It refuses if `from` can't afford the amount.
+  - A disconnecting player's bones are held in a SERVER table and restored if they rejoin this round.
+- **The stockpile** is a map entity, `state_stockpile`. It holds counts, not entities: `{ration = n, clean_water = n}`, which are PUBLIC world state.
+  - Delivering a crate (step 11.1) adds to the count and pays the deliverer the crate price from the treasury.
+  - Anyone can buy a ration or clean water at the counter for the ration price, and the bones go to the treasury.
+  - Withdrawing for free needs `FateHas("StockpileAccess")` (Kaiser, Sanitar).
+- **The Kaiser's levers** replace the original's tax system. They are PUBLIC world state, reset each round:
+  - **Crate price**: what the state pays per delivered crate (default 20).
+  - **Ration price**: what citizens pay for a ration or clean water (default 15).
+  - **Sanitar wage**: paid from the treasury to each sanitar every 300 s (default 40).
+  - The Kaiser can also take bones from the treasury into their own pocket. The treasury balance is PUBLIC, so everyone can see it happen.
+  - **Bad settings hurt on their own:**
+    - A low crate price means proles can't afford food.
+    - A high crate price drains the treasury, so sanitar wages stop.
+    - A high ration price drives hoarding and theft.
+  - Any payment the treasury can't cover isn't paid, and the people affected are told why ("The treasury is empty.").
+- **Dropped from the original:** the labor, sales and sanitar tax storages, the 20% payout to the Kaiser, tax evasion, ATM bonds and inflation. This also removes the B11 bug.
+- **Done when:**
+  - A delivered crate moves bones from the treasury to the deliverer, and buying a ration moves them back.
+  - Changing each lever changes the next payment.
+  - An empty treasury stops crate payments and wages, with a notice.
+  - `econ_audit` reports zero drift after a 30-bot soak with deaths, revives, disconnects and rejoins.
 
 ### Step 10: Crime and police
 
@@ -198,7 +229,11 @@
   - Victim is the Kaiser → "high assassination", death-wanted for 600 s.
   - Same faction and lower authority than the victim → big stem penalty (and −666 for killing your own leader).
   - Victim is a citizen → "murder", death-wanted for 300 s, −1 stem cell, +30 despair.
-- **Done when:** each rule fires in a scripted bot scenario, and wanted status counts down only while out of sight.
+- **`Crime.Report(ply, act, ctx)`** judges crimes that aren't kills. It uses the same rules-table form as `Crime.Judge`. The theft rules:
+  - **Theft, unseen:** delivering or opening a crate stamped as made by someone else adds *theft* evidence (300 s).
+  - **Theft, caught in the act:** if any police can see the player at that moment (the same prefiltered trace as wanted expiry), they become torment-wanted for 180 s, with the reason "theft from the People".
+  - **Stockpile break-in:** finishing a stockpile pry (step 11.1) makes the player judgment-wanted for 300 s. Starting one sends an alarm on the `"state"` radio channel with the stockpile's location.
+- **Done when:** each rule fires in a scripted bot scenario, and wanted status counts down only while out of sight. Each theft rule also fires in a bot scenario.
 
 ### Step 11: The fates
 
@@ -206,8 +241,16 @@ Build them in this order, so each one has something to act on.
 
 1. **Prole**: the economic base.
    - Kit: `permit_tool` and a random scrap item. Worse aim (`AccuracyMulti 1.25`, `RecoilMulti 1.3`).
-   - **Work loop (minimal):** a "work station" entity turns scrap into a product. Selling it pays bones through `Econ.Tax(…, "labor")`.
-   - **Construction:** the C-menu `Build` places a factory site (25) or a crate (35). Validate placement range on the server.
+   - **Work loop (food is the product):**
+     - Using a `ration_press` work station is a timed action (rule 6, about 30 s). When it finishes, a physical **ration crate** entity (`ent_crate`, kind `ration` or `clean_water`) appears next to the station.
+     - Each crate carries a SERVER-only `MadeBy` stamp (the maker's SteamID).
+     - Each station allows at most 3 crates waiting in the world, so the map can't fill with entities.
+     - Crates are carried by hand (physics pickup). Carrying one slows the carrier.
+     - Touching a crate to the `state_stockpile` delivers it: the crate is removed, the count goes up, and the **deliverer** is paid the crate price (step 9). So crates left lying around are worth stealing.
+     - A crate can also be opened on the spot, which gives its contents to the person who opened it.
+     - Delivering or opening a crate someone else made goes through `Crime.Report(ply, "theft", …)` (step 10).
+   - **Stockpile pry:** any non-slave without `StockpileAccess` can pry the stockpile open. This is a 60 s timed action, cancelled by moving away or taking damage. It sends the step 10 alarm when it starts, and when it finishes it drops 3 rations and runs the break-in rule.
+   - **Construction:** the C-menu `Build` places a factory site (25) or a storage crate (35). The cost goes to the treasury through `Econ.Transfer`. Validate placement range on the server.
    - Unions and WorkTitles are deferred.
 2. **Korpsman**: the revive and healing loop.
    - Regenerates 3× faster.
@@ -218,24 +261,32 @@ Build them in this order, so each one has something to act on.
    - Police flag, radio, codename, baton and scope.
    - **Teeth** is an OWNER field, spent at a `sanitation_station` entity on weapons.
    - Can see wanted status and evidence summaries.
+   - Paid the sanitar wage from the treasury (step 9). If the treasury is empty, they aren't paid.
+   - Has `StockpileAccess`, so guarding the stockpile is part of the job.
+   - **Inspect:** a context-menu action on a living player within 100 units. It is a validated receiver (rate-limited, sender is police and alive, target in range).
+     - It reveals whether the target is carrying a crate stamped by someone else, and shows their evidence summary.
+     - If the target has theft evidence, the inspection turns it into torment-wanted for 180 s.
+   - Beating or arresting a theft-wanted player earns +1 Teeth.
    - Slots: `Slots = function(pop) return math.Clamp(2 + math.floor(pop / 10), 2, 6) end`.
 4. **Kaiser**: the head of state.
    - 1 slot, needs Kaiser rank, costs 5 stem cells, 75 armor, the novoluger pistol and the strategy book.
-   - **Tax panel:** sets labor and sales rates; both start at 15 on spawn.
+   - **Price panel:** sets the crate price, the ration price and the sanitar wage (step 9), and can take bones from the treasury. Each is a validated receiver with clamped values. There are no taxes.
+   - Has `StockpileAccess`.
    - **Sentence and forgive:**
      - Both are validated receivers: target valid, alive, not a ghost, in range or visible.
-     - Forgiving an economic crime costs 300.
-   - **Upgrades:** **one** receiver `nKaiserUpgrade(targetFate)` reading a data table `{prole = 125, korpsman = 150}` (R3).
-   - **On death:** taxes go to 50% with a global announcement and a 600 s cooldown for the role.
+     - Forgiving a theft costs 300. The forgiven player pays it to the treasury through `Econ.Transfer`, and the forgiveness fails if they can't afford it.
+   - **Upgrades:** **one** receiver `nKaiserUpgrade(targetFate)` reading a data table `{prole = 125, korpsman = 150}` (R3). It is paid from the treasury, and the bones are held in an upgrade fund that is part of the step 9 invariant. They are not destroyed.
+   - **On death:** the three prices go back to their defaults, with a global announcement and a 600 s cooldown for the role.
 5. **Slave**: probation for new players. It is a Prole with restrictions, so build it as a variant of the Prole definition: `Fates.Define("slave", {Base = "prole", ...})`.
    - **Who:** every Foolish-rank player, and only them. Cost 0, unlimited slots, a short death cooldown (15 s, like Prole).
-   - **Same as Prole:** the work loop, wages and labor tax, needs, inventory, and being revived by korpsmen.
+   - **Same as Prole:** the work loop (making and delivering crates for the crate price), needs, inventory, and being revived by korpsmen.
    - **Different from Prole:**
      - Barcode name: `"<Drone|Serf|Peon…> #<last digits of SteamID>"`.
      - Slave model and clothing, plus a PUBLIC marker so everyone can see who is new.
      - Gets `weapon_cc_slave` (hands/tool only). **Can't deal damage to players**: a `Damage.Scale` hook zeroes it (from the original).
      - **Can't build Constructions.** New players can't spend bones on world objects.
      - **Can't be made wanted or collect evidence** (from the original). Killing a slave is still judged as murder of a citizen, so they are protected.
+     - Because a slave can't be punished, a slave **can't steal**: the server refuses to let them deliver or open a crate someone else made, and refuses a stockpile pry.
      - The corpse decomposes in 30 s.
    - **Leaving slavery** (both paths call `Rank.Free(ply, how)`):
      - **Survive a round:** at `Round.End`, every player who is a Slave, alive and not downed, and has been a Slave for at least `slave_min_round_time` (default 20 min of this round), is freed. Joining just before the round ends doesn't count.
@@ -252,11 +303,12 @@ Build them in this order, so each one has something to act on.
        - If the freed slave is alive, they stay a Slave until they die. On the ghost screen they can then pick any fate (no forced kill, unlike the original's ascend).
    - Banishing is dropped. Kicking and banning are admin tools (step 14).
 - **Done when:** a 4-player session (Kaiser, Sanitar, Korpsman, Prole) can play one full loop:
-  1. The prole works and pays tax.
-  2. The Kaiser is paid and sentences the prole.
+  1. The prole makes a ration crate, hauls it to the stockpile and is paid the crate price. Someone buys a ration at the counter.
+  2. The Kaiser changes a price, takes bones from the treasury, and sentences the prole.
   3. The sanitar executes the prole and earns Teeth.
   4. The korpsman revives someone for a fee.
-  5. A fresh account joins as a Slave, works for wages, can't hurt anyone, and is freed by a commendation. A second fresh account is freed at the end of the round.
+  5. A second prole delivers another player's crate in sight of the sanitar and becomes wanted. An unseen theft becomes wanted when the sanitar inspects the thief.
+  6. A fresh account joins as a Slave, makes and delivers crates, can't hurt or steal from anyone, and is freed by a commendation. A second fresh account is freed at the end of the round.
 
 ### Step 12: Chat and radio
 
@@ -272,16 +324,17 @@ Build them in this order, so each one has something to act on.
   - Earned from playtime ticks and objectives.
   - Lost to unjust kills and despair deaths.
   - Spent on fates.
-  - Each one spent gives 25 bones.
+  - Spending them gives no bones. The original gave 25 per stem cell, but that would mint bones into the fixed supply (step 9).
 - **Ranks:**
   - Foolish, Friend, Kapitan and Kaiser are enough for the core.
   - New accounts start at **Foolish**, which can only play Slave (step 11.5). Friend comes from `Rank.Free`.
   - Keep auto-promotion from Friend to Kapitan at the stem-cell threshold.
   - Admin ranks are separate from the game's ranks.
-- **Rounds (minimal):** the slave rule needs a round end, and the original only had one through Doom (deferred).
-  - `Round.Start` happens on map load.
-  - `Round.End(reason)` fires when the round timer (`round_length`, default 3 h) runs out or an admin ends it. It frees surviving slaves, flushes the DB, shows an end screen, then changes level.
-  - Doom, war and the Kaiser's fall can trigger `Round.End` later.
+- **Rounds:** the round is the unit of play. Keep it simpler than the original, which only ended a round through Doom.
+  - `Round.Start` happens on map load. It seeds the treasury with `bones_supply`, sets the prices to their defaults and empties the stockpile (step 9). Everyone starts the round with 0 bones.
+  - `Round.End(reason)` fires when the round timer (`round_length`, default 60 min) runs out or an admin ends it. It frees surviving slaves, flushes the DB, shows an end screen, then changes level.
+  - Only stem cells, rank and playtime carry over to the next round.
+  - The Kaiser's fall may trigger `Round.End` later. There is no Doom or war end state.
 - **Done when:**
   - A new player starts as a Slave and is freed either by commendation or by surviving to `Round.End`.
   - The new player can then, over time, unlock and take the Kaiser fate.
@@ -289,7 +342,7 @@ Build them in this order, so each one has something to act on.
 ### Step 14: Hardening and playtest
 
 - **Audit every `Net.Receive`:** rate limit, sender checks and target checks (S1–S2).
-- **Bot soak:** 30 bots cycling through fates for an hour. Watch the `sched_debug` costs, the net bytes per second and the DB flush time.
+- **Bot soak:** 30 bots cycling through fates for an hour. Watch the `sched_debug` costs, the net bytes per second and the DB flush time. `econ_audit` must report zero drift at the end.
 - **Admin basics:** kick, ban, set rank, set fate and noclip for staff.
 - **Then playtest with people.** Only after that, pick what to bring back from the deferred list below.
 
@@ -305,7 +358,7 @@ These are ordered by how much they add to the feel compared with their cost:
 6. Dealer stocks and contraband.
 7. Foreman work orders and factories.
 8. Organs, parasites and mutations.
-9. Rot, Doom and War: war with Rottingham (Rottish, the Duke and the UR) and the Prohlada Union (Prohladian, the kommissars), plus refugees from both.
+9. Rot and Doom.
 10. Potentials and antagonists.
 
 ## Dropped outright
@@ -315,3 +368,6 @@ These are ordered by how much they add to the feel compared with their cost:
 - Hard-coded SteamIDs.
 - Text-file persistence.
 - mysqloo.
+- War with Rottingham and the Prohlada Union, nation potentials and refugee waves. The remake uses several simple pressures instead (see Scope). The nations stay as lore, and as races that could be added later (step 5).
+- Taxes (labor, sales and sanitar storages), tax evasion, ATM bonds and inflation. The Kaiser's three prices replace them (step 9).
+- Free food spawns. Food comes from labor only (step 11.1).

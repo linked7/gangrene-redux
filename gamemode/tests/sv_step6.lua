@@ -23,6 +23,13 @@ return function( T )
 	Needs.Add( b, "Emptiness", -500, "food" )
 	T.Equal( Needs.Get( b, "Emptiness" ), 0, "needs clamp at 0" )
 
+	-- Pox lowers max HP, down to half at 100.
+	Needs.Add( b, "Pox", 100, "dirty water" )
+	T.Equal( b:GetMaxHealth(), 50, "full pox halves max HP" )
+	T.Check( b:Health() <= 50, "health is clamped to the new max" )
+	Needs.Add( b, "Pox", -100, "cure" )
+	T.Equal( b:GetMaxHealth(), 100, "curing pox restores max HP" )
+
 	-- Modifiers see every change and can scale it.
 	local function halve( _, name, amount ) if name == "Despair" and amount > 0 then return amount / 2 end end
 	table.insert( Needs.Modifiers, halve )

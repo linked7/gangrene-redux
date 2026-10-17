@@ -7,6 +7,7 @@
 return {
 	core = {
 		"sh_log.lua",
+		"sh_config.lua",
 		"sh_net.lua",
 		"sh_sched.lua",
 		"sv_test.lua",
@@ -36,5 +37,6 @@ return {
 		"sv_lifecycle.lua",
 		"sh_ghost.lua",
 		"sh_needs.lua",
+		"cl_atmosphere.lua",
 	},
 }

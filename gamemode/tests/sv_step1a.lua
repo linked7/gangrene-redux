@@ -1,11 +1,11 @@
 -- Step 1, part a: rows, write-behind, disconnect flush, world table, bans.
--- Leaves bones = 456 flushed and 789 unflushed; step1b checks what survives the killed server.
+-- Leaves stem_cells = 456 flushed and 789 unflushed; step1b checks what survives the killed server.
 local function stored( key, col )
 	return tonumber( sql.QueryValue( "SELECT " .. col .. " FROM players WHERE steamid = " .. sql.SQLStr( key ) ) )
 end
 
 return function( T )
-	T.Equal( tonumber( sql.QueryValue( "SELECT version FROM schema_version" ) ), 1, "schema version" )
+	T.Equal( tonumber( sql.QueryValue( "SELECT version FROM schema_version" ) ), 2, "schema version" )
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t1_%'" )
 	DB.Query( "DELETE FROM world WHERE key = 't1_treasury'" )
 
@@ -14,29 +14,29 @@ return function( T )
 	T.Check( stored( "bot:t1_a", "created" ) ~= nil, "joining creates a row" )
 	T.Equal( DB.Get( bot, "rank" ), 0, "new players start at rank 0 (Foolish)" )
 
-	DB.Set( bot, "bones", 123 )
-	T.Equal( DB.Get( bot, "bones" ), 123, "set changes the cache" )
-	T.Equal( stored( "bot:t1_a", "bones" ), 0, "set does not write immediately" )
+	DB.Set( bot, "stem_cells", 123 )
+	T.Equal( DB.Get( bot, "stem_cells" ), 123, "set changes the cache" )
+	T.Equal( stored( "bot:t1_a", "stem_cells" ), 0, "set does not write immediately" )
 
 	bot:Kick( "test" )
 	T.WaitUntil( function() return not IsValid( bot ) end, 5, "bot left" )
-	T.Equal( stored( "bot:t1_a", "bones" ), 123, "disconnect flushes" )
+	T.Equal( stored( "bot:t1_a", "stem_cells" ), 123, "disconnect flushes" )
 
 	T.Wait( 0.5 )
 	bot = player.CreateNextBot( "t1_a" )
-	T.Equal( DB.Get( bot, "bones" ), 123, "rejoin keeps bones" )
+	T.Equal( DB.Get( bot, "stem_cells" ), 123, "rejoin keeps stem cells" )
 
-	DB.Set( bot, "bones", 456 )
+	DB.Set( bot, "stem_cells", 456 )
 	DB.SetWorld( "t1_treasury", 50 )
 	DB.Flush()
-	T.Equal( stored( "bot:t1_a", "bones" ), 456, "flush writes dirty rows" )
+	T.Equal( stored( "bot:t1_a", "stem_cells" ), 456, "flush writes dirty rows" )
 	T.Equal( sql.QueryValue( "SELECT value FROM world WHERE key = 't1_treasury'" ), "50", "flush writes world keys" )
 
 	DB.Set( bot, "rank", 1 )
 	DB.FlushPlayer( bot )
 	T.Equal( stored( "bot:t1_a", "rank" ), 1, "FlushPlayer writes now" )
 
-	DB.Set( bot, "bones", 789 ) -- never flushed: the killed server should lose it
+	DB.Set( bot, "stem_cells", 789 ) -- never flushed: the killed server should lose it
 
 	local evil = "7656119' OR '1'='1"
 	DB.Ban( "76561190000000001", 60, "test ban", "step1a" )

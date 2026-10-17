@@ -14,6 +14,14 @@ PIDFILE=$LOGS/server.pid
 
 [ -x "$DS/srcds_run" ] || { echo "no dedicated server at $DS (install app 4020 with SteamCMD)"; exit 2; }
 mkdir -p "$DATA/gr_tests" "$LOGS"
+
+# One server install is shared by every checkout (worktrees of parallel workers included):
+# take the lock, then point the gamemode folder at this checkout for the length of the run.
+if [ "${1:-}" = test ] && [ -z "${GR_LOCKED:-}" ]; then
+	exec 9>"$LOGS/srv.lock"
+	flock 9
+	export GR_LOCKED=1
+fi
 ln -sfn "$REPO" "$DS/garrysmod/gamemodes/gangreneredux"
 
 start_server() { # $1 = log file
