@@ -8,7 +8,8 @@
 --             episode (Crime keeps the episode), so it can't be farmed
 --   Station   a sanitation_station sells weapons for Teeth (Police.OFFERS)
 --
--- Police see wanted players and evidence summaries over their heads (client half below).
+-- Police see wanted players and evidence summaries over their heads (client half below); their
+-- teeth are shown in the main HUD (cl_hud.lua).
 Police = Police or {}
 
 Police.INSPECT_RANGE = 100
@@ -112,7 +113,6 @@ if CLIENT then
 	hook.Add( "HUDPaint", "gr_police", function()
 		local me = LocalPlayer()
 		if not isPolice( me ) then return end
-		draw.SimpleText( "Teeth: " .. me:GetTeeth(), "DermaDefaultBold", 16, ScrH() - 120, color_white )
 
 		local eye = me:EyePos()
 		for _, p in player.Iterator() do

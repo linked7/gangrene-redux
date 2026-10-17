@@ -241,15 +241,26 @@ function Fates.Apply( ply, id, opts )
 	Log.Debug( "fates", "%s -> %s (%s)", ply:Nick(), f.id, reason )
 end
 
--- What a fate station does: check, charge, apply. Returns whether it worked.
+-- What a fate station does: check, charge, apply. Returns whether it worked, and why not.
 function Fates.Take( ply, id )
 	local ok, why = Fates.CanTake( ply, id )
 	if not ok then
 		Notify( ply, why )
-		return false
+		return false, why
 	end
 	local f = byId[ id ]
 	if ( f.Cost or 0 ) > 0 then ply:SetStemCells( ply:GetStemCells() - f.Cost ) end
 	Fates.Apply( ply, id, { reason = "pick" } )
 	return true
 end
+
+-- The fate menu (cl_fates.lua) asks for a fate by id. It greys out what CanTake refuses, but
+-- nothing the client says is trusted: the receiver only lets ghosts through and Take re-checks.
+function Fates.Request( ply, id )
+	if not isstring( id ) then return false, "There is no such purpose." end
+	return Fates.Take( ply, id )
+end
+
+Net.Receive( "gr_take_fate", { rate = 2, ghost = true }, function( ply )
+	Fates.Request( ply, Net.ReadString() )
+end )
