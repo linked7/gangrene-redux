@@ -1,4 +1,4 @@
--- A water pump: anyone alive gets one dirty water per use, then waits Inventory.PUMP_COOLDOWN.
+-- A water pump: a drinking faucet. Anyone alive drinks dirty water straight from it, then waits Inventory.PUMP_COOLDOWN.
 -- The cooldown is a timestamp on the player, shared by every pump, so pump-hopping doesn't help.
 AddCSLuaFile()
 
@@ -18,18 +18,18 @@ function ENT:Initialize()
 	if IsValid( phys ) then phys:EnableMotion( false ) end
 end
 
+-- Drinking straight from the tap, as the original faucet: one gulp per use, then a short wait.
+local TASTE = { "Worms in the water!", "Tastes horrible.", "Tastes terrible.", "There's something squirming.", "The faucet gurgles.", "Scum and worms.", "Putrid stench." }
+
 function ENT:Use( activator )
 	if not IsValid( activator ) or not activator:IsPlayer() or not activator:Alive() or activator:IsGhost() then return end
 	local now = CurTime()
-	if ( activator.GR_PumpReadyAt or 0 ) > now then
-		Notify( activator, "The pump is still dry. Wait a moment." )
-		return
-	end
-	local ok, why = Inventory.Add( activator, "dirty_water", 1 )
-	if not ok then
-		Notify( activator, why )
-		return
-	end
+	if ( activator.GR_PumpReadyAt or 0 ) > now then return end
 	activator.GR_PumpReadyAt = now + Inventory.PUMP_COOLDOWN
-	self:EmitSound( "ambient/water/water_spray1.wav", 60 )
+	local def = Items.Get( "dirty_water" )
+	for name, amount in pairs( def.Effects ) do Needs.Add( activator, name, amount, "faucet" ) end
+	def.OnUse( activator )
+	activator:EmitSound( "npc/barnacle/barnacle_gulp" .. math.random( 1, 2 ) .. ".wav", 75, math.random( 80, 110 ) )
+	self:EmitSound( "ambient/water/water_pump_drainin1.wav", 60, math.random( 80, 120 ) )
+	if math.random( 1, 3 ) == 1 then Notify( activator, TASTE[ math.random( #TASTE ) ] ) end
 end

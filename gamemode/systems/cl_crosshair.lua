@@ -176,8 +176,8 @@ P.state_stockpile = function( ent, ply, ct )
 	small( ct, "The city's food is kept here. Deliver crates to it." )
 end
 P.water_pump = function( ent, ply, ct )
-	table.insert( ct, { text = "Water Pump" } )
-	small( ct, "Use to collect water. It isn't for drinking." )
+	table.insert( ct, { text = "Drinking Faucet" } )
+	small( ct, "Use to drink water." )
 end
 P.sanitation_station = function( ent, ply, ct )
 	table.insert( ct, { text = "Sanitation Station" } )
