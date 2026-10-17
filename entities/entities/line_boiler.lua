@@ -1,11 +1,10 @@
 -- The lunch machine's boiler (step 11.1). Holds water (full barrels touching it pour in); its
 -- pressure 0-100 creeps up on its own. Holding Use on the red valve wheel vents, on the black one
 -- builds (the gr_valve receiver). Too high and it vents scalding steam (systems/sh_lunch.lua). Pressure, water
--- and the vent are public and drawn on it.
+-- and the vent are public and shown in its cross-texts.
 AddCSLuaFile()
 
 ENT.Type = "anim"
-ENT.GR_Panel3D2D = true
 ENT.Base = "base_anim"
 ENT.PrintName = "Boiler"
 ENT.Spawnable = false
@@ -65,36 +64,15 @@ if CLIENT then
 	end
 
 	function ENT:CrossTexts( ply, ct )
+		local p, small = self:GetPressure(), HUD.Font( "LabelSmall" )
+		-- Pressure is coloured by band: grey under GREEN_MIN, green to GREEN_MAX, orange to VENT_AT, red above.
+		local col = p < Lunch.GREEN_MIN and Color( 160, 160, 160 ) or p <= Lunch.GREEN_MAX and Color( 80, 200, 80 )
+			or p < Lunch.VENT_AT and Color( 230, 150, 30 ) or Color( 255, 60, 60 )
 		table.insert( ct, { text = "Boiler" } )
-		table.insert( ct, { text = "Hold use on the red wheel to vent, the black one to build pressure.", font = HUD.Font( "LabelSmall" ) } )
-	end
-
-	function ENT:DrawTranslucent()
-		local ang = self:GetAngles()
-		ang:RotateAroundAxis( ang:Up(), 90 )
-		ang:RotateAroundAxis( ang:Forward(), 90 )
-		local top = self:LocalToWorld( Vector( self:OBBMaxs().x + 1, 0, self:OBBMaxs().z - 6 ) )
-		local p = self:GetPressure()
-		cam.Start3D2D( top, ang, 0.16 )
-			local w, h = 260, 110
-			local x, y = -w / 2, -h
-			surface.SetDrawColor( 0, 0, 0, 230 )
-			surface.DrawRect( x, y, w, h )
-			-- The dial: dark under GREEN_MIN, green to GREEN_MAX, orange to VENT_AT, red above.
-			local bx, bw = x + 10, w - 20
-			local bands = { { 0, Lunch.GREEN_MIN, Color( 50, 50, 50 ) }, { Lunch.GREEN_MIN, Lunch.GREEN_MAX, Color( 40, 150, 40 ) },
-				{ Lunch.GREEN_MAX, Lunch.VENT_AT, Color( 200, 120, 0 ) }, { Lunch.VENT_AT, 100, Color( 180, 20, 20 ) } }
-			for _, b in ipairs( bands ) do
-				surface.SetDrawColor( b[ 3 ] )
-				surface.DrawRect( bx + bw * b[ 1 ] / 100, y + 40, bw * ( b[ 2 ] - b[ 1 ] ) / 100, 20 )
-			end
-			surface.SetDrawColor( 255, 255, 255, 255 )
-			surface.DrawRect( bx + bw * p / 100 - 2, y + 34, 4, 32 )
-			draw.SimpleText( string.format( "PRESSURE %d", math.floor( p ) ), "Trebuchet24", 0, y + 6,
-				self:GetVenting() and Color( 255, 60, 60 ) or color_white, TEXT_ALIGN_CENTER )
-			draw.SimpleText( self:GetVenting() and "VENTING" or ( "Water: " .. self:GetWater() ), "Trebuchet18", 0, y + 74,
-				self:GetWater() == 0 and Color( 255, 80, 80 ) or color_white, TEXT_ALIGN_CENTER )
-		cam.End3D2D()
+		table.insert( ct, { text = string.format( "Pressure %d (green %d-%d)", math.floor( p ), Lunch.GREEN_MIN, Lunch.GREEN_MAX ), font = small, color = col } )
+		table.insert( ct, { text = self:GetVenting() and "VENTING" or ( "Water: " .. self:GetWater() ), font = small,
+			color = ( self:GetVenting() or self:GetWater() == 0 ) and Color( 255, 80, 80 ) or nil } )
+		table.insert( ct, { text = "Hold use on the red wheel to vent, the black one to build pressure.", font = small } )
 	end
 
 	function ENT:Think()
