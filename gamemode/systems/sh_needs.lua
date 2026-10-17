@@ -31,20 +31,16 @@ function Needs.All() return order end
 function Needs.Def( name ) return defs[ name ] end
 
 -- The core needs ----------------------------------------------------------------------------
--- Survival is meant to be hard: thirst fills in about 25 min and hunger in about 40, and either
--- one at 100 drains HP until the player dies. A 60-minute round needs two meals and 2-3 drinks.
-
-local function starve( ply )
-	ply:TakeDamage( 1, game.GetWorld(), game.GetWorld() )
-end
+-- Survival is meant to be hard: thirst fills in about 25 min and hunger in about 40. A 60-minute
+-- round needs two meals and 2-3 drinks. Hunger and thirst never deal damage; they wear the player
+-- down instead (Needs.Weakness), full thirst brings Pox, and a body downed at full hunger can't be
+-- revived (sh_corpse.lua).
 
 Needs.Define( "Emptiness", {
 	rate = 1 / 24,
 	thresholds = { [ 60 ] = "Your stomach growls.", [ 80 ] = "You are starving.", [ 100 ] = "Hunger is eating you alive." },
 	onTick = function( ply, v )
-		if v < 100 then return end
-		starve( ply )
-		if Needs.Get( ply, "Despair" ) < 90 then Needs.Add( ply, "Despair", 1, "starving" ) end
+		if v >= 100 and Needs.Get( ply, "Despair" ) < 90 then Needs.Add( ply, "Despair", 1, "starving" ) end
 	end,
 } )
 
@@ -52,7 +48,7 @@ Needs.Define( "Dryness", {
 	rate = 1 / 15,
 	thresholds = { [ 60 ] = "Your mouth is dry.", [ 80 ] = "You are parched.", [ 100 ] = "Your throat cracks with thirst." },
 	onTick = function( ply, v )
-		if v >= 100 then starve( ply ) end
+		if v >= 100 then Needs.Add( ply, "Pox", Needs.THIRST_POX, "thirst" ) end
 	end,
 } )
 
@@ -62,12 +58,30 @@ Needs.Define( "Despair", {
 	onMax = function( ply ) Needs.HeartAttack( ply ) end,
 } )
 
--- Pox: sickness from dirty water. It never rises on its own and lowers max HP, down to half at 100.
+-- Pox: sickness from dirty water and full thirst. It lowers max HP, down to half at 100 (never below 5).
 Needs.Define( "Pox", {
 	rate = 0,
 	thresholds = { [ 30 ] = "Your skin itches and weeps.", [ 70 ] = "Sores cover your body." },
 	onChange = function( ply ) Needs.ApplyPox( ply ) end,
 } )
+
+-- Weakness, 0 to 1: the worse of hunger and thirst, from WEAK_FROM to 100.
+Needs.WEAK_FROM = 50
+Needs.WEAK_SPEED = 0.7         -- movement at full weakness
+Needs.WEAK_DAMAGE = 0.6        -- damage dealt at full weakness
+Needs.WEAK_CONSCIOUSNESS = 0.25 -- consciousness regen at full weakness
+Needs.POX_FLOOR = 5           -- Pox never takes max HP below this
+Needs.THIRST_POX = 0.1         -- Pox per second while Dryness is 100 (+1 every 10 s)
+
+function Needs.Weakness( ply )
+	local worst = math.max( Needs.Get( ply, "Emptiness" ), Needs.Get( ply, "Dryness" ) )
+	return math.Clamp( ( worst - Needs.WEAK_FROM ) / ( 100 - Needs.WEAK_FROM ), 0, 1 )
+end
+
+-- 1 at no weakness, `low` at full weakness.
+function Needs.WeakScale( ply, low )
+	return Lerp( Needs.Weakness( ply ), 1, low )
+end
 
 if CLIENT then return end
 
@@ -103,7 +117,7 @@ end
 function Needs.ApplyPox( ply )
 	local f = ply:GetFateDef()
 	local base = f and f.Health or 100
-	local max = math.max( 1, math.floor( base * ( 1 - Needs.Get( ply, "Pox" ) / 200 ) ) )
+	local max = math.max( Needs.POX_FLOOR, math.floor( base * ( 1 - Needs.Get( ply, "Pox" ) / 200 ) ) )
 	if ply:GetInjured() then max = math.min( max, Config.InjuredMaxHealth ) end -- step 7
 	ply:SetMaxHealth( max )
 	if ply:Health() > max then ply:SetHealth( max ) end
@@ -141,7 +155,17 @@ function Needs.Tick( ply )
 		if def.rate ~= 0 then Needs.Add( ply, name, def.rate, "tick" ) end
 		if def.onTick then def.onTick( ply, ply.GR_Needs[ name ] ) end
 	end
+
+	-- Speed follows weakness; only touch it when the factor has moved noticeably.
+	local speed = Needs.WeakScale( ply, Needs.WEAK_SPEED )
+	if math.abs( speed - ( ply.GR_WeakSpeed or 1 ) ) >= 0.01 then
+		ply.GR_WeakSpeed = speed
+		Fates.ApplySpeed( ply )
+	end
 end
+
+Fates.SpeedMods.needs = function( ply ) return ply.GR_WeakSpeed or 1 end
+
 Sched.EachPlayer( "needs", 1, function( ply ) Needs.Tick( ply ) end )
 
 -- Every new life starts with empty needs; ghosts have none. A revive or get-up keeps the old life's needs.
@@ -149,6 +173,7 @@ hook.Add( "GR_FateEnter", "gr_needs", function( ply, f, reason )
 	ply.GR_HeartAttackAt = nil
 	if f.index == FATE_GHOST then
 		ply.GR_Needs = nil
+		ply.GR_WeakSpeed = nil
 		return
 	end
 	if not Fates.SameLife( reason ) or not ply.GR_Needs then
@@ -157,4 +182,6 @@ hook.Add( "GR_FateEnter", "gr_needs", function( ply, f, reason )
 	end
 	for _, name in ipairs( order ) do ply[ "SetNeed_" .. name ]( ply, math.floor( ply.GR_Needs[ name ] ) ) end
 	Needs.ApplyPox( ply )
+	ply.GR_WeakSpeed = Needs.WeakScale( ply, Needs.WEAK_SPEED )
+	Fates.ApplySpeed( ply )
 end )

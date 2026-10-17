@@ -147,6 +147,19 @@ local function callHook( f, name, ... )
 	if not ok then Log.Error( "fates", "%s.%s: %s", f.id, name, err ) end
 end
 
+-- Speed = config x the fate's SpeedMulti x every factor in Fates.SpeedMods (needs weakness, a
+-- carried crate). Nothing else sets speed: a system that slows players adds a mod and calls
+-- Fates.ApplySpeed( ply ) when its factor changes.
+Fates.SpeedMods = Fates.SpeedMods or {}
+
+function Fates.ApplySpeed( ply, f )
+	f = f or ply:GetFateDef()
+	local speed = f and f.SpeedMulti or 1
+	for _, mod in pairs( Fates.SpeedMods ) do speed = speed * ( mod( ply ) or 1 ) end
+	ply:SetWalkSpeed( Config.WalkSpeed * speed )
+	ply:SetRunSpeed( Config.RunSpeed * speed )
+end
+
 -- Physical setup shared by every fate; ghosts float, pass through everything and can't be hurt.
 local function applyBody( ply, f, look )
 	local ghost = f.index == FATE_GHOST
@@ -160,9 +173,7 @@ local function applyBody( ply, f, look )
 	ply:SetMaxHealth( f.Health or 100 )
 	ply:SetHealth( f.Health or 100 )
 	ply:SetArmor( f.Armor or 0 )
-	local speed = f.SpeedMulti or 1
-	ply:SetWalkSpeed( Config.WalkSpeed * speed )
-	ply:SetRunSpeed( Config.RunSpeed * speed )
+	Fates.ApplySpeed( ply, f )
 
 	look = look or f.Appearance
 	if isfunction( look ) then look = look( ply ) end

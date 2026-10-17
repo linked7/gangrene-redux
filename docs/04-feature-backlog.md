@@ -33,6 +33,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | Kaiser runs the economy with a full toolkit; no clamps, no self-enrichment | `accepted → Step 9` (`Economy` table, Set/Grant/Fine/Ledger), `Step 11.2`, `11.3`, `11.4` | 2026-10-17 |
 | Knocked out isn't death: wounded get back up `Injured`; only dying (severe) bleed out to ghost | `accepted → Step 7`, `Step 11.2` | 2026-10-17 |
 | Kaiser has no rank gate for now | `accepted → Step 11.4`, `Step 13` | 2026-10-17 |
+| Hunger/thirst never damage: progressive weakness, full thirst raises Pox, no revive at full hunger | `accepted → Step 6`, `Step 7`, `Step 5` (speed) | 2026-10-17 |
 
 ## Decisions log
 
@@ -52,5 +53,6 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Kaiser economic control (replaces the "Kaiser levers" row) | One PUBLIC `Economy` table with a schema: buy and sell price per good, a wage per fate, a ration limit, a reserve per good, a bread line and the revive fee. One `nKaiserEcon(key, value)` receiver, plus Grant and Fine. A ledger built from `Econ.Transfer`. Only sanity checks (never negative, never above supply). No Kaiser wage and no pocket withdrawal. The table resets each round and when the Kaiser dies. | User's choice: the Kaiser's challenge is running a working economy, so they get many tools and no checks that restrict control or invite getting rich. |
 | 2026-10-17 | Kaiser rank gate | Removed for now. Kaiser needs no rank, only stem cells and the free slot. Rank gates on fates are an open decision. | User: "don't limit access just yet"; will choose gates later. |
 | 2026-10-17 | Downed states | HP 0 downs the player. `wounded` (hit less than 30 past 0 HP): gets up after 45 s at 25 HP with `Injured` (max HP 50) until a korpsman treats it. `dying` (30 or more past 0 HP, or hit again while down): bleeds out over 120 s to a ghost unless revived, and the downer is judged then. Finish off is an explicit ~3 s action. Revive clears `Injured`. | User: being knocked out shouldn't kill you; only severe wounds without treatment do. Keeps korpsmen essential without making every fall a death. |
+| 2026-10-17 | Hunger and thirst effects (replaces "at 100 drains HP") | No direct damage. Weakness from 50 to 100 (higher of the two): speed ×0.7, damage dealt ×0.6, consciousness regen ×0.25 at worst. Dryness 100: Pox slowly rises (+1 per 10 s). Downed at Emptiness 100: no revive. Despair at 100 is the only need that kills outright. Pox can lower max HP to a floor of 5, never below. | User's choice. Also ends the wounded/starving loop Rewrite found. |
 | 2026-10-17 | War | Dropped. The nations stay as lore and possible races. Rot/Doom stay deferred. | The user wants several simple pressures instead of a war. |
 | 2026-10-17 | Fates kept | Kaiser, Sanitar, Prole, Korpsman, plus Slave; Ghost as the dead/lobby state | User's choice |

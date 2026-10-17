@@ -71,6 +71,14 @@ Damage.Add( "Scale", "fate", function( ply, dmg )
 	if s then dmg:ScaleDamage( s ) end
 end )
 
+-- A player weak from hunger or thirst hits softer (step 6).
+Damage.Add( "Scale", "weakness", function( ply, dmg )
+	local attacker = dmg:GetAttacker()
+	if IsValid( attacker ) and attacker:IsPlayer() and attacker.GR_Needs then
+		dmg:ScaleDamage( Needs.WeakScale( attacker, Needs.WEAK_DAMAGE ) )
+	end
+end )
+
 -- Armor soaks most of a hit and wears down by what it soaks. Falls and drowning go around it.
 local ARMOR_SOAK = 0.6
 local ARMOR_BYPASS = bit.bor( DMG_FALL, DMG_DROWN, DMG_POISON, DMG_RADIATION )
