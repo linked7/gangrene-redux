@@ -81,8 +81,9 @@ end )
 
 hook.Add( "InitPostEntity", "gr_round", Round.Start )
 
--- round_end [reason]: server console or superadmins.
+-- round_end [reason]: server console or staff (Admin.IsStaff, sv_admin.lua).
 concommand.Add( "round_end", function( ply, _, args )
-	if IsValid( ply ) and not ply:IsSuperAdmin() then return end
+	if not Admin.IsStaff( ply ) then return end
+	Log.Info( "admin", "%s ended the round", IsValid( ply ) and ply:SteamName() or "console" )
 	Round.End( args[ 1 ] or "admin" )
 end )

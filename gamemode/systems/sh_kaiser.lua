@@ -186,7 +186,7 @@ Net.Receive( "nKaiserForgive", { rate = 2, alive = true, fate = "CanSentence", t
 end )
 
 Net.Receive( "nKaiserUpgrade", { rate = 2, alive = true, fate = "Upgrades" }, function( ply )
-	Kaiser.Upgrade( ply, net.ReadString() )
+	Kaiser.Upgrade( ply, Net.ReadString() )
 end )
 
 Net.Receive( "nKaiserLedger", { rate = 1, alive = true, fate = "RunsEconomy" }, function( ply )

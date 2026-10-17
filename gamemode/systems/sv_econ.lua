@@ -347,7 +347,7 @@ end
 
 Net.Receive( "gr_counter", { rate = 4, alive = true, target = "entity", range = Econ.COUNTER_RANGE }, function( ply, ent )
 	local action = net.ReadUInt( 2 )
-	Econ.Counter( ply, ent, action, net.ReadString() )
+	Econ.Counter( ply, ent, action, Net.ReadString() )
 end )
 
 -- Wages ------------------------------------------------------------------------------------
@@ -400,8 +400,9 @@ local function livingTarget( target )
 	return IsValid( target ) and target:IsPlayer() and target:Alive() and not target:IsGhost()
 end
 
+-- Never to themselves: the Kaiser runs the economy but doesn't get rich from it (no pocket withdrawal).
 function Econ.Grant( ply, target, amount )
-	if not ply:FateHas( "RunsEconomy" ) or not livingTarget( target ) then return false end
+	if not ply:FateHas( "RunsEconomy" ) or not livingTarget( target ) or target == ply then return false end
 	local ok, why = Econ.Transfer( Econ.TREASURY, target, amount, "grant" )
 	if ok then return true end
 	if why == "cannot afford" then Notify( ply, Econ.Treasury() == 0 and EMPTY or string.format( "The treasury holds only %d bones.", Econ.Treasury() ) ) end
@@ -425,7 +426,7 @@ function Econ.Fine( ply, target, amount )
 end
 
 Net.Receive( "nKaiserEcon", { rate = 4, alive = true, fate = "RunsEconomy" }, function( ply )
-	local key = net.ReadString()
+	local key = Net.ReadString()
 	Econ.KaiserSet( ply, key, net.ReadDouble() )
 end )
 
@@ -448,7 +449,7 @@ end )
 
 -- Console ----------------------------------------------------------------------------------
 
-local function adminOnly( ply ) return not IsValid( ply ) or ply:IsSuperAdmin() end
+local function adminOnly( ply ) return Admin.IsStaff( ply ) end
 
 local function reply( ply, fmt, ... )
 	local msg = string.format( fmt, ... )

@@ -52,7 +52,7 @@ if SERVER then
 	end
 
 	Net.Receive( "gr_interact", { rate = 4, alive = true, target = "any", range = 400 }, function( ply, ent )
-		Interact.Run( ply, net.ReadString(), ent )
+		Interact.Run( ply, Net.ReadString(), ent )
 	end )
 	return
 end

@@ -62,7 +62,8 @@ function Build.Place( ply, kind, pos )
 	if not k then return false, "unknown kind" end
 	if not ply:Alive() or ply:IsGhost() then return false, "not alive" end
 	if not Build.CanBuild( ply ) then return refuse( "You need a permit tool to build." ) end
-	if not isvector( pos ) or ply:EyePos():DistToSqr( pos ) > Build.RANGE * Build.RANGE then
+	-- NaN compares false with everything, so a non-finite spot would pass the range check.
+	if not Net.Finite( pos ) or ply:EyePos():DistToSqr( pos ) > Build.RANGE * Build.RANGE then
 		return refuse( "That is too far away to build on." )
 	end
 	-- The spot must be in sight: nothing between the builder's eyes and it.
@@ -82,6 +83,6 @@ function Build.Place( ply, kind, pos )
 end
 
 Net.Receive( "gr_build", { rate = 1, alive = true }, function( ply )
-	local kind = net.ReadString()
+	local kind = Net.ReadString()
 	Build.Place( ply, kind, net.ReadVector() )
 end )
