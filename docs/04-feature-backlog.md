@@ -16,6 +16,12 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
+| Falling boulders (`boulder`, sv_think spawner every 15-30 s) | `idea` | Recommend: yes, cheap physical hazard, one entity, layout spots. |
+| Campfire / cooker (cook raw food, warmth) | `idea` | Recommend: yes if food has a raw state; gives labor a second step without menus. |
+| Ghost haunting (Deferred 4, light slice) | `idea` | Recommend: yes, a small version only (ghosts flicker lights, knock props); keeps dead players busy in a short round. |
+| Starter quirks (Deferred 1, 3-4 quirks) | `idea` | Recommend: later; adds replay value but needs balance passes. |
+| Bell / alarm (`bell`, `alarm`) | `idea` | Recommend: yes, a physical way to call people, pairs with Sanitar Summon. |
+| Round timer starts on first Kaiser spawn | `accepted` | Step 13. |
 | Workplace accidents (from the original's machines: operator error, misuse, rust, haunting, waste spills) | `idea` | Raised 2026-10-17 by the analysis session. Proposed slice: rust plus accidents on the ration press, sanitar upkeep that pays bones. Haunting waits for ghost Suffering (Deferred 4), and the factory cards wait for the foreman (Deferred 7). Their suggestion that slaves be immune conflicts with Slave parity. Original refs: entities/entities/machine_*.lua, machine_gears.lua:681. |
 | Rank gates on fates (who may take Kaiser etc.) | `idea` | Raised 2026-10-17. User will choose later; for now no gate above Friend. |
 
@@ -23,10 +29,21 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Plan location | Date |
 |---|---|---|
+| Rocket turret (optimized port) | `accepted` | Step 10. |
+| Round flow (stations gone at 10 min, migrant waves, papers → passport at the gate) | `accepted` | Step 13. |
+| Kaiser recruits sanitars (context menu); sanitar station dropped | `accepted` | Steps 4, 11.4. |
+| Deadly wasteland water (1:1 port: damage + Pox by water level) | `accepted` | Step 8. |
+| XOMBOKOM as big red screen text | `accepted` | Step 11.4. |
+| Wading slowdown (x0.8/0.6/0.5 by water level) | `accepted` | Step 8. |
+| Gate makes migrants Proles; Kaiser recruits korpsmen in-world | `accepted` | Steps 11.4, 13. |
+| Sanitar Summon (1:1 port, 16 rp_slumtown spots) | `accepted` | Step 10. |
+| Immigration Kontrol Konsole in the Gate Antechamber (papers → passport) | `accepted` | Step 13. |
 | Korpsman loop remake | `accepted` | Step 11.2 ported from the original: revive (3 presses) promotes to lovebox (blood/Pox/parasite modes, HP cost); surgery is a timed action with per-procedure time, tool %, fail roll and costs. |
 | Shop goods from the stockpile | `accepted` | Step 9: loaf = ration at sell.ration; beer/spirits/knife seeded stock (shop_stock 10), sold out until next round. |
 | Slave fate: new players are slaves until they survive a round or are commended | Step 11 item 5, Step 13 (Rounds) | 2026-10-17 |
 | Round-based play: 60-min rounds, only stem cells/rank/playtime persist | `accepted → Step 13` (also Scope, Step 1, Step 2) | 2026-10-17 |
+| Trash piles (ported, mostly bone capsules) | `accepted → Step 8` (also Step 4 layout) | 2026-10-17 |
+| Weather cycle (clear/night/yellow/meat) | `accepted → Step 5` | 2026-10-17 |
 | Darker, slower feel; scarce food and water | `accepted → Step 5` (pace/atmosphere), `Step 6` (needs rates, Pox core), `Step 8` (pump, dirty water) | 2026-10-17 |
 | Fixed bone supply; the Kaiser's three prices can wreck the economy | `accepted → Step 9` (also Step 11.4, Step 13) | 2026-10-17 |
 | Made goods (ration crates) appear in the world and are hauled to the stockpile | `accepted → Step 11.1` (also Step 9) | 2026-10-17 |
@@ -93,3 +110,15 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Korpsman loop | Lovebox = fast, self-costly heal; surgery = slow, step-by-step, often better. Revive is 3 presses. | User's description of the original loop. |
 | 2026-10-17 | Korpsman parity | 11.2 rewritten from original lovebox/korpsman/sv_surgery numbers; surgery is the one timed-action exception to D3. | User: "look at the original for parity / Surgery is the exception". |
 | 2026-10-17 | Shop stock | Shop goods come out of the stockpile; Soylent Loaf is the ration; other goods get a fixed per-round stock. | User: tie shop goods into the stockpile. |
+| 2026-10-17 | Trash piles | Port as-is to Step 8; loot mostly bone capsules, rare rotten food or clean water; no white mold; no exemption; original rp_slumtown spots. | User agreed. |
+| 2026-10-17 | Weather | Port original cycle and four weathers to Step 5; ritual and area weathers later. | User agreed. |
+| 2026-10-17 | Round flow | Fate stations removed at 10 min; migrant wave every 1 min with `papers`; passport and permanent fate pick at the "Gates of Gangrene"; korpsman cap = korpsmen lost. | User agreed. |
+| 2026-10-17 | Sanitar recruiting | Kaiser's "Recruit as Sanitar" context action; no sanitar station. | User agreed. |
+| 2026-10-17 | Wasteland water | 1:1 port of the original wade damage and Pox in the wasteland box. | User: the water should be horrible in the wasteland. |
+| 2026-10-17 | XOMBOKOM | Kaiser broadcast as large red top-centre text plus sound, not chat; 120 chars, 30 s cooldown. | User's choice. |
+| 2026-10-17 | Sanitar Summon | 1:1 port of the original summoner with its 16 rp_slumtown spots. | User asked. |
+| 2026-10-17 | Wading slowdown | Movement slowed by water level in all water; new, the original had none. | User asked. |
+| 2026-10-17 | In-world fate pick | Konsole stamps migrants as Proles, no fate list; Kaiser "Recruit as Korpsman" like sanitar recruiting. | User asked. |
+| 2026-10-17 | Immigration konsole | New `konsole_immigration` at the Gate Antechamber is the papers → passport point; none existed in the original. | User asked. |
+| 2026-10-17 | Rocket turret | Re-added as an optimized port: throttled search, cached client trace, single sound. | User asked; cheap hazard that respects permits. |
+| 2026-10-17 | Round timer start | Timer and 10 min marks count from the first Kaiser spawn, not map load. | User asked. |
