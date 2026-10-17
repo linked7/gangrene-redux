@@ -37,13 +37,18 @@ if CLIENT then
 end
 
 function ENT:Initialize()
-	self:SetModel( "models/props_wasteland/rockgranite02a.mdl" )
+	-- Loose physics rocks, as in Gangrene: they drop where they spawn and hits knock them about
+	local mdls = { "models/props_wasteland/rockgranite03a.mdl", "models/props_wasteland/rockgranite03b.mdl", "models/props_wasteland/rockgranite03c.mdl" }
+	self:SetModel( mdls[ math.random( #mdls ) ] )
 	self:PhysicsInit( SOLID_VPHYSICS )
-	self:SetMoveType( MOVETYPE_NONE )
 	local phys = self:GetPhysicsObject()
-	if IsValid( phys ) then phys:EnableMotion( false ) end
+	if IsValid( phys ) then phys:Wake() end
+	self.GR_Home = { self:GetPos(), self:GetAngles() }
 	self:SetIntegrity( ToolsMachine.BOULDER_INTEGRITY )
 	ToolsMachine.Track( self )
 end
 
-function ENT:OnTakeDamage( dmg ) ToolsMachine.BoulderDamaged( self, dmg ) end
+function ENT:OnTakeDamage( dmg )
+	self:TakePhysicsDamage( dmg )
+	ToolsMachine.BoulderDamaged( self, dmg )
+end

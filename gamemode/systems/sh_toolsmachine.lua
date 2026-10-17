@@ -347,6 +347,8 @@ function ToolsMachine.BoulderDamaged( b, dmg )
 	b:SetBroken( true )
 	b:SetNoDraw( true )
 	b:SetNotSolid( true )
+	local phys = b:GetPhysicsObject()
+	if IsValid( phys ) then phys:EnableMotion( false ) end
 	b.GR_RespawnAt = CurTime() + ToolsMachine.BOULDER_RESPAWN
 	Econ.AddStock( "ore", 1 + math.random( 2, 3 ) )
 	if living( att ) then Econ.Transfer( Econ.TREASURY, att, ToolsMachine.LABOR_BOULDER, "labor" ) end
@@ -354,6 +356,11 @@ function ToolsMachine.BoulderDamaged( b, dmg )
 end
 
 function ToolsMachine.RestoreBoulder( b )
+	-- back to where it first spawned, loose again
+	b.GR_Home = b.GR_Home or { b:GetPos(), b:GetAngles() }
+	b:SetPos( b.GR_Home[ 1 ] ); b:SetAngles( b.GR_Home[ 2 ] )
+	local phys = b:GetPhysicsObject()
+	if IsValid( phys ) then phys:EnableMotion( true ); phys:Wake() end
 	b:SetBroken( false )
 	b:SetNoDraw( false )
 	b:SetNotSolid( false )
