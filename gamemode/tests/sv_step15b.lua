@@ -2,7 +2,8 @@
 -- through; Fates.Request re-checks with CanTake and returns its reason), every field the HUD and
 -- the menu read reaches the client, and every client file is listed and sent. The UI parity pass
 -- (docs/05): the body registry message (Corpse.Sync), the screen-effect message (FX.Send and the
--- GR_Judged hook that starts the scares), the downed screen's LastThought and the content pack.
+-- GR_Judged hook that starts the scares), the downed screen's LastThought and the content pack;
+-- fate footsteps and the music list (§11); the ghost's look, hearing, grade and radio (§13).
 return function( T )
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t15b_%'" )
 
@@ -119,6 +120,40 @@ return function( T )
 	T.Check( seen[ 1 ] and seen[ 1 ].a == killer and seen[ 1 ].v == victim and seen[ 1 ].out == out, "with the attacker, victim and outcome" )
 	T.Check( pcall( FX.Send, killer, "jumpscare" ) and pcall( FX.Send, killer, "nonsense" ), "FX.Send skips bots and unknown kinds" )
 	T.Check( pcall( Corpse.Sync, killer ), "Corpse.Sync ignores what isn't a body" )
+
+	-- Sound (§11): fate footsteps from the server, none for ghosts; the music list.
+	T.Check( hook.GetTable().PlayerFootstep and hook.GetTable().PlayerFootstep.gr_ghost, "PlayerFootstep runs the fate's Footstep" )
+	for _, id in ipairs( { "korpsman", "slave", "sanitar" } ) do
+		T.Check( isfunction( Fates.Get( id ).Footstep ), id .. " has its own footsteps" )
+	end
+	T.Check( pcall( Fates.Get( "slave" ).Footstep, killer, 0 ), "a Footstep runs on a player" )
+	T.Equal( hook.GetTable().PlayerFootstep.gr_ghost( killer, killer:GetPos(), 0 ), nil, "a living step keeps the engine sound" )
+	T.Check( istable( Config.UI.Music ) and #Config.UI.Music > 0, "the music list is in Config.UI" )
+	local kinds = {}
+	for _, s in ipairs( Config.UI.Music ) do
+		T.Check( isstring( s[ 1 ] ) and isnumber( s[ 2 ] ) and s[ 2 ] > 0 and isstring( s[ 4 ] ), "track " .. tostring( s[ 1 ] ) .. " has a length and name" )
+		kinds[ s[ 3 ] ] = true
+	end
+	T.Check( kinds.idle and kinds.alert, "there are idle and ghost (alert) tracks" )
+	T.Check( Loader.Sent[ root .. "systems/cl_music.lua" ], "cl_music.lua is sent to clients" )
+
+	-- Ghosts (§13): the look on entering, cleared on leaving; the feel is fate data.
+	local g = Fates.Get( "ghost" )
+	T.Equal( g.Appearance.model, "models/player/skeleton.mdl", "ghosts are skeletons" )
+	T.Equal( g.DSP, 4, "with muffled hearing" )
+	T.Equal( g.CustomRadio, "Suffering Eternal", "the ghost radio is Suffering Eternal" )
+	T.Check( g.NoRadioSound == true and g.ColorModOverride == true, "with no radio sound, and the grade replaces the usual one" )
+	local grade = g.ColorMod( killer )
+	T.Check( istable( grade ) and isnumber( grade[ "$pp_colour_contrast" ] ) and grade[ "$pp_colour_mulr" ] == 5, "the grade is red at no Suffering" )
+	T.Check( g.MotionBlur and g.MotionBlur[ 1 ] == 0.08, "and blurred" )
+	Fates.Apply( killer, "ghost", { reason = "admin" } )
+	T.Check( killer:IsGhost(), "the killer is a ghost" )
+	T.Equal( killer:GetSubMaterial( 0 ), "effects/tp_eyefx/tpeye", "with the glowing eyes" )
+	T.Equal( killer:GetRenderFX(), 16, "and the hologram effect" )
+	T.Equal( hook.GetTable().PlayerFootstep.gr_ghost( killer, killer:GetPos(), 0 ), true, "and silent steps" )
+	Fates.Apply( killer, "prole", { reason = "admin" } )
+	T.Equal( killer:GetSubMaterial( 0 ), "", "leaving the ghost clears the eyes" )
+	T.Equal( killer:GetRenderFX(), kRenderFxNone, "and the effect" )
 	killer:Kick( "test" )
 	victim:Kick( "test" )
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t15b_%'" )

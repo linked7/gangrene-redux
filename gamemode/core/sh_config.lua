@@ -84,6 +84,41 @@ Config.UI = {
 		"piercing", "trauma", "fear", "joy", "fallingaway", "finaltrip", "biter",
 	},
 	Postals = 27,
+	-- Music (cl_music.lua): { path, seconds, kind, name }, the original's GM.Music idle and alert
+	-- tracks. Idle plays while alive, alert for ghosts. Pack-only: a track that isn't installed is
+	-- skipped, and with none installed there is no music.
+	Music = {
+		{ "placenta/music/liverdamage.ogg", 173, "idle", "Liver Damage" },
+		{ "placenta/music/ademonicalteration.ogg", 332, "idle", "A Demonic Alteration" },
+		{ "placenta/music/fallen.ogg", 369, "idle", "Fallen" },
+		{ "placenta/music/somenamelessthing.ogg", 151, "idle", "Some Nameless Thing" },
+		{ "placenta/music/stainedglass.ogg", 247, "idle", "Stained Glass Under Dim Arches" },
+		{ "placenta/music/ashadowedportal.ogg", 293, "idle", "A Shadowed Portal" },
+		{ "placenta/music/seethingchaos.ogg", 282, "idle", "An Abyss of Seething Chaos and Cerulean Splendor" },
+		{ "placenta/music/oilyriver.ogg", 304, "idle", "An Oily River That Flows Under Endless Onyx Bridges To A Black Putrid Sea" },
+		{ "placenta/music/wintersolsticeprocession.ogg", 383, "idle", "Winter Solstice Procession" },
+		{ "placenta/music/damnation.ogg", 335, "idle", "Damnation" },
+		{ "placenta/music/falling.ogg", 212, "idle", "Falling" },
+		{ "placenta/music/reaction.ogg", 315, "idle", "The Reaction" },
+		{ "placenta/music/milestomidnight.ogg", 295, "idle", "Miles To Midnight" },
+		{ "placenta/music/quietdays.ogg", 404, "idle", "Quiet Days on Earth" },
+		{ "placenta/music/carnophage.ogg", 262, "idle", "The Carnophage" },
+		{ "placenta/music/eyes.ogg", 424, "idle", "The Eyes Are Part Of The Brain" },
+		{ "placenta/music/safe.ogg", 111, "idle", "Desperately Safe" },
+		{ "placenta/music/burnedbodies.ogg", 80, "idle", "Burned Bodies" },
+		{ "placenta/music/notsafe.ogg", 79, "idle", "Not Safe" },
+		{ "placenta/music/rudiments.ogg", 47, "idle", "Some Rudiments of Propriety" },
+		{ "placenta/music/todayisworst.ogg", 59, "idle", "Today Is Worst" },
+		{ "placenta/music/yesterdaywasbetter.ogg", 119, "idle", "Yesterday Was Better" },
+		{ "placenta/music/endlesshallway.ogg", 76, "idle", "Endless Hallway" },
+		{ "placenta/music/rainyday.ogg", 47, "idle", "Rainy Day" },
+		{ "placenta/music/moltenmist.ogg", 509, "idle", "Molten Mist" },
+		{ "placenta/music/hydrabreath.ogg", 443, "idle", "Hydra Breath" },
+		{ "placenta/music/ironandsteel.ogg", 580, "idle", "Iron and Steel" },
+		{ "placenta/music/meltingdiamonds.ogg", 541, "idle", "Melting Diamonds" },
+		{ "placenta/music/blastfurnace.ogg", 751, "idle", "Blast Furnace" },
+		{ "placenta/music/truesuffering.ogg", 239, "alert", "True Suffering Is Not Known" },
+	},
 }
 
 -- Chat (step 12, parity 05 §8). The lists are the original's (config/sh_config.lua), copied as they

@@ -2,8 +2,14 @@
 -- heard only by other ghosts, and make no footsteps. Suffering and haunting are deferred.
 -- Ghost text chat is routed by sh_chat.lua (Chat.Recipients); voice stays here.
 
-hook.Add( "PlayerFootstep", "gr_ghost", function( ply )
+-- Footsteps (docs/05 §11, the original's GM:PlayerFootstep): ghosts make none; anyone else gets
+-- the engine's step plus their fate's own Footstep( ply, foot ), played from the server.
+hook.Add( "PlayerFootstep", "gr_ghost", function( ply, pos, foot )
 	if ply:IsGhost() then return true end
+	if SERVER then
+		local step = ply:FateHas( "Footstep" )
+		if isfunction( step ) then step( ply, foot ) end
+	end
 end )
 
 if CLIENT then

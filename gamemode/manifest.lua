@@ -81,5 +81,6 @@ return {
 		"cl_view.lua",
 		"cl_crosshair.lua",
 		"cl_chatbox.lua",
+		"cl_music.lua",
 	},
 }

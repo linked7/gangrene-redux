@@ -28,9 +28,9 @@ end
 
 -- DSP: one decision a frame, from the effect state. A scare opens a DSP 28 window from +0.2 s to
 -- +0.5 s (the original's two timers); a scare during a window extends it. Then the head wound's
--- 35, then the base (HUD.BaseDSP: 0, or the ghost's muffled hearing).
+-- 35, then the base (HUD.BaseDSP: the fate's DSP, so the ghost's muffled 4, else 0).
 local dsp = { from = 0, to = 0, current = nil }
-local function baseDSP( ply ) return 0 end
+local function baseDSP( ply ) return ply:FateHas( "DSP" ) or 0 end
 HUD.BaseDSP = baseDSP
 local function scareDSP()
 	local now = CT()

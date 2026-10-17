@@ -3,6 +3,10 @@
 -- as items, so they lie on the body when the sanitar goes down.
 local NOUNS = { "Cleaner", "Janitor", "Officer", "Sanitator", "Purifier", "Filter", "Operator", "Enforcer",
 	"Disinfectant", "Antiseptic", "Cleanser" }
+-- Boots on a run only (the original's sanitator Footstep).
+local BOOTS = { "npc/footsteps/hardboot_generic1.wav", "npc/footsteps/hardboot_generic2.wav", "npc/footsteps/hardboot_generic3.wav",
+	"npc/footsteps/hardboot_generic4.wav", "npc/footsteps/hardboot_generic5.wav", "npc/footsteps/hardboot_generic6.wav",
+	"npc/footsteps/hardboot_generic8.wav" }
 
 Fates.Define( "sanitar", {
 	Name = "Sanitar",
@@ -13,6 +17,9 @@ Fates.Define( "sanitar", {
 	DeathCooldown = 120,
 	Slots = function( pop ) return math.Clamp( 2 + math.floor( pop / 10 ), 2, 6 ) end,
 	Police = true,
+	Footstep = function( ply )
+		if ply:GetVelocity():Length2D() >= 150 then ply:EmitSound( BOOTS[ math.random( #BOOTS ) ], 75, math.random( 85, 95 ) ) end
+	end,
 	StockpileAccess = true, -- guarding the stockpile is part of the job
 	Wage = 40,              -- default wage.sanitar in the Economy table
 	Faction = "state",

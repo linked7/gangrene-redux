@@ -344,7 +344,6 @@ end )
 local death = { alpha = nil, kind = nil }
 local wakeAt
 local EVENTUALLY_UP = "Eventually you will get up, assuming nothing finishes you off."
-local SPEAK = "Speak \"MOTHER OF DEATH, I CALL ON THEE\" if you wish to perish, instead."
 local EVENTUALLY_ROT = "Eventually you will rot, be mutilated, or revived."
 
 local function centred( text, font, y, col, shadow )
@@ -378,7 +377,6 @@ HUD.Layer( 40, "consciousness", function( ply )
 			local _, tH = surface.GetTextSize( thought ~= "" and thought or " " )
 			if thought ~= "" then centred( maybe( thought ), F_GIANT, h - 70, col, col2 ) end
 			centred( maybe( EVENTUALLY_UP ), F_GIANT, h + tH, col2, col )
-			centred( maybe( SPEAK ), F_GIANT, h + 75, col2, col )
 		else
 			local col, col2 = Color( 255, 0, 0, a ), Color( 25, 25, 25, a )
 			local tH = centred( maybe( "DEATH" ), F_GIANT, h, col, col2 )
@@ -397,6 +395,63 @@ HUD.Layer( 40, "consciousness", function( ply )
 		HUD.Blur( 1 - frac )
 		surface.SetDrawColor( 0, 0, 0, 255 * ( 1 - frac ) )
 		surface.DrawRect( 0, 0, ScrW(), ScrH() )
+	end
+end )
+
+-- Giving up (docs/03 step 7, in place of the original's kill sentences): while the local player
+-- is dying, "click ->HERE<- to die instantly!!" sits under the death lines with the mouse freed;
+-- clicking HERE sends gr_give_up (no payload, the server checks the state).
+local giveUp, gaveUp = nil, false
+local function closeGiveUp()
+	if IsValid( giveUp ) then giveUp:Remove() gui.EnableScreenClicker( false ) end
+	giveUp = nil
+end
+local function openGiveUp()
+	local font = HUD.Font( "LabelBig" )
+	local red, grey = Color( 255, 0, 0 ), Color( 200, 200, 200 )
+	local p = vgui.Create( "EditablePanel" )
+	p:SetSize( ScrW(), 60 )
+	p:SetPos( 0, ScrH() / 2 + 110 )
+	local parts = {}
+	for i, text in ipairs( { "click ", "->HERE<-", " to die instantly!!" } ) do
+		local l = vgui.Create( i == 2 and "DButton" or "DLabel", p )
+		l:SetFont( font )
+		l:SetText( text )
+		l:SizeToContents()
+		if i == 2 then
+			l:SetTextColor( red )
+			l:SetCursor( "hand" )
+			l.Paint = function() end
+			l.DoClick = function()
+				net.Start( "gr_give_up" )
+				net.SendToServer()
+				HUD.Play( "button_release" )
+				gaveUp = true
+				closeGiveUp()
+			end
+		else
+			l:SetTextColor( grey )
+		end
+		parts[ i ] = l
+	end
+	local x = ScrW() / 2 - ( parts[ 1 ]:GetWide() + parts[ 2 ]:GetWide() + parts[ 3 ]:GetWide() ) / 2
+	for _, l in ipairs( parts ) do
+		l:SetPos( x, 0 )
+		x = x + l:GetWide()
+	end
+	gui.EnableScreenClicker( true )
+	giveUp = p
+end
+
+hook.Add( "Think", "gr_hud_giveup", function()
+	local ply = LocalPlayer()
+	local now = CT()
+	local dying = IsValid( ply ) and not ply:Alive() and ply:GetWakeUntil() <= now and ply:GetBleedoutUntil() > now
+	if dying then
+		if not giveUp and not gaveUp then openGiveUp() end
+	else
+		if giveUp then closeGiveUp() end
+		gaveUp = false
 	end
 end )
 
