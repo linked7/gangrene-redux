@@ -62,5 +62,6 @@ return {
 		"sh_crates.lua",
 		"sh_build.lua",
 		"sv_admin.lua",
+		"sv_layout.lua",
 	},
 }

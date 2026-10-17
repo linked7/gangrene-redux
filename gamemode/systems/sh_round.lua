@@ -1,6 +1,7 @@
 -- The round (step 13): the unit of play. One map load is one round.
 --
---   Round.Start()          on map load: fresh economy (Econ.ResetRound), then hook GR_RoundStart
+--   Round.Start()          on map load: the world entities (Layout.Spawn), fresh economy
+--                          (Econ.ResetRound), then hook GR_RoundStart
 --   Round.End( reason )    the timer ran out ("time") or an admin ended it: free the surviving
 --                          slaves, run hook GR_RoundEnd, flush the DB, show the end screen, and
 --                          Config.RoundEndDelay s later change level (Round.ChangeLevel)
@@ -24,6 +25,7 @@ function Round.Start()
 	WorldState.Set( "round.number", n )
 	WorldState.Set( "round.endsAt", CurTime() + Config.RoundLength )
 	WorldState.Set( "round.over", false )
+	Layout.Spawn() -- the world entities first (sv_layout.lua); only missing ones on a repeat
 	Econ.ResetRound()
 	hook.Run( "GR_RoundStart", n )
 	Log.Info( "round", "round %d begins (%d min)", n, Config.RoundLength / 60 )
