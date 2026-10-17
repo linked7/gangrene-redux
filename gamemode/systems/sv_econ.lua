@@ -159,8 +159,9 @@ function Econ.ResetRound()
 	WorldState.Set( "treasury", supply )
 	Econ.ResetSettings()
 	local seed = Econ.Setting( "shop_stock" )
+	-- Beer and spirits are brewed by proles (sh_brewing.lua) and sold in, never seeded.
 	for _, good in ipairs( Econ.SHOP ) do
-		if good ~= Econ.BREAD then WorldState.Set( "stock." .. good, seed ) end
+		if good ~= Econ.BREAD and not Econ.BREWED[ good ] then WorldState.Set( "stock." .. good, seed ) end
 	end
 	Log.Info( "econ", "new round: the treasury holds all %d bones", supply )
 	hook.Run( "GR_EconReset" )
