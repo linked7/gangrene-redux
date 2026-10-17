@@ -30,6 +30,8 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | Shop goods from the stockpile | `accepted` | Step 9: loaf = ration at sell.ration; beer/spirits/knife seeded stock (shop_stock 10), sold out until next round. |
 | Slave fate: new players are slaves until they survive a round or are commended | Step 11 item 5, Step 13 (Rounds) | 2026-10-17 |
 | Round-based play: 60-min rounds, only stem cells/rank/playtime persist | `accepted → Step 13` (also Scope, Step 1, Step 2) | 2026-10-17 |
+| Trash piles (ported, mostly bone capsules) | `accepted → Step 8` (also Step 4 layout) | 2026-10-17 |
+| Weather cycle (clear/night/yellow/meat) | `accepted → Step 5` | 2026-10-17 |
 | Darker, slower feel; scarce food and water | `accepted → Step 5` (pace/atmosphere), `Step 6` (needs rates, Pox core), `Step 8` (pump, dirty water) | 2026-10-17 |
 | Fixed bone supply; the Kaiser's three prices can wreck the economy | `accepted → Step 9` (also Step 11.4, Step 13) | 2026-10-17 |
 | Made goods (ration crates) appear in the world and are hauled to the stockpile | `accepted → Step 11.1` (also Step 9) | 2026-10-17 |
@@ -96,3 +98,5 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Korpsman loop | Lovebox = fast, self-costly heal; surgery = slow, step-by-step, often better. Revive is 3 presses. | User's description of the original loop. |
 | 2026-10-17 | Korpsman parity | 11.2 rewritten from original lovebox/korpsman/sv_surgery numbers; surgery is the one timed-action exception to D3. | User: "look at the original for parity / Surgery is the exception". |
 | 2026-10-17 | Shop stock | Shop goods come out of the stockpile; Soylent Loaf is the ration; other goods get a fixed per-round stock. | User: tie shop goods into the stockpile. |
+| 2026-10-17 | Trash piles | Port as-is to Step 8; loot mostly bone capsules, rare rotten food or clean water; no white mold; no exemption; original rp_slumtown spots. | User agreed. |
+| 2026-10-17 | Weather | Port original cycle and four weathers to Step 5; ritual and area weathers later. | User agreed. |
