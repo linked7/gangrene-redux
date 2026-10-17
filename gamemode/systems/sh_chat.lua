@@ -479,9 +479,9 @@ end
 
 local SIGHS = { "placenta/suffering/sigh2.ogg", "placenta/suffering/sigh3.ogg", "placenta/suffering/sigh4.ogg" }
 
--- Holstered: nothing in hand. A holster system may define ply:IsHolstered() and is asked first.
+-- Holstered: the weapon in hand is put away (sh_weapons.lua's Holstered field), or nothing is in hand.
 function Chat.IsHolstered( ply )
-	if ply.IsHolstered then return ply:IsHolstered() end
+	if ply.GetHolstered then return ply:GetHolstered() end
 	return not IsValid( ply:GetActiveWeapon() )
 end
 
