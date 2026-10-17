@@ -1,10 +1,10 @@
 -- Kaiser imports: goods no factory makes reach the stockpile only this way. The Kaiser orders
 -- one from the panel (Imports tab), the treasury pays its buy price to the outside world (the
 -- upgrade fund), and a crate of it appears at the gate. Someone hauls it to the stockpile like
--- any other crate (Crates.Deliver), which is the only way its stock rises. Coats come first.
+-- any other crate (Crates.Deliver), which is the only way its stock rises. Coats and lighters.
 --   Imports.GOODS[ good ] = true     Imports.IsImport( good )     Imports.Order( ply, good )
 Imports = Imports or {}
-Imports.GOODS = { coat = true }
+Imports.GOODS = { coat = true, lighter = true }
 
 function Imports.IsImport( good ) return Imports.GOODS[ good ] == true end
 
