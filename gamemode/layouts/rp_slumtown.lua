@@ -10,6 +10,7 @@
 --                    and its line_boiler at the spot beside it (the old generator's job)
 --                    faucet -> water_pump candidates; two are enabled (step 8: one or two per map)
 --   GM.Capsules      -> the 12 capsule_spawn points
+--   GM.Summoners     -> the 16 summoner spots (area = the old name)
 --   Everything else in the old file (other purposes, loot, gangs, war, other machines) is ignored.
 -- The old file has no stockpile, slave purpose, sanitation station or water barrels. Those are
 -- placed here from free floor spots found on the real map (Layout.Ring and a hull probe, 2026-10-17);
@@ -70,4 +71,22 @@ return {
 	{ class = "water_pump", pos = Vector( -204, 466, 39 ), ang = Angle( 3, 1, 0 ), kv = {}, drop = true },
 	{ class = "water_pump", pos = Vector( 140, 149, -137 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true, candidate = true },
 	{ class = "water_pump", pos = Vector( -842, 1485, 166 ), ang = Angle( 1, 91, 0 ), kv = {}, drop = true },
+
+	-- GM.Summoners -> the 16 Sanitar Summons (summoner), wall-mounted: placed exactly, no drop.
+	{ class = "summoner", pos = Vector( -2165, 441, 189 ), ang = Angle( 0, -179, 0 ), kv = { area = "Lunch Factory" } },
+	{ class = "summoner", pos = Vector( 56, 984, 230 ), ang = Angle( 42, -86, 4 ), kv = { area = "Water Treatment Plant" } },
+	{ class = "summoner", pos = Vector( -195, 3243, 170 ), ang = Angle( 2, -90, 1 ), kv = { area = "Tools Factory" } },
+	{ class = "summoner", pos = Vector( -1154, -18, 210 ), ang = Angle( 0, -90, 0 ), kv = { area = "Hothouse" } },
+	{ class = "summoner", pos = Vector( -750, 1396, 176 ), ang = Angle( 1, 1, 0 ), kv = { area = "Arms Factory" } },
+	{ class = "summoner", pos = Vector( -966, 2860, 179 ), ang = Angle( 3, -89, 1 ), kv = { area = "Device Factory" } },
+	{ class = "summoner", pos = Vector( -1428, 866, 181 ), ang = Angle( 0, 180, 0 ), kv = { area = "Soup Pit" } },
+	{ class = "summoner", pos = Vector( 248, -305, 36 ), ang = Angle( 0, 90, 0 ), kv = { area = "Wetmarket" } },
+	{ class = "summoner", pos = Vector( -736, 632, 212 ), ang = Angle( 4, 178, -1 ), kv = { area = "Crawling Horror" } },
+	{ class = "summoner", pos = Vector( -1143, -28, 52 ), ang = Angle( 9, 2, 0 ), kv = { area = "Klinic" } },
+	{ class = "summoner", pos = Vector( -881, -585, 45 ), ang = Angle( 0, 0, 0 ), kv = { area = "Morgue" } },
+	{ class = "summoner", pos = Vector( 1301, -370, 53 ), ang = Angle( 1, 90, 1 ), kv = { area = "Gatehouse" } },
+	{ class = "summoner", pos = Vector( 1409, 52, 91 ), ang = Angle( 2, -90, 1 ), kv = { area = "Gate Antechamber" } },
+	{ class = "summoner", pos = Vector( 1309, 2722, 163 ), ang = Angle( 3, 1, 0 ), kv = { area = "Garage" } },
+	{ class = "summoner", pos = Vector( 1790, 3535, 410 ), ang = Angle( 0, 90, 0 ), kv = { area = "Foreman's Office" } },
+	{ class = "summoner", pos = Vector( 181, 2605, -236 ), ang = Angle( 0, 90, 0 ), kv = { area = "Underground Refineries" } },
 }

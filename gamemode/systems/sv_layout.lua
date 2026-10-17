@@ -47,6 +47,10 @@ Layout.CLASSES = {
 	},
 	water_barrel = {},
 	capsule_spawn = {},
+	-- The Sanitar Summon (systems/sh_summoner.lua): area is the place named in its calls.
+	summoner = {
+		area = function( v ) return v ~= "" and #v <= 64 end,
+	},
 	fate_station = {
 		fate = function( v )
 			local f = Fates.Get( v )
