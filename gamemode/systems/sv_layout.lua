@@ -53,6 +53,10 @@ Layout.CLASSES = {
 	gr_incinerator = {},
 	autostitcher = {}, -- autostitcher port
 	trash_pile = { model = function( v ) return isstring( v ) end, lootname = function( v ) return isstring( v ) end },
+	-- The Sanitar Summon (systems/sh_summoner.lua): area is the place named in its calls.
+	summoner = {
+		area = function( v ) return v ~= "" and #v <= 64 end,
+	},
 	fate_station = {
 		fate = function( v )
 			local f = Fates.Get( v )

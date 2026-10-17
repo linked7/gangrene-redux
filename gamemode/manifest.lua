@@ -98,5 +98,6 @@ return {
 		"sh_gunpermit.lua",
 		"sh_shop.lua",
 		"sh_roundflow.lua",
+		"sh_summoner.lua",
 	},
 }
