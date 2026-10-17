@@ -41,6 +41,10 @@
    - The HUD, menus, fonts, sounds and screen effects look and behave like Gangrene's. `05-ui-effects-parity.md` has the inventory.
    - The only exception is optimisation: an element may be built differently, or a costly pass made optional, but what the player sees stays the same (05 §6).
    - Each step's UI items are part of its "done when" (05 §7).
+9. **Ported entities keep the original's model and material.**
+   - Any entity that existed in Gangrene uses the same model and material as the original file. A replacement entity (e.g. `fate_station` for `purpose_in_life`) uses the model of the one it replaces.
+   - Effects that have been broken for years in the original (e.g. the charple hologram on `purpose_in_life`) are not brought back.
+   - **Done when:** a bot script lists every ported entity and compares its model and material with the original's entity file. There are no mismatches.
 
 ## The steps
 
@@ -114,16 +118,18 @@
 - The HUD and the server both call `CanTake`, so they can't drift apart (R7). There is one error path: `Notify(ply, reason)` (R5).
 - **`fate_station` entity:**
   - Replaces `purpose_in_life`. Its key value is the fate id, and it can only be used by ghosts.
+  - Model and material are the original's (ground rule 9): `models/props_junk/sawblade001a.mdl` with material `models/props_combine/masterinterface01c` (`purpose_in_life.lua:37-38`). No charple hologram.
   - On use it calls `CanTake`, then charges stem cells, then calls `Apply`.
   - Potentials are **dropped**.
 - **Map layouts:** each round places the world entities from a per-map layout. These are the fate stations, `state_stockpile`, the lunch machine's posts (`lunch_machine`, `line_boiler`), `capsule_spawn` points, loose `water_barrel`s, `water_pump`, and `sanitation_station`.
   - The layout source, in priority order: a staff-saved `data/gangrene/layouts/<map>.json`, then a shipped `gamemode/layouts/<map>.lua`, then a fallback ring around the first spawn. Staff edit it with `gr_layout_add/remove/save/list`.
   - **The core map is `rp_slumtown`.** Its shipped layout is converted from the original's `gamemode/liverfailure-modules/maps/list/rp_slumtown.lua`, which holds the old positions. Entries commented out there stay out.
     - `purpose_in_life` entries for the kept fates become `fate_station`s: `kommandant` → kaiser, `sanitator` → sanitar, `korpsman` → korpsman, `proletariat` → prole.
-    - One of the `machine_lunch` positions (all in one room) becomes the `lunch_machine`, and staff place the `line_boiler` in the same room (step 11.1).
-    - The 12 `GM.Capsules` positions become `capsule_spawn` points. Staff place 4 loose `water_barrel`s.
+    - One of the `machine_lunch` positions (all in one room) becomes the `lunch_machine`. The shipped layout puts the `line_boiler` beside it (step 11.1).
+    - The 12 `GM.Capsules` positions become `capsule_spawn` points. The shipped layout puts 4 loose `water_barrel`s in the lunch hall.
     - The `faucet` positions are the candidates for `water_pump`. Only as many as step 8 allows are enabled.
-    - The old file has no position for the stockpile, the slave station or the sanitation station. Staff place those with `gr_layout_add`, then save.
+    - The old file has no position for the stockpile, the slave station or the sanitation station. The shipped layout adds them at free floor spots probed on the real map: the slave station by the town-centre proles (612 349 0), the stockpile by the Kaiser (1249 -141 400), and the sanitation station in the sanitars' room (-733 -377 128).
+    - Staff can still move any shipped entry with `gr_layout_add/remove/save`.
     - Every other class in the old file (loot, gangs, war and machines) is ignored.
 - **Done when:**
   - A ghost can take each of five placeholder fates.
@@ -184,14 +190,16 @@
     - **`dying`**: the hit went `lethal_overkill` or more past 0 HP. Any damage to a body that is already wounded also makes it dying.
   - The player who downed them is remembered (SERVER field) for judging later. If a second attacker turns a wounded body into a dying one, the second attacker replaces them, since they made the wound lethal.
   - **No suicide:** `CanPlayerSuicide` returns false for everyone. The despair heart attack (step 6) is still an outright death, not a downed state.
-- **Corpse registry:** add on create, remove on `EntityRemoved` (P2). Decomposition beyond "despawn after N minutes" is deferred.
+- **Corpse registry:** add on create, remove on `EntityRemoved` (P2).
+- **Rotting and corpse recycling (ported from the original):** corpses rot through the original's visible stages on the original's timings, run by one scheduler job over the corpse registry. Corpse recycling works as it did in the original, with the same entity, inputs and outputs. Where the original differs from "corpses are never an input", the original wins. The lunch machine (step 11.1) stays corpse-free unless the original's lunch machine took corpses.
+  - **Done when:** a bot corpse goes through every rot stage on the original's timings, and recycling a corpse gives the original's result. Doom and wider Rot pressure are not part of this step.
 - **Leaving the downed state:**
   - **Get back up (wounded only):** after `wake_time` (default 45 s) the player gets up on their own as the same fate, with 25 HP and the **`Injured`** condition.
     - `Injured` is a PUBLIC field that caps max HP at 50. It does not wear off. A korpsman treats it (step 11.2).
     - Getting up is its own small wake-up path (like waking from a pass-out). It isn't a revive.
   - **Bleed out (dying only):** after `bleedout_time` (default 120 s) without a revive, the player dies and becomes a ghost. `Crime.Judge` runs against the player who downed them.
   - **Give up (dying only):** the bleed-out screen shows a clickable line, *"click ->HERE<- to die instantly!!"*, so nobody has to wait out a hopeless revive. Clicking it sends one validated, rate-limited request; the server checks the player is still dying, then they bleed out at once (same death, same `Crime.Judge` against the downer). This replaces the original's kill sentences. It is the only way to choose death, and `CanPlayerSuicide` stays false.
-  - **Revive (either state):** a korpsman uses the body. **Exception:** a player downed while Emptiness is 100 can't be revived. The body has nothing left to bring back. A wounded starving player still gets up on their own; a dying one is lost. This is a timed action (rule 6) and calls `Fates.Apply(ply, sameFate, {reason="revive"})`. The fee comes from step 11.2. A revived player has no `Injured`. There is one revive function (R2).
+  - **Revive (either state):** a korpsman uses the body. **Exception:** a player downed while Emptiness is 100 can't be revived. The body has nothing left to bring back. A wounded starving player still gets up on their own; a dying one is lost. It is a short press sequence, not a timed action: the korpsman presses Use on the body 3 separate times, a few seconds apart at most, and the third press rolls success on the server. Stopping resets it; a failure can be retried. It calls `Fates.Apply(ply, sameFate, {reason="revive"})`. The fee comes from step 11.2. A revived player has no `Injured`. There is one revive function (R2).
   - **Finish off (either state):** an explicit context action on a downed body (a short timed action, about 3 s), not just stray damage. It calls `Crime.Judge` (step 10), and the player becomes a ghost. This is the only instant death.
 - **Consciousness** stays separate: at 0 the player passes out into a short stun and wakes with no injury.
 - **Done when:**
@@ -220,10 +228,18 @@
 - **Bones** are a per-round OWNER field, not persisted (step 1).
   - There is one primitive: `Econ.Transfer(from, to, amount, source)`. `from` and `to` are each a player, a corpse or `TREASURY`. It refuses if `from` can't afford the amount.
   - A disconnecting player's bones are held in a SERVER table and restored if they rejoin this round.
-- **The stockpile** is a map entity, `state_stockpile`. It holds counts, not entities: `{ration = n, clean_water = n}`, which are PUBLIC world state.
+- **The stockpile** is a map entity, `state_stockpile`. It holds counts, not entities: `{ration = n, clean_water = n}`, which are PUBLIC world state. It also holds the shop's goods (`fear_beer`, `spirits`, `knife`); see the shop below.
   - Delivering a crate (step 11.1) adds to the count and pays the deliverer that good's buy price from the treasury.
   - Anyone can buy at the counter for that good's sell price, and the bones go to the treasury. Purchases follow the ration limit and the reserve below.
   - Withdrawing for free needs `FateHas("StockpileAccess")` (Kaiser, Sanitar). It ignores the limit and the reserve.
+- **The shop (for the time being).** A `Buy` list in the C menu, in the style of the original dealer's buy menu, open to every living fate. It stands in for a shop entity for now.
+  - **Every shop item comes out of the stockpile.** A sale takes one from the `state_stockpile` count, and a count of 0 means sold out. The shop is a second counter on the same stock, not a source of goods.
+    - **Soylent Loaf is the ration.** It is the lunch machine's ration (step 11.1), sold at `sell.ration` and under the ration limit and reserve, so buying one competes with the bread line.
+    - **Fear Beer 35, Spirits 85, Knife 40** (original prices). Nothing in the city makes these yet, so `Round.Start` seeds the stockpile with a fixed stock of each (`shop_stock`, default 10). When they sell out, they're gone until next round. Holders of `StockpileAccess` can withdraw them for free, as with rations.
+  - Buying calls `Econ.Transfer(ply, TREASURY, price, "shop")`, takes one from the stockpile count, then spawns the item physically in front of the buyer and plays `placenta/coinkeeper1-4.wav`, as the original did.
+  - One validated receiver, `nShopBuy(item)`: rate-limited, alive only, item must be in the shop list, refused if the buyer can't afford it or the count is 0.
+  - Fate-locked shops (Seed Bank, Sanitar Surplus, the Wishbone) are dropped. Dealer stocks stay in Deferred item 6.
+  - **Done when:** a bot of each living fate buys each item, the item appears in front of it, the treasury rises by the price and that stockpile count falls by 1. A bot that buys the last loaf empties the ration count the counter sees, a sold-out item is refused, and a bot with too few bones is refused, and `econ_audit` shows zero drift.
 - **The Kaiser runs the economy.** The challenge is keeping a working city fed and paid, not getting rich, so the Kaiser has many tools and no personal stake:
   - There is no Kaiser wage and no way to move treasury bones into their own pocket. The treasury is the Kaiser's budget.
   - There are no clamps on the Kaiser's choices. Values are only checked for sanity: never negative, and never above `bones_supply`.
@@ -293,15 +309,16 @@ Build them in this order, so each one has something to act on.
        - **Smash it:** any melee hit or bullet takes Integrity (it bleeds and squeals). At 0 it bursts into gore and drops **2 meat chunks**, which are light props that disappear after 2 minutes.
        - **Or carry it whole:** a whole capsule is heavy and carried like a crate (walk only, below). One slow trip with the whole thing, or two quick trips with the chunks.
        - A thrown capsule hurts whoever it hits, at a tenth of normal physics damage, as in the original.
-       - This is not cannibalism: corpses are never an input (see 00, "Things to leave behind").
+       - Corpses are not an input to the lunch machine, unless the original's was (corpse recycling is in step 7).
      - **Water: barrels.** A `water_barrel` is a physics prop using the blue plastic barrel model (`models/props_borealis/bluebarrel001.mdl`).
        - An empty barrel fills over a few seconds while it touches map water (its `WaterLevel() > 0`).
-       - A full barrel touching the boiler pours all its water in (4 crates' worth) and becomes empty.
+       - A full barrel touching the boiler pours in half a boiler of water and becomes empty. The boiler holds 16 water (two barrels), and each crate uses 1.
        - Full barrels are carried like crates (below). Empty ones are light.
        - Barrels live in a registry checked once a second by the scheduler, never `FindByClass`.
        - The map layout spawns a few loose ones. Proles can build more (Construction).
      - **The two posts.** Their state is PUBLIC on the entities and drawn on them in 3D2D, as in the original.
-       - **Boiler (`line_boiler`):** holds water and has a pressure gauge (0–100) that drifts by itself, slowly creeping up with random wobble (a scheduled job). A **valve wheel** sits on it with two handles: each use on the red handle turns it a notch and vents (−8), and each use on the black handle builds (+8). Each use is instant, through a validated, rate-limited receiver. With no water the pressure falls to 0.
+       - **Where info shows:** info about an aimed-at entity (its name, Integrity or Blood bar, a barrel's water) goes in the cross-text under the crosshair, never floating text. Only the machines' own gauges and panels are drawn on them in 3D2D.
+       - **Boiler (`line_boiler`):** holds water and has a pressure gauge (0–100) that drifts by itself, slowly creeping up with random wobble (a scheduled job). Two **valve wheels** (`models/props_pipes/valvewheel001.mdl`) stand out of its front: holding Use on the red one (left) turns it and vents 8 pressure a second, and holding Use on the black one (right) builds 8 a second. Going from 90 back to 55 takes about 4 s. The turn starts through a validated, rate-limited receiver and lasts while Use is held. With no water the pressure falls to 0.
          - **Under 40:** no power. The machine's panel goes dark.
          - **40–70 (green):** the machine runs.
          - **70–90:** the machine runs, but its panel sparks, and each button press has a chance to shock the presser (4–6 damage), like the original's generator overload.
@@ -345,11 +362,16 @@ Build them in this order, so each one has something to act on.
    - Unions and WorkTitles are deferred.
 2. **Korpsman**: the revive and healing loop.
    - Regenerates 3× faster.
-   - Revive is the timed action from step 7. The fee is `revive_fee` percent of the patient's carried bones (default 50, set by the Kaiser in step 9).
-   - **Surgery:** a small set of 2–3 procedures (heal, which also **treats `Injured`** from step 7; cure Pox; remove a bullet). Treating the injured is the korpsman's everyday work. Each is a timed action with a server-rolled failure chance; `autoFail` is never read from the client (B19).
-   - `lovebox` heal tool: only after the Kaiser upgrade.
+   - **The loop:** find a downed body, judge it by looking (a range-limited inspect line shows dying or wounded and the bones carried; starved bodies can't be saved), drag it out of danger, revive it. The clock is the patient's bleed-out, not a bar. There is no cot.
+   - Revive is the 3-press sequence from step 7. On success the server moves `revive_fee` percent of the patient's carried bones (default 50, set by the Kaiser in step 9) with `Econ.Transfer(patient, korpsman, n, "revive_fee")`. A broke patient pays 0.
+   - **Treatment:** the tool in hand picks the procedure, so there is no menu. Each is a few separate presses or hits with a server-rolled failure (original `SurgeryFailChance` 10); `autoFail` is never read from the client (B19). On success the patient pays a small fixed fee per procedure through `Econ.Transfer`.
+     - `lovebox`: heals and clears `Injured`. Only after the Kaiser upgrade, and it costs the korpsman some of their own HP.
+     - Tonic: cures Pox.
+     - Knife: removes a bullet (2 stabs).
+   - **Done when:** a korpsman bot drags a dying 100-bone prole and presses Use 3 times, and the prole is alive, not Injured, with exactly one 50-bone `revive_fee` transfer. Setting `revive_fee` to 20 changes the next fee. A starved body refuses every press. A faked success message changes nothing. The lovebox is refused before the upgrade and heals after it with the fee paid. A forced failure leaves the patient unchanged and unpaid. There are no `Actions.Timed` calls on the korpsman path, and the audit shows zero drift.
 3. **Sanitar**: enforcement.
    - Police flag, radio, codename, baton and scope.
+   - **Weapons:** every gun used by sanitars or the Kaiser is a 1:1 port of the original `weapon_cc_*` file, with the same stats, sounds, models and ammo. This covers the sanitator, scout, support and crusader loadouts, the weapons sold at the `sanitation_station`, and the Kaiser's novoluger. **Done when:** each ported gun's damage, fire rate, spread, clip, ammo and sounds match its original file, checked by a side-by-side table.
    - **Teeth** is an OWNER field, spent at a `sanitation_station` entity on weapons.
    - Can see wanted status and evidence summaries.
    - Paid `wage.sanitar` from the treasury (step 9). If the treasury is empty, they aren't paid.
@@ -468,14 +490,14 @@ Built alongside steps 11–13. It must hold before step 14's playtest with peopl
 These are ordered by how much they add to the feel compared with their cost:
 
 1. Quirks, through `Needs.Modifiers` and fate hooks.
-2. Corpse decomposition stages.
+2. ~~Corpse decomposition stages.~~ Moved into step 7 (2026-10-17).
 3. Day/night weather.
 4. Ghost haunting and Suffering.
 5. Unions and gangs.
 6. Dealer stocks and contraband.
 7. Foreman work orders and factories.
 8. Organs, parasites and mutations.
-9. Rot and Doom.
+9. Doom and wider Rot pressure. (Corpse rot moved into step 7, 2026-10-17.)
 10. Potentials and antagonists.
 
 ## Dropped outright
@@ -483,7 +505,7 @@ These are ordered by how much they add to the feel compared with their cost:
 - `fedhoria`, gprofiler, `replicate` and the old module loader.
 - Hogmode, `SpawnerThink` and copy-pasted resource spawners.
 - Player-built factory sites and production. Production comes only from the lunch machine the map layout places.
-- Using corpses as a factory input.
+- Using corpses as a factory input, except where the original did (corpse recycling, step 7).
 - Hard-coded SteamIDs.
 - Text-file persistence.
 - mysqloo.

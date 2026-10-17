@@ -23,6 +23,8 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Plan location | Date |
 |---|---|---|
+| Korpsman loop remake | `accepted` | Step 7 revive + Step 11.2: 3-press revive, drag, no cot, tool picks treatment. |
+| Shop goods from the stockpile | `accepted` | Step 9: loaf = ration at sell.ration; beer/spirits/knife seeded stock (shop_stock 10), sold out until next round. |
 | Slave fate: new players are slaves until they survive a round or are commended | Step 11 item 5, Step 13 (Rounds) | 2026-10-17 |
 | Round-based play: 60-min rounds, only stem cells/rank/playtime persist | `accepted → Step 13` (also Scope, Step 1, Step 2) | 2026-10-17 |
 | Darker, slower feel; scarce food and water | `accepted → Step 5` (pace/atmosphere), `Step 6` (needs rates, Pox core), `Step 8` (pump, dirty water) | 2026-10-17 |
@@ -43,6 +45,10 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | Rendering line: fleshgrowths, water barrels, hopper/valve-boiler/press, crew stamps and split pay; replaces the ration press | `accepted → Step 11.1` (also Steps 4, 6, 8, 9, 10, Dropped) | 2026-10-17 (superseded by the lunch machine) |
 | Physical work: hit, shoot, toss, press, turn; no timed work actions; cut steps that aren't interesting | `accepted → Step 11.1` (lunch machine, lock-breaking) | 2026-10-17 |
 | Lunch machine: bone capsules, water barrels, valve boiler, the original's button panel, empty-gauge explosion; replaces the rendering line | `accepted → Step 11.1` (also Steps 4, 8) | 2026-10-17 |
+| Sanitar and Kaiser guns ported 1:1 from the original | `accepted → Step 11` (Sanitar Weapons; Kaiser novoluger) | 2026-10-17 |
+| Corpse rot stages and corpse recycling as in the original | `accepted → Step 7` (Deferred 2 and part of 9, Dropped) | 2026-10-17 |
+| Shop open to everyone: the dealer's buy menu (Soylent Loaf, Fear Beer, Spirits, Knife) for the time being | `accepted → Step 9` (shop) | 2026-10-17 |
+| Ported entities keep the original's model and material; `fate_station` is the sawblade, no hologram | `accepted → ground rule 9`, `Step 4` | 2026-10-17 |
 
 ## Decisions log
 
@@ -75,7 +81,14 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Physical, loud lock-breaking (replaces timed pries) | Locks have Integrity and are beaten open by any melee hit or bullet: stockpile about 40 baton hits, storage crate about 15. Every hit is a far-carrying clang with screen shake. Locks recover after 10 s untouched. The stockpile's first hit sends the state-radio alarm and starts a klaxon; breaking it drops 3 rations and runs the break-in rule. | User: make prying physical too, but very loud. |
 | 2026-10-17 | Parity rulings on Rewrite's interpretations | Melee matches the original's real behaviour (no heavy-swing bonus, no block reduction). Head burst at about 6 units. No leg-shot jump lock. OOC off by default. Kill sentences: dropped, replaced by a give-up button (below). | User's answers to Rewrite's five interpretations. |
 | 2026-10-17 | Give-up button while dying | The bleed-out screen shows *"click ->HERE<- to die instantly!!"*; clicking bleeds out at once (same death and `Crime.Judge`). Replaces the kill sentences; `CanPlayerSuicide` stays false. | User: the downed suicide only existed to escape a hopeless revive wait. |
+| 2026-10-17 | Cross-texts, valve wheels, barrel size | Entity info goes in cross-texts; only machine gauges and panels stay 3D2D. The boiler's valves are two valvewheel001 wheels, held with Use at 8 pressure a second (red vents, black builds). One barrel fills half the boiler (8 of 16 water). | User confirmed Rewrite's three rulings (already merged as 3a3a37a). |
+| 2026-10-17 | Guns | Every gun used by sanitars or the Kaiser is a 1:1 port of the original `weapon_cc_*` files: same stats, sounds, models and ammo. Covers the sanitator, scout, support and crusader loadouts, the sanitation-station weapons and the novoluger. | The user, as relayed by Rewrite. |
+| 2026-10-17 | Rotting | Corpse rot stages and corpse recycling come back, as they were in the original (step 7). The original overrides "corpses are never an input" where it differs. The lunch machine stays corpse-free unless the original's took corpses. Doom and wider Rot pressure stay open. | The user, as relayed by Rewrite. |
 | 2026-10-17 | War | Dropped. The nations stay as lore and possible races. Rot/Doom stay deferred. | The user wants several simple pressures instead of a war. |
 | 2026-10-17 | UI and effects | Parity with the original Gangrene: HUD, menus, fonts, sounds and screen effects as listed in `05-ui-effects-parity.md`. The only exception is optimisation, where the implementation may differ but the look stays the same. Ground rule 8, Step 15. | User's choice. |
 | 2026-10-17 | Parity scope extended | Parity also covers speech and chat, weapon feel, wording, sound, movement, ghosts and controls (05 §8–§14). **Race speech modification (`Accent`, `RacialQuirks`) is not kept:** everyone speaks as typed. | User's choice. |
 | 2026-10-17 | Fates kept | Kaiser, Sanitar, Prole, Korpsman, plus Slave; Ghost as the dead/lobby state | User's choice |
+| 2026-10-17 | Shop | The dealer's buy menu, open to every fate, as a C-menu list for now: Soylent Loaf 50, Fear Beer 35, Spirits 85, Knife 40, paid to the treasury. Seed Bank, Sanitar Surplus and the Wishbone dropped. | User's choice. Seed bank redundant, surplus not relevant, Wishbone never used. |
+| 2026-10-17 | Entity models | Ported entities use the original's model and material. `fate_station` is the purpose in life sawblade; no charple hologram. | User's choice. The hologram hasn't worked since the bonemerged playermodels. |
+| 2026-10-17 | Korpsman loop | 3 separate Use presses to revive (no bar), drag the body, no cot; tool in hand picks the treatment. | User: "yes". |
+| 2026-10-17 | Shop stock | Shop goods come out of the stockpile; Soylent Loaf is the ration; other goods get a fixed per-round stock. | User: tie shop goods into the stockpile. |
