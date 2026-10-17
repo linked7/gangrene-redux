@@ -1,10 +1,13 @@
--- The shop (gr_shop): a buy menu opened with E, styled after the original capitalist_public.
+-- Stockpile ports (stockpile_port): a buy/sell menu opened with E, styled after the original
+-- capitalist_public. Every port shares the one stockpile and treasury. Small goods (beer, spirits)
+-- sell back at their buy price and raise the stock; crates only go to the main stockpile.
 -- Prices go to the treasury through Econ.Transfer( "shop" ). Stock is world state "stock.<id>",
 -- the same counter as the stockpile: the ration sells down to reserve.ration under ration_limit,
--- the rest are seeded with shop_stock at round start and stay gone once sold out.
+-- the knife is seeded with shop_stock at round start; beer and spirits start at 0.
 -- StockpileAccess holders take shop goods for free.
 Shop = Shop or {}
-Shop.RANGE = 150
+Shop.RANGE = 100
+Shop.CLASS = "stockpile_port"
 Shop.SOUNDS = { "placenta/coinkeeper1.wav", "placenta/coinkeeper2.wav", "placenta/coinkeeper3.wav", "placenta/coinkeeper4.wav" }
 
 Items.Define( "fear_beer", {
@@ -33,8 +36,8 @@ Items.Define( "knife", {
 -- In menu order. `kind` picks the icon outline, as in the original.
 Shop.LIST = {
 	{ id = "ration", name = "Soylent Loaf", kind = "food", price = function() return Econ.Setting( "sell.ration" ) end },
-	{ id = "fear_beer", kind = "booze", price = 35 },
-	{ id = "spirits", kind = "booze", price = 85 },
+	{ id = "fear_beer", kind = "booze", price = 35, sellable = true },
+	{ id = "spirits", kind = "booze", price = 85, sellable = true },
 	{ id = "knife", kind = "weapon", price = 40 },
 }
 local byId = {}
@@ -65,14 +68,16 @@ function Shop.Listed()
 end
 
 if SERVER then
-	CreateConVar( "shop_stock", "10", FCVAR_ARCHIVE, "Shop goods (beer, spirits, knives) seeded at round start" )
+	CreateConVar( "shop_stock", "10", FCVAR_ARCHIVE, "Knives seeded into the stockpile at round start" )
 	Net.Pool( "nShopOpen" )
+	Net.Pool( "nShopBuy" )
+	Net.Pool( "nShopSell" )
 
 	-- Econ.ResetRound zeroes the stockpile goods; the shop's own goods are seeded here.
 	hook.Add( "GR_EconReset", "GR_Shop", function()
 		local n = GetConVar( "shop_stock" ):GetInt()
 		for _, e in ipairs( Shop.LIST ) do
-			if e.id ~= "ration" then WorldState.Set( "stock." .. e.id, n ) end
+			if e.id ~= "ration" then WorldState.Set( "stock." .. e.id, e.id == "knife" and n or 0 ) end
 		end
 		Shop.purchases = {}
 	end )
@@ -116,17 +121,39 @@ if SERVER then
 		if bought then table.insert( bought, CurTime() ) end
 		WorldState.Set( "stock." .. id, Econ.Stock( id ) - 1 )
 
-		local fwd = ply:GetForward()
+		local fwd = ent:GetForward()
 		fwd.z = 0
 		fwd:Normalize()
-		Items.Spawn( id, 1, ply:GetPos() + fwd * 40 + Vector( 0, 0, 40 ), Angle( 0, ply:EyeAngles().y, 0 ) )
+		Items.Spawn( id, 1, ent:GetPos() + fwd * 30 + Vector( 0, 0, 40 ), Angle( 0, ent:GetAngles().y, 0 ) )
+		ent:EmitSound( Shop.SOUNDS[ math.random( #Shop.SOUNDS ) ] )
+		return true
+	end
+
+	-- `ply` sells one small good from their inventory at its buy price; the stock goes up.
+	function Shop.Sell( ply, ent, id )
+		local function refuse( why ) Notify( ply, why ) return false, why end
+		local e = byId[ id ]
+		if not e or not e.sellable then return refuse( "The port only takes beer and spirits. Crates go to the stockpile." ) end
+		if Inventory.Count( ply, id ) <= 0 then return refuse( "You have none to sell." ) end
+		local price = Shop.Price( id )
+		if Econ.Treasury() < price then return refuse( "The treasury is empty." ) end
+		if not Inventory.Remove( ply, id, 1 ) then return refuse( "You have none to sell." ) end
+		if not Econ.Transfer( Econ.TREASURY, ply, price, "shop" ) then
+			Inventory.Add( ply, id, 1 )
+			return refuse( "The treasury is empty." )
+		end
+		WorldState.Set( "stock." .. id, Econ.Stock( id ) + 1 )
 		ent:EmitSound( Shop.SOUNDS[ math.random( #Shop.SOUNDS ) ] )
 		return true
 	end
 
 	Net.Receive( "nShopBuy", { rate = 2, alive = true, target = "entity", range = Shop.RANGE }, function( ply, ent )
-		if ent:GetClass() ~= "gr_shop" then return end
+		if ent:GetClass() ~= Shop.CLASS then return end
 		Shop.Buy( ply, ent, net.ReadString() )
+	end )
+	Net.Receive( "nShopSell", { rate = 2, alive = true, target = "entity", range = Shop.RANGE }, function( ply, ent )
+		if ent:GetClass() ~= Shop.CLASS then return end
+		Shop.Sell( ply, ent, net.ReadString() )
 	end )
 	return
 end
@@ -143,7 +170,7 @@ Net.Receive( "nShopOpen", nil, function()
 	menu = vgui.Create( "DFrame" )
 	menu:SetSize( W, H )
 	menu:Center()
-	menu:SetTitle( "Personal bloodsucking" )
+	menu:SetTitle( "Stockpile Port" )
 	menu.PerformLayout = HUD.FrameLayout
 	menu:MakePopup()
 	surface.PlaySound( HUD.Sound( "menu_open" ) )
@@ -256,5 +283,28 @@ Net.Receive( "nShopOpen", nil, function()
 		net.SendToServer()
 		surface.PlaySound( "ambient/machines/keyboard7_clicks_enter.wav" )
 		menu:Close()
+	end
+
+	-- Selling: one button per small good the player carries.
+	local x = 10
+	for _, e in ipairs( Shop.LIST ) do
+		if e.sellable then
+			local sell = vgui.Create( "DButton", menu )
+			sell:SetSize( 150, 20 )
+			sell:SetPos( x, H - 30 )
+			x = x + 160
+			function sell:Think()
+				local n = Inventory.Count( LocalPlayer(), e.id )
+				self:SetText( string.format( "SELL %s (%d) +%d", Shop.Name( e.id ), n, Shop.Price( e.id ) ) )
+				self:SetEnabled( n > 0 )
+			end
+			function sell:DoClick()
+				net.Start( "nShopSell" )
+				net.WriteEntity( ent )
+				net.WriteString( e.id )
+				net.SendToServer()
+				surface.PlaySound( "ambient/machines/keyboard7_clicks_enter.wav" )
+			end
+		end
 	end
 end )

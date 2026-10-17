@@ -1,16 +1,17 @@
--- The shop, rebuilt from the original's capitalist_public. Use on it opens the buy menu
--- (systems/sh_shop.lua); every living fate can buy.
+-- A stockpile port (replaces the old gr_shop): a window onto the one shared stockpile and treasury.
+-- Use opens the menu (systems/sh_shop.lua): buy goods out of stock, or sell small goods (beer,
+-- spirits) back into it. Bulk crates still go to the main state_stockpile.
 AddCSLuaFile()
 
 ENT.Type = "anim"
 ENT.Base = "base_anim"
-ENT.PrintName = "Shop"
+ENT.PrintName = "Stockpile Port"
 ENT.Spawnable = false
 
 if CLIENT then
 	function ENT:CrossTexts( ply, ct )
-		table.insert( ct, { text = "Shop" } )
-		table.insert( ct, { text = "Personal bloodsucking. Press E to buy.", font = HUD.Font( "LabelSmall" ) } )
+		table.insert( ct, { text = "Stockpile Port" } )
+		table.insert( ct, { text = "Press E to buy, or to sell beer and spirits.", font = HUD.Font( "LabelSmall" ) } )
 	end
 	return
 end

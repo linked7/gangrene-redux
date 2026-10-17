@@ -1,4 +1,4 @@
--- The shop (gr_shop): nShopBuy sells from the list to living buyers who can pay, takes one
+-- The shop (stockpile_port): nShopBuy sells from the list to living buyers who can pay, takes one
 -- from the stock, spawns the item in front of them, and refuses the poor, the dead, unknown
 -- items, sold-out goods and spammers. StockpileAccess takes for free. Bones balance throughout.
 return function( T )
@@ -12,7 +12,7 @@ return function( T )
 	local oldNotify = Notify
 	Notify = function( ply, msg, ... ) if ply == buyer then table.insert( told, msg ) end return oldNotify( ply, msg, ... ) end
 
-	local shop = ents.Create( "gr_shop" )
+	local shop = ents.Create( "stockpile_port" )
 	shop:SetPos( buyer:GetPos() + buyer:GetForward() * 60 )
 	shop:Spawn()
 
@@ -34,13 +34,14 @@ return function( T )
 		return n
 	end
 
-	T.Equal( Econ.Stock( "fear_beer" ), GetConVar( "shop_stock" ):GetInt(), "beer seeded from shop_stock" )
+	T.Equal( Econ.Stock( "fear_beer" ), 0, "beer is not seeded" )
+	WorldState.Set( "stock.fear_beer", 10 ) WorldState.Set( "stock.spirits", 10 )
 	Econ.Transfer( Econ.TREASURY, buyer, 100, "test" )
 	local bones, stock = buyer:GetBones(), Econ.Stock( "fear_beer" )
 	send( "fear_beer" )
 	T.Equal( buyer:GetBones(), bones - 35, "a beer costs 35" )
 	T.Equal( Econ.Stock( "fear_beer" ), stock - 1, "and one leaves the stock" )
-	T.Equal( items( "fear_beer" ), 1, "the beer appears in front of the buyer" )
+	T.Equal( items( "fear_beer" ), 1, "the beer appears at the port" )
 
 	T.Wait( 1.1 )
 	bones = buyer:GetBones()

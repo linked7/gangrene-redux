@@ -254,6 +254,11 @@ local function addStock( good, n )
 	WorldState.Set( "stock." .. good, math.max( 0, Econ.Stock( good ) + n ) )
 end
 
+-- Raises (or lowers) a stockpile good's count without paying; crate deliveries pay themselves.
+function Econ.AddStock( good, n )
+	if isGood( good ) then addStock( good, n ) end
+end
+
 -- Hands goods to a player. The item system (step 8) listens for GR_StockpileDispense; `how` is
 -- "buy", "take" or "free".
 local function dispense( ply, good, how )

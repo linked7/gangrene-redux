@@ -82,7 +82,7 @@ if SERVER then
 		bone_capsule = { "bone_capsule", centre, true },
 		meat_chunk = { "meat_chunk", centre, true },
 		storage_crate = { "storage_crate", centre, true },
-		gr_shop = { "gr_shop", centre, false, 50 },
+		stockpile_port = { "stockpile_port", centre, false, 50 },
 	}
 
 	hook.Add( "GR_PlayerReady", "gr_uitour", function( ply )
@@ -154,7 +154,7 @@ local steps = {
 	{ "09h_meat_chunk", function() RunConsoleCommand( "gr_uitour_face", "meat_chunk" ) end },
 	{ "09i_storage_crate", function() RunConsoleCommand( "gr_uitour_face", "storage_crate" ) end },
 	{ "09j_shop_menu", function()
-		RunConsoleCommand( "gr_uitour_face", "gr_shop" )
+		RunConsoleCommand( "gr_uitour_face", "stockpile_port" )
 		timer.Simple( 0.5, function() press( "use", 0.2 ) end )
 		timer.Simple( 4.5, function()
 			for _, p in ipairs( vgui.GetWorldPanel():GetChildren() ) do
