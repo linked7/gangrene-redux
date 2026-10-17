@@ -26,6 +26,9 @@ local SCHEMA = {
 	Appearance = { "table", "function" }, -- { model, skin, bodygroups = { name = value }, race = id }
 	Names = { "table", "function" }, -- list of names, or function( ply ) -> name; nil = Steam name
 	Color = { "table" },           -- for HUD and chat
+	ChatSounds = { "table", "function" }, -- babble per chat line: sound list, or function( ply, emit ) (sh_chat.lua)
+	ChatGestures = { "table" },    -- talking gesture sequences; default Config.ChatGestures
+	CustomRadio = { "string" },    -- radio label, "[Radio]" by default
 	Faction = { "string" },        -- fates sharing a faction answer to each other (step 10)
 	Authority = { "number" },      -- rank inside the faction; higher outranks lower
 	OnEnter = { "function" },      -- ( ply, reason )

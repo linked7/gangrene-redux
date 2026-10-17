@@ -11,6 +11,15 @@ Fates.Define( "prole", {
 	Name = "Prole",
 	Description = "A standard worker. The body and blood of our town.",
 	Color = Color( 180, 140, 90 ),
+	-- Babble (05 §8): a hurt prole groans like the dead instead.
+	ChatSounds = function( ply, emit )
+		if ply:Health() < 40 then
+			local snd = "npc/zombie/zombie_voice_idle" .. math.random( 1, 14 ) .. ".wav"
+			for _ = 1, math.random( 1, 3 ) do emit( snd, math.random( 75, 95 ) ) end
+		else
+			emit( "placenta/speech/prole" .. math.random( 1, 3 ) .. ".wav" )
+		end
+	end,
 	Cost = 1,
 	DeathCooldown = 15,
 	Citizen = true,

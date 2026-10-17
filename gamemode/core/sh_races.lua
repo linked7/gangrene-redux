@@ -1,6 +1,7 @@
 -- Race registry. A race is data in races/<id>.lua: Races.Define( id, { Name, Hands, ... } ).
 -- A fate picks its race through Appearance.race. "No race shown" is race = nil (Race field 0).
 -- Code uses the lore names (gangral, outsider, rottish, prohladian, skinless).
+-- Races never change speech (user decision): there is no accent or speech hook here.
 Races = Races or {}
 
 local list, byId = {}, {}
@@ -9,7 +10,6 @@ local SCHEMA = {
 	Name = { "string" },
 	Nation = { "string" },  -- gangrene, rottingham, prohlada; nil for the stateless
 	Hands = { "table" },    -- { model, skin, body } for the first-person hands
-	ModifySpeech = { "function" }, -- ( ply, text ) -> text; deferred with speech mangling
 }
 
 function Races.Define( id, def )
