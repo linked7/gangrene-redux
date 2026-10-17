@@ -38,5 +38,6 @@ return {
 		"sh_ghost.lua",
 		"sh_needs.lua",
 		"cl_atmosphere.lua",
+		"sh_chat.lua",
 	},
 }

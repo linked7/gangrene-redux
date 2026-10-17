@@ -1,5 +1,6 @@
 -- Ghost rules: ghosts can't be hurt, can't touch the world except fate stations, are seen and
 -- heard only by other ghosts, and make no footsteps. Suffering and haunting are deferred.
+-- Ghost text chat is routed by sh_chat.lua (Chat.Recipients); voice stays here.
 
 hook.Add( "PlayerFootstep", "gr_ghost", function( ply )
 	if ply:IsGhost() then return true end
@@ -26,10 +27,6 @@ end )
 
 hook.Add( "PlayerCanPickupItem", "gr_ghost", function( ply )
 	if ply:IsGhost() then return false end
-end )
-
-hook.Add( "PlayerCanSeePlayersChat", "gr_ghost", function( _, _, listener, speaker )
-	if IsValid( speaker ) and speaker:IsGhost() and not listener:IsGhost() then return false end
 end )
 
 hook.Add( "PlayerCanHearPlayersVoice", "gr_ghost", function( listener, speaker )
