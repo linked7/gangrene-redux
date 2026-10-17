@@ -136,8 +136,8 @@ function Econ.ResetSettings()
 	for _, def in ipairs( Econ.Schema ) do WorldState.Set( "econ." .. def.key, def.default ) end
 end
 
--- Every bone goes back to the treasury and every count to zero. Runs at map load; step 13's
--- Round.Start calls it for each new round.
+-- Every bone goes back to the treasury and every count to zero. Round.Start (sh_round.lua) calls
+-- it on map load, so each round starts fresh.
 function Econ.ResetRound()
 	local supply = math.Clamp( math.floor( supplyVar:GetInt() ), 0, 2 ^ 24 - 1 )
 	for _, p in player.Iterator() do p:SetBones( 0 ) end
@@ -160,8 +160,6 @@ function Econ.ResetRound()
 	Log.Info( "econ", "new round: the treasury holds all %d bones", supply )
 	hook.Run( "GR_EconReset" )
 end
-
-hook.Add( "InitPostEntity", "gr_econ", Econ.ResetRound )
 
 -- Audit ------------------------------------------------------------------------------------
 

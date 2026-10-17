@@ -74,6 +74,9 @@ local function newContext( r )
 	return T
 end
 
+-- True while a scenario runs; Round.End checks it so a test never changes the level.
+function Test.IsRunning() return running ~= nil end
+
 function Test.Run( name )
 	if running then return Log.Warn( "test", "%s is still running", running.name ) end
 	if not string.match( name, "^[%w_]+$" ) then return Log.Warn( "test", "bad scenario name %q", name ) end

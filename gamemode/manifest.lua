@@ -51,5 +51,8 @@ return {
 		"sv_econ.lua",
 		"sh_crime.lua",
 		"sh_interact.lua",
+		"sh_rank.lua",
+		"sh_round.lua",
+		"cl_round.lua",
 	},
 }
