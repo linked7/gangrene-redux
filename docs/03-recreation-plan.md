@@ -276,7 +276,7 @@
 - **`Crime.Report(ply, act, ctx)`** judges crimes that aren't kills. It uses the same rules-table form as `Crime.Judge`. The theft rules:
   - **Theft, unseen:** delivering or opening a crate whose crew stamp doesn't include you adds *theft* evidence (300 s).
   - **Theft, caught in the act:** if any police can see the player at that moment (the same prefiltered trace as wanted expiry), they become torment-wanted for 180 s, with the reason "theft from the People".
-  - **Stockpile break-in:** finishing a stockpile pry (step 11.1) makes the player judgment-wanted for 300 s. Starting one sends an alarm on the `"state"` radio channel with the stockpile's location.
+  - **Stockpile break-in:** breaking the stockpile's lock (step 11.1) makes the player judgment-wanted for 300 s. The first hit on the lock sends an alarm on the `"state"` radio channel with the stockpile's location.
 - **Done when:** each rule fires in a scripted bot scenario, and wanted status counts down only while out of sight. Each theft rule also fires in a bot scenario.
 
 ### Step 11: The fates
@@ -328,11 +328,17 @@ Build them in this order, so each one has something to act on.
      - Gatherers and haulers aren't paid by the state unless they also crewed. Crews pay them with **Give bones** (step 9).
      - A crate can also be opened on the spot, which gives its contents to the person who opened it.
      - Delivering or opening a crate whose crew stamp doesn't include you goes through `Crime.Report(ply, "theft", …)` (step 10).
-   - **Stockpile pry:** anyone without `StockpileAccess` can pry the stockpile open. This is a 60 s timed action, cancelled by moving away or taking damage. It sends the step 10 alarm when it starts, and when it finishes it drops 3 rations and runs the break-in rule.
+   - **Breaking locks is physical and very loud.** There is no timed pry. Locks are broken by beating them.
+     - A lock has an Integrity, PUBLIC on its entity and shown as a bar in its cross-text. Any melee hit or bullet on it takes Integrity, whatever the weapon.
+     - **Every hit is loud:** a heavy metal clang at a sound level that carries across several streets, plus a small screen shake for anyone nearby. Nobody breaks a lock quietly.
+     - If nobody hits a lock for 10 s, it slowly recovers (+1 Integrity a second), so it can't be chipped away over time.
+     - **The stockpile lock:** anyone without `StockpileAccess` can beat it, and it takes about 40 baton hits.
+       - The first hit sends the step 10 alarm, and a **klaxon rings at the stockpile** until 30 s after the lock breaks or recovers fully.
+       - Breaking it drops 3 rations and runs the break-in rule (step 10). The lock re-forms at full Integrity 2 minutes later.
    - **Construction:** the C-menu `Build` places a **storage crate** (35 bones) or a **water barrel** (15 bones; at most 8 barrels in the world, and building is refused at the cap). The cost goes to the treasury through `Econ.Transfer`. Validate placement range on the server.
      - The storage crate:
        - It holds 8 items, and the builder can lock it.
-       - Anyone else can pry it open: a 30 s timed action that is reported through `Crime.Report(ply, "theft", …)`.
+       - Anyone else can beat its lock open (about 15 baton hits, with the same loud clang but no klaxon or radio alarm). Breaking it is reported through `Crime.Report(ply, "theft", …)`.
        - Its contents drop when it is removed, and it is cleared when the round resets.
      - **Players can't build production.** There are no player-built machines or posts. A barrel is equipment, not production. Production is limited to the one lunch machine the map layout places (step 4).
    - Unions and WorkTitles are deferred.
@@ -365,7 +371,7 @@ Build them in this order, so each one has something to act on.
    - **Who:** every Foolish-rank player, and only them. Cost 0, unlimited slots, a short death cooldown (15 s, like Prole).
    - **Same as Prole, in every rule:**
      - The Prole kit and aim, the work loop (making and delivering crates for the buy price), Construction, needs, inventory, and being revived by korpsmen.
-     - Can deal damage, steal and pry the stockpile.
+     - Can deal damage, steal and break the stockpile lock.
      - Can be made wanted and collect evidence.
      - Killing a slave is judged exactly like killing a prole (murder of a citizen).
      - The corpse decays like a prole's.
