@@ -16,7 +16,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
-_(none)_
+_(none)_ | | |
 
 ## Accepted
 
@@ -29,6 +29,8 @@ _(none)_
 | Made goods (ration crates) appear in the world and are hauled to the stockpile | `accepted → Step 11.1` (also Step 9) | 2026-10-17 |
 | Theft: stamps, caught-in-the-act, stockpile pry, sanitar Inspect | `accepted → Step 10` (`Crime.Report`), `Step 11.3` | 2026-10-17 |
 | No war; several simple pressures drive player action | `accepted → Dropped` (War removed from Deferred item 9) | 2026-10-17 |
+| Slaves lose their protection: full parity with Prole, only the mark differs | `accepted → Step 11.5` (also Scope, 00-vibe Slave paragraph) | 2026-10-17 |
+| Kaiser runs the economy with a full toolkit; no clamps, no self-enrichment | `accepted → Step 9` (`Economy` table, Set/Grant/Fine/Ledger), `Step 11.2`, `11.3`, `11.4` | 2026-10-17 |
 
 ## Decisions log
 
@@ -44,5 +46,7 @@ _(none)_
 | 2026-10-17 | Pace and atmosphere | Slower walk/run (130/200) from one config table, fates may use `SpeedMulti`. `cl_atmosphere.lua` adds a desaturated colour grade and fog. | Darker, slower feel without new systems. |
 | 2026-10-17 | Crates and stockpile | Physical crates with a SERVER `MadeBy` stamp, at most 3 waiting per station, slow to carry. Whoever delivers is paid. The stockpile is a counter; Kaiser and Sanitar have `StockpileAccess`. | Trust and theft come from goods sitting in the world. |
 | 2026-10-17 | Theft rules | `Crime.Report` rules table. Unseen theft gives evidence. Theft seen by police gives torment-wanted for 180 s. A stockpile pry (60 s, alarms state radio) gives judgment-wanted. Sanitar Inspect turns theft evidence into wanted, and punishing a thief earns +1 Teeth. Slaves can't steal. Forgiving a theft costs the thief 300 bones, paid to the treasury. | Prevention (guarding, alarm) and punishment (inspect, wanted) both belong to sanitars. Slaves can't be punished, so they can't steal. |
+| 2026-10-17 | Slave rules | Slave has full parity with Prole: they can fight, steal, build and be made wanted, and killing one is murder. Only the barcode name, model and PUBLIC marker differ, plus Foolish-only access and the two ways out. The zero-damage hook, `weapon_cc_slave`, wanted immunity, the building ban, 30 s corpse decay and the earlier "slaves can't steal" rule are all dropped. Survive-the-round time adds up across deaths, but the slave must be alive at the end. | User's choice: slaves lose their protection. The visible mark replaces the rule as the guard against new players killing at random. |
+| 2026-10-17 | Kaiser economic control (replaces the "Kaiser levers" row) | One PUBLIC `Economy` table with a schema: buy and sell price per good, a wage per fate, a ration limit, a reserve per good, a bread line and the revive fee. One `nKaiserEcon(key, value)` receiver, plus Grant and Fine. A ledger built from `Econ.Transfer`. Only sanity checks (never negative, never above supply). No Kaiser wage and no pocket withdrawal. The table resets each round and when the Kaiser dies. | User's choice: the Kaiser's challenge is running a working economy, so they get many tools and no checks that restrict control or invite getting rich. |
 | 2026-10-17 | War | Dropped. The nations stay as lore and possible races. Rot/Doom stay deferred. | The user wants several simple pressures instead of a war. |
 | 2026-10-17 | Fates kept | Kaiser, Sanitar, Prole, Korpsman, plus Slave; Ghost as the dead/lobby state | User's choice |

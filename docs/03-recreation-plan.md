@@ -3,12 +3,12 @@
 **Scope:**
 
 - **Four fates:** Kaiser, Sanitar, Prole, Korpsman.
-- **Plus Slave:** the probation fate for new players. It works like a Prole with restrictions. New players can only play Slave until they survive a round or another player commends them (step 11.5 and step 13).
+- **Plus Slave:** the probation fate for new players. It plays exactly like a Prole and is only marked differently. New players can only play Slave until they survive a round or another player commends them (step 11.5 and step 13).
 - **Ghost** stays as the dead/lobby state. It isn't a fate you pick.
 - **Round loop:** play is round-based (60 min). Each round the city has to feed itself from a fixed supply of bones, and every round starts fresh. A few simple pressures drive what players do:
   - Hunger and thirst (step 6).
   - Food that only exists because someone made it and hauled it to the stockpile (step 11.1).
-  - Three prices set by the Kaiser (step 9).
+  - An economy the Kaiser runs with a full toolkit (step 9).
   - Theft, and sanitars punishing it (steps 10 and 11.3).
   - There is no war (see Dropped).
 - **Platform:** a Garry's Mod gamemode in Lua, with **SQLite** persistence through GMod's built-in `sql.*` library (replacing mysqloo).
@@ -194,23 +194,40 @@
   - There is one primitive: `Econ.Transfer(from, to, amount, source)`. `from` and `to` are each a player, a corpse or `TREASURY`. It refuses if `from` can't afford the amount.
   - A disconnecting player's bones are held in a SERVER table and restored if they rejoin this round.
 - **The stockpile** is a map entity, `state_stockpile`. It holds counts, not entities: `{ration = n, clean_water = n}`, which are PUBLIC world state.
-  - Delivering a crate (step 11.1) adds to the count and pays the deliverer the crate price from the treasury.
-  - Anyone can buy a ration or clean water at the counter for the ration price, and the bones go to the treasury.
-  - Withdrawing for free needs `FateHas("StockpileAccess")` (Kaiser, Sanitar).
-- **The Kaiser's levers** replace the original's tax system. They are PUBLIC world state, reset each round:
-  - **Crate price**: what the state pays per delivered crate (default 20).
-  - **Ration price**: what citizens pay for a ration or clean water (default 15).
-  - **Sanitar wage**: paid from the treasury to each sanitar every 300 s (default 40).
-  - The Kaiser can also take bones from the treasury into their own pocket. The treasury balance is PUBLIC, so everyone can see it happen.
-  - **Bad settings hurt on their own:**
-    - A low crate price means proles can't afford food.
-    - A high crate price drains the treasury, so sanitar wages stop.
-    - A high ration price drives hoarding and theft.
-  - Any payment the treasury can't cover isn't paid, and the people affected are told why ("The treasury is empty.").
+  - Delivering a crate (step 11.1) adds to the count and pays the deliverer that good's buy price from the treasury.
+  - Anyone can buy at the counter for that good's sell price, and the bones go to the treasury. Purchases follow the ration limit and the reserve below.
+  - Withdrawing for free needs `FateHas("StockpileAccess")` (Kaiser, Sanitar). It ignores the limit and the reserve.
+- **The Kaiser runs the economy.** The challenge is keeping a working city fed and paid, not getting rich, so the Kaiser has many tools and no personal stake:
+  - There is no Kaiser wage and no way to move treasury bones into their own pocket. The treasury is the Kaiser's budget.
+  - There are no clamps on the Kaiser's choices. Values are only checked for sanity: never negative, and never above `bones_supply`.
+- **The `Economy` table** holds every setting. It is one PUBLIC world-state table, described by a schema (`{key, type, min = 0, max = bones_supply, default}`), and it resets each round and when the Kaiser dies:
+
+  | Setting | What it does | Default |
+  |---|---|---|
+  | `buy.<good>` | What the state pays per delivered crate, for each good (ration, clean water). | 20 / 20 |
+  | `sell.<good>` | What the counter charges, for each good. | 15 / 15 |
+  | `wage.<fate>` | Paid from the treasury to each living player of that fate every 300 s. It is a data table keyed by fate id, so no code compares fate names. | sanitar 40, others 0 |
+  | `ration_limit` | How many counter purchases each player can make per 10 min (0 = unlimited). | 0 |
+  | `reserve.<good>` | The counter stops selling when stock drops to this level. | 0 |
+  | `breadline` | Minutes between free rations for each player at the counter (0 = off). Free rations also stop at the reserve. | 0 |
+  | `revive_fee` | The percentage of a patient's carried bones a korpsman takes (step 11.2). | 50 |
+
+- **Kaiser actions** (step 11.4):
+  - **Set:** one validated receiver, `nKaiserEcon(key, value)`, checks the key and value against the schema. The same one-receiver pattern as R3.
+  - **Grant:** pay any amount from the treasury to any living player.
+  - **Fine:** take any amount from a player into the treasury, capped at what they carry. It uses the same target checks as Sentence.
+  - **Ledger:** `Econ.Transfer` logs every movement with its source. The Kaiser's panel shows the treasury, stock levels, money in and out over the last 5 minutes broken down by source, and the most recent transfers. The panel shows this next to each setting, so the Kaiser can see what each change does.
+- **Bad settings hurt on their own:**
+  - A low buy price means proles can't afford food.
+  - A high buy price or high wages drain the treasury, so payments stop.
+  - A high sell price drives hoarding and theft.
+  - A high reserve with no bread line starves the city while the stockpile sits full.
+- Any payment the treasury can't cover isn't paid, and the people affected are told why ("The treasury is empty.").
 - **Dropped from the original:** the labor, sales and sanitar tax storages, the 20% payout to the Kaiser, tax evasion, ATM bonds and inflation. This also removes the B11 bug.
 - **Done when:**
   - A delivered crate moves bones from the treasury to the deliverer, and buying a ration moves them back.
-  - Changing each lever changes the next payment.
+  - Every `Economy` setting changes the next relevant payment or purchase. Grant and Fine move bones, and the ledger shows each one by source.
+  - Out-of-schema values (negative, above supply, unknown key) are rejected.
   - An empty treasury stops crate payments and wages, with a notice.
   - `econ_audit` reports zero drift after a 30-bot soak with deaths, revives, disconnects and rejoins.
 
@@ -246,22 +263,22 @@ Build them in this order, so each one has something to act on.
      - Each crate carries a SERVER-only `MadeBy` stamp (the maker's SteamID).
      - Each station allows at most 3 crates waiting in the world, so the map can't fill with entities.
      - Crates are carried by hand (physics pickup). Carrying one slows the carrier.
-     - Touching a crate to the `state_stockpile` delivers it: the crate is removed, the count goes up, and the **deliverer** is paid the crate price (step 9). So crates left lying around are worth stealing.
+     - Touching a crate to the `state_stockpile` delivers it: the crate is removed, the count goes up, and the **deliverer** is paid that good's buy price (step 9). So crates left lying around are worth stealing.
      - A crate can also be opened on the spot, which gives its contents to the person who opened it.
      - Delivering or opening a crate someone else made goes through `Crime.Report(ply, "theft", …)` (step 10).
-   - **Stockpile pry:** any non-slave without `StockpileAccess` can pry the stockpile open. This is a 60 s timed action, cancelled by moving away or taking damage. It sends the step 10 alarm when it starts, and when it finishes it drops 3 rations and runs the break-in rule.
+   - **Stockpile pry:** anyone without `StockpileAccess` can pry the stockpile open. This is a 60 s timed action, cancelled by moving away or taking damage. It sends the step 10 alarm when it starts, and when it finishes it drops 3 rations and runs the break-in rule.
    - **Construction:** the C-menu `Build` places a factory site (25) or a storage crate (35). The cost goes to the treasury through `Econ.Transfer`. Validate placement range on the server.
    - Unions and WorkTitles are deferred.
 2. **Korpsman**: the revive and healing loop.
    - Regenerates 3× faster.
-   - Revive is the timed action from step 7. The fee is half the patient's carried bones.
+   - Revive is the timed action from step 7. The fee is `revive_fee` percent of the patient's carried bones (default 50, set by the Kaiser in step 9).
    - **Surgery:** a small set of 2–3 procedures (heal, cure Pox, remove a bullet). Each is a timed action with a server-rolled failure chance; `autoFail` is never read from the client (B19).
    - `lovebox` heal tool: only after the Kaiser upgrade.
 3. **Sanitar**: enforcement.
    - Police flag, radio, codename, baton and scope.
    - **Teeth** is an OWNER field, spent at a `sanitation_station` entity on weapons.
    - Can see wanted status and evidence summaries.
-   - Paid the sanitar wage from the treasury (step 9). If the treasury is empty, they aren't paid.
+   - Paid `wage.sanitar` from the treasury (step 9). If the treasury is empty, they aren't paid.
    - Has `StockpileAccess`, so guarding the stockpile is part of the job.
    - **Inspect:** a context-menu action on a living player within 100 units. It is a validated receiver (rate-limited, sender is police and alive, target in range).
      - It reveals whether the target is carrying a crate stamped by someone else, and shows their evidence summary.
@@ -270,26 +287,27 @@ Build them in this order, so each one has something to act on.
    - Slots: `Slots = function(pop) return math.Clamp(2 + math.floor(pop / 10), 2, 6) end`.
 4. **Kaiser**: the head of state.
    - 1 slot, needs Kaiser rank, costs 5 stem cells, 75 armor, the novoluger pistol and the strategy book.
-   - **Price panel:** sets the crate price, the ration price and the sanitar wage (step 9), and can take bones from the treasury. Each is a validated receiver with clamped values. There are no taxes.
+   - **Economy panel:** Set, Grant, Fine and the Ledger from step 9. There are no taxes, no clamps and no Kaiser wage.
    - Has `StockpileAccess`.
    - **Sentence and forgive:**
      - Both are validated receivers: target valid, alive, not a ghost, in range or visible.
      - Forgiving a theft costs 300. The forgiven player pays it to the treasury through `Econ.Transfer`, and the forgiveness fails if they can't afford it.
    - **Upgrades:** **one** receiver `nKaiserUpgrade(targetFate)` reading a data table `{prole = 125, korpsman = 150}` (R3). It is paid from the treasury, and the bones are held in an upgrade fund that is part of the step 9 invariant. They are not destroyed.
-   - **On death:** the three prices go back to their defaults, with a global announcement and a 600 s cooldown for the role.
-5. **Slave**: probation for new players. It is a Prole with restrictions, so build it as a variant of the Prole definition: `Fates.Define("slave", {Base = "prole", ...})`.
+   - **On death:** the `Economy` table goes back to its defaults, with a global announcement and a 600 s cooldown for the role.
+5. **Slave**: probation for new players. It has **full parity with Prole**: build it as a variant of the Prole definition, `Fates.Define("slave", {Base = "prole", ...})`, that only overrides presentation and who may take it.
    - **Who:** every Foolish-rank player, and only them. Cost 0, unlimited slots, a short death cooldown (15 s, like Prole).
-   - **Same as Prole:** the work loop (making and delivering crates for the crate price), needs, inventory, and being revived by korpsmen.
-   - **Different from Prole:**
+   - **Same as Prole, in every rule:**
+     - The Prole kit and aim, the work loop (making and delivering crates for the buy price), Construction, needs, inventory, and being revived by korpsmen.
+     - Can deal damage, steal and pry the stockpile.
+     - Can be made wanted and collect evidence.
+     - Killing a slave is judged exactly like killing a prole (murder of a citizen).
+     - The corpse decays like a prole's.
+   - **Different from Prole (presentation only):**
      - Barcode name: `"<Drone|Serf|Peon…> #<last digits of SteamID>"`.
      - Slave model and clothing, plus a PUBLIC marker so everyone can see who is new.
-     - Gets `weapon_cc_slave` (hands/tool only). **Can't deal damage to players**: a `Damage.Scale` hook zeroes it (from the original).
-     - **Can't build Constructions.** New players can't spend bones on world objects.
-     - **Can't be made wanted or collect evidence** (from the original). Killing a slave is still judged as murder of a citizen, so they are protected.
-     - Because a slave can't be punished, a slave **can't steal**: the server refuses to let them deliver or open a crate someone else made, and refuses a stockpile pry.
-     - The corpse decomposes in 30 s.
+   - **Dropped from the original slave:** `weapon_cc_slave`, the zero-damage hook, immunity from wanted and evidence, the ban on building, and the 30 s corpse decay. No gameplay code may check for Slave; anything that applies to slaves applies to proles.
    - **Leaving slavery** (both paths call `Rank.Free(ply, how)`):
-     - **Survive a round:** at `Round.End`, every player who is a Slave, alive and not downed, and has been a Slave for at least `slave_min_round_time` (default 20 min of this round), is freed. Joining just before the round ends doesn't count.
+     - **Survive a round:** at `Round.End`, every player who is a Slave, alive and not downed, and has spent at least `slave_min_round_time` (default 20 min) as a Slave this round, is freed. The time adds up across deaths (a SERVER field), but the player must be alive at the end. Joining just before the round ends doesn't count.
      - **Commendation:** a non-slave uses the context-menu "Commend" on a slave. This is a validated receiver:
        - The commender is alive, not a ghost and not a slave.
        - The commender's rank is at least Friend.
@@ -303,12 +321,12 @@ Build them in this order, so each one has something to act on.
        - If the freed slave is alive, they stay a Slave until they die. On the ghost screen they can then pick any fate (no forced kill, unlike the original's ascend).
    - Banishing is dropped. Kicking and banning are admin tools (step 14).
 - **Done when:** a 4-player session (Kaiser, Sanitar, Korpsman, Prole) can play one full loop:
-  1. The prole makes a ration crate, hauls it to the stockpile and is paid the crate price. Someone buys a ration at the counter.
-  2. The Kaiser changes a price, takes bones from the treasury, and sentences the prole.
+  1. The prole makes a ration crate, hauls it to the stockpile and is paid the buy price. Someone buys a ration at the counter.
+  2. The Kaiser changes a price, grants bones to the korpsman, fines a player, and sentences the prole. The ledger shows each movement.
   3. The sanitar executes the prole and earns Teeth.
   4. The korpsman revives someone for a fee.
   5. A second prole delivers another player's crate in sight of the sanitar and becomes wanted. An unseen theft becomes wanted when the sanitar inspects the thief.
-  6. A fresh account joins as a Slave, makes and delivers crates, can't hurt or steal from anyone, and is freed by a commendation. A second fresh account is freed at the end of the round.
+  6. A fresh account joins as a Slave, makes and delivers crates, and is freed by a commendation. A second fresh account steals a crate in sight of the sanitar, becomes wanted like a prole would, and is still freed at the end of the round if alive.
 
 ### Step 12: Chat and radio
 
@@ -369,5 +387,5 @@ These are ordered by how much they add to the feel compared with their cost:
 - Text-file persistence.
 - mysqloo.
 - War with Rottingham and the Prohlada Union, nation potentials and refugee waves. The remake uses several simple pressures instead (see Scope). The nations stay as lore, and as races that could be added later (step 5).
-- Taxes (labor, sales and sanitar storages), tax evasion, ATM bonds and inflation. The Kaiser's three prices replace them (step 9).
+- Taxes (labor, sales and sanitar storages), tax evasion, ATM bonds and inflation. The Kaiser's `Economy` table replaces them (step 9).
 - Free food spawns. Food comes from labor only (step 11.1).

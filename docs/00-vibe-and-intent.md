@@ -96,8 +96,10 @@ Even with only four fates, the core loop has the full shape of the original.
 
 **Slave** is how you enter this machine.
 
-- Every new player starts at the bottom: harmless, named by barcode, working for wages, and visibly marked as new.
-- **The point:** it is in-fiction probation. It protects the city from newcomers who kill at random, and it puts newcomers below everyone else, which fits the setting.
+- Every new player starts at the bottom: named by barcode, working for wages, and visibly marked as new.
+- **The point:** it is in-fiction probation that puts newcomers below everyone else, which fits the setting.
+  - A slave plays exactly like a prole. They can fight, steal and be punished, and killing one is murder like any other.
+  - What protects the city from newcomers who kill at random is the mark, not a rule: everyone can see who is new, and sanitars know who to watch.
 - **Ways out:**
   - Endure a whole round.
   - Have someone vouch for you. Being commended turns "teach the new guy" into a social act that is part of the game.
