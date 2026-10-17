@@ -204,6 +204,9 @@
   - **Revive (either state):** a korpsman uses the body. **Exception:** a player downed while Emptiness is 100 can't be revived. The body has nothing left to bring back. A wounded starving player still gets up on their own; a dying one is lost. It is a short press sequence, not a timed action: the korpsman presses Use on the body 3 separate times, a few seconds apart at most, and the third press rolls success on the server. Stopping resets it; a failure can be retried. It calls `Fates.Apply(ply, sameFate, {reason="revive"})`. The fee comes from step 11.2. A revived player has no `Injured`. There is one revive function (R2).
   - **Finish off (either state):** an explicit context action on a downed body (a short timed action, about 3 s), not just stray damage. It calls `Crime.Judge` (step 10), and the player becomes a ghost. This is the only instant death.
 - **Consciousness** stays separate: at 0 the player passes out into a short stun and wakes with no injury.
+- **Breakables (as in the original, `DoorRammingEnabled`):**
+  - **Doors** take club/blast damage and burst open when their health runs out. A broken door stays broken: it never auto-repairs during the round.
+  - **Props** have health and break into gibs when it runs out. They never ignite on break. Wooden props and wood-material `func_breakable` brushes drop `wood` chunks (campfire, step 13). Metal props and metal-material `func_breakable` brushes drop `scrap` (the step 8 item).
 - **Done when:**
   - A bot downed by a light hit gets back up after 45 s at 25 HP, `Injured`, with max HP 50. A korpsman treatment clears it.
   - A bot downed by a hit 30 past 0 HP, or shot again while wounded, is dying, and becomes a ghost after 120 s unless revived. The downer is judged at that point.
@@ -243,6 +246,7 @@
   - Anyone can buy at the counter for that good's sell price, and the bones go to the treasury. Purchases follow the ration limit and the reserve below.
   - Withdrawing for free needs `FateHas("StockpileAccess")` (Kaiser, Sanitar). It ignores the limit and the reserve.
 - **The shop (for the time being).** A `Buy` list in the C menu, in the style of the original dealer's buy menu, open to every living fate. It stands in for a shop entity for now.
+  - **Imports:** anything no factory produces (coats, lighters) reaches the stockpile only by Kaiser import. The Kaiser orders it from the panel and pays from the treasury, and the goods arrive as a crate at the gate for someone to haul to the stockpile.
   - **Every shop item comes out of the stockpile.** A sale takes one from the `state_stockpile` count, and a count of 0 means sold out. The shop is a second counter on the same stock, not a source of goods.
     - **Soylent Loaf is the ration.** It is the lunch machine's ration (step 11.1), sold at `sell.ration` and under the ration limit and reserve, so buying one competes with the bread line.
     - **Fear Beer 35, Spirits 85, Knife 40** (original prices). Nothing in the city makes these yet, so `Round.Start` seeds the stockpile with a fixed stock of each (`shop_stock`, default 10). When they sell out, they're gone until next round. Holders of `StockpileAccess` can withdraw them for free, as with rations.
@@ -509,7 +513,13 @@ Build them in this order, so each one has something to act on.
     - **WINTER:** adds a `cold` need that drains outdoors, faster each stage.
       - Stage 1 chill. Stage 2 water drains cold fast. Stage 3 water is lethal within seconds. Stage 4 outdoors alone kills an unprotected player.
       - Warmth sources stack: near a map fire (`env_fire` or fire layout spots), indoors (no sky trace up), taking burn damage, being well fed (hunger above 70%), and wearing a coat.
-      - Coat: a `coat` clothing item sold at the counter. Wearing it sets the fate model's coat bodygroup and cuts cold drain. Proles start without one (their default bodygroup has the coat off).
+      - Coat: a `coat` clothing item sold at the counter. No factory makes coats, so the counter only has them after the Kaiser imports them (see Imports in Step 9). Wearing it sets the fate model's coat bodygroup and cuts cold drain. Proles start without one (their default bodygroup has the coat off).
+  - **Campfire** (new design; the original `campfire.lua` was never finished). Always available, not only in WINTER.
+    - Wood: wooden map props (crates, pallets, furniture) and wood-material `func_breakable` brushes drop 1-3 `wood` chunks when smashed. These are physical props you carry, and the map's wood runs out.
+    - Build: 3+ wood chunks resting within ~48 units of each other merge into an unlit `campfire` entity. No menu.
+    - Light: anything burning touches it (a burning prop or player, or a map fire), or a player uses a `lighter` on it. The lighter is an import (Step 9).
+    - Burn: about 3 min of fuel. Each wood chunk thrown in adds about 1 min, up to 8 min. When the fuel runs out it leaves an unlit pit that new wood can relight.
+    - Hazard: touching it ignites players and props. It counts as a map fire for WINTER warmth. One `env_fire`-style light, and no think while it is unlit.
   - Only stem cells, rank and playtime carry over to the next round.
   - The Kaiser's fall may trigger `Round.End` later. There is no Doom or war end state.
 - **Done when:**
