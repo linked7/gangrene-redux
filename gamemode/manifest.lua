@@ -67,5 +67,6 @@ return {
 		"cl_fates.lua",
 		"cl_scoreboard.lua",
 		"cl_help.lua",
+		"sv_soak.lua",
 	},
 }

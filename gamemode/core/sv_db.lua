@@ -4,6 +4,9 @@
 -- Every value passes through sql.SQLStr, and column names come from a fixed whitelist (S4).
 DB = DB or {}
 DB.FLUSH_INTERVAL = 60
+-- Flush timings for the soak and debugging: ms of the last flush, the slowest (ever, and since
+-- whoever reads it last reset windowMaxMs), flush count, rows written.
+DB.stats = DB.stats or { lastMs = 0, maxMs = 0, windowMaxMs = 0, flushes = 0, rows = 0 }
 
 local Q = sql.SQLStr
 
@@ -184,7 +187,11 @@ function DB.Flush()
 	DB.Query( "BEGIN" )
 	for _, s in ipairs( stmts ) do DB.Query( s ) end
 	DB.Query( "COMMIT" )
-	Log.Debug( "db", "flushed %d rows in %.2f ms", #stmts, ( SysTime() - start ) * 1000 )
+	local ms = ( SysTime() - start ) * 1000
+	local st = DB.stats
+	st.lastMs, st.flushes, st.rows = ms, st.flushes + 1, st.rows + #stmts
+	st.maxMs, st.windowMaxMs = math.max( st.maxMs, ms ), math.max( st.windowMaxMs, ms )
+	Log.Debug( "db", "flushed %d rows in %.2f ms", #stmts, ms )
 	return #stmts
 end
 

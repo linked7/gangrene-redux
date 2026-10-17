@@ -34,6 +34,8 @@ function Sched.Remove( name )
 end
 
 function Sched.Get( name ) return jobs[ name ] end
+-- Job names in run order (read-only).
+function Sched.Names() return order end
 
 local function call( job, arg )
 	local start = SysTime()
