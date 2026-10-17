@@ -16,6 +16,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
+| Maladies (one round-long, escalating city-wide threat, picked at round start; first: WINTER) | `idea` | Raised 2026-10-17. Recommend: yes, one module per round, 3-4 stages tied to day/night, effects via Needs.Modifiers. WINTER: each day colder, water lethal by stage 3, warmth from coats (bought, physical item), fires and indoors. Name options: Maladies (recommended), Afflictions, Seasons. |
 | Falling boulders (`boulder`, sv_think spawner every 15-30 s) | `idea` | Recommend: yes, cheap physical hazard, one entity, layout spots. |
 | Campfire / cooker (cook raw food, warmth) | `idea` | Recommend: yes if food has a raw state; gives labor a second step without menus. |
 | Ghost haunting (Deferred 4, light slice) | `idea` | Recommend: yes, a small version only (ghosts flicker lights, knock props); keeps dead players busy in a short round. |
