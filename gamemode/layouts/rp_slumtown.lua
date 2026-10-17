@@ -43,10 +43,11 @@ return {
 	-- The lunch hall: the machine at the first machine_lunch spot, the boiler at the one beside it.
 	{ class = "lunch_machine", pos = Vector( -2599, 608, 172 ), ang = Angle( 0, 0, 1 ), kv = {}, drop = true },
 	{ class = "line_boiler", pos = Vector( -2599, 532, 172 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
-	-- Three water barrels in a row across the hall, clear of the machine's front (not in the old file).
+	-- Four water barrels (plan step 4) in a row across the hall, clear of the machine's front (not in the old file).
 	{ class = "water_barrel", pos = Vector( -2439, 530, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "water_barrel", pos = Vector( -2439, 570, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "water_barrel", pos = Vector( -2439, 610, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
+	{ class = "water_barrel", pos = Vector( -2479, 610, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 
 	-- GM.Capsules: where bone capsules appear. Spawn points, not models, so they stay where they are.
 	{ class = "capsule_spawn", pos = Vector( -303, -80, 435 ), ang = Angle( 0, 0, 0 ), kv = {} },

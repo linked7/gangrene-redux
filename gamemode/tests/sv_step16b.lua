@@ -28,7 +28,7 @@ return function( T )
 	T.Check( entries ~= nil and string.find( source or "", "layouts/rp_slumtown.lua", 1, true ) ~= nil, "Layout.Load reads the shipped file" )
 	entries = entries or {}
 	T.Equal( #entries, #raw, "no entry is skipped as invalid" )
-	T.Equal( #entries, 36, "13 purposes, the machine, its boiler and 3 barrels, 12 capsule points, 4 pump spots, stockpile, sanitation" )
+	T.Equal( #entries, 37, "13 purposes, the machine, its boiler and 4 barrels, 12 capsule points, 4 pump spots, stockpile, sanitation" )
 
 	local classes, fates = {}, {}
 	local enabledPumps, candidates, allDrop, validFates = 0, 0, true, true
@@ -60,7 +60,7 @@ return function( T )
 	T.Equal( classes.lunch_machine, 1, "machine_lunch -> one lunch machine" )
 	T.Equal( classes.line_boiler, 1, "and its boiler" )
 	T.Equal( classes.capsule_spawn, 12, "GM.Capsules -> 12 capsule points" )
-	T.Equal( classes.water_barrel, 3, "three water barrels in the lunch hall" )
+	T.Equal( classes.water_barrel, 4, "four water barrels in the lunch hall" )
 	local machinePos, boilerPos
 	for _, e in ipairs( entries ) do
 		if e.class == "lunch_machine" then machinePos = e.pos end
@@ -86,7 +86,7 @@ return function( T )
 	T.Wait( 0.1 )
 	T.Equal( #living(), 0, "gm_construct's layout is cleared" )
 	local n = Layout.Spawn( SLUM )
-	T.Equal( n, 34, "every entry but the two candidates spawns" )
+	T.Equal( n, 35, "every entry but the two candidates spawns" )
 	local stockpiles, spare = 0, 0
 	for _, ent in ipairs( living() ) do
 		if ent:GetClass() == "state_stockpile" then stockpiles = stockpiles + 1 end
@@ -96,7 +96,7 @@ return function( T )
 	end
 	T.Equal( stockpiles, 1, "only the shipped stockpile, no fallback on top of it" )
 	T.Equal( spare, 0, "no candidate spawned" )
-	T.Equal( #living(), 34, "nothing else in the world" )
+	T.Equal( #living(), 35, "nothing else in the world" )
 	T.Equal( Layout.Spawn( SLUM ), 0, "a second spawn adds nothing" )
 
 	-- The flags on a fake map's json ---------------------------------------------------------------

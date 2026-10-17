@@ -21,7 +21,7 @@ if CLIENT then
 	-- The two valves are real valve wheels (clientside models): red vents, black builds. A wheel
 	-- turns while someone holds Use on it (GetTurning), and stays where it was left.
 	local VALVE = "models/props_pipes/valvewheel001.mdl"
-	local VALVES = { vent = Color( 255, 255, 255 ), build = Color( 40, 40, 40 ) }
+	local VALVES = { vent = Color( 200, 30, 30 ), build = Color( 40, 40, 40 ) }
 
 	function ENT:Valve( dir )
 		self.GR_Valves = self.GR_Valves or {}
