@@ -388,6 +388,21 @@ hook.Add( "EntityTakeDamage", "gr_corpse", function( ent, dmg )
 	end
 end )
 
+-- Hands a body's record to a replacement ragdoll (rotting swaps the model). The old entity
+-- stops being a corpse first, so removing it does not count as the body going away.
+function Corpse.Rebind( old, new )
+	local rec = registry[ old ]
+	if not rec or not IsValid( new ) then return false end
+	registry[ old ] = nil
+	old.GR_Corpse = nil
+	registry[ new ] = rec
+	new.GR_Corpse = rec
+	rec.rag = new
+	local ply = rec.owner
+	if IsValid( ply ) and ply.GR_Corpse == old then ply.GR_Corpse = new end
+	return true
+end
+
 hook.Add( "EntityRemoved", "gr_corpse", function( ent )
 	local rec = registry[ ent ]
 	if not rec then return end

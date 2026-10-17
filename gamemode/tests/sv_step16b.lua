@@ -28,7 +28,7 @@ return function( T )
 	T.Check( entries ~= nil and string.find( source or "", "layouts/rp_slumtown.lua", 1, true ) ~= nil, "Layout.Load reads the shipped file" )
 	entries = entries or {}
 	T.Equal( #entries, #raw, "no entry is skipped as invalid" )
-	T.Equal( #entries, 37, "13 purposes, the machine, its boiler and 4 barrels, 12 capsule points, 4 pump spots, stockpile, sanitation" )
+	T.Equal( #entries, 38, "13 purposes, the machine, its boiler and 4 barrels, 12 capsule points, 4 pump spots, stockpile, sanitation, corpse washer" )
 
 	local classes, fates = {}, {}
 	local enabledPumps, candidates, allDrop, validFates = 0, 0, true, true
@@ -59,6 +59,7 @@ return function( T )
 	T.Equal( classes.ration_press, nil, "no ration_press is left" )
 	T.Equal( classes.lunch_machine, 1, "machine_lunch -> one lunch machine" )
 	T.Equal( classes.line_boiler, 1, "and its boiler" )
+	T.Equal( classes.corpse_washer, 1, "and the corpse washer" )
 	T.Equal( classes.capsule_spawn, 12, "GM.Capsules -> 12 capsule points" )
 	T.Equal( classes.water_barrel, 4, "four water barrels in the lunch hall" )
 	local machinePos, boilerPos
