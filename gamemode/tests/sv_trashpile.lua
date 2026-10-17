@@ -21,7 +21,7 @@ return function( T )
 	T.Check( p:Lootable(), "a fresh pile is lootable" )
 	T.Check( p.PhysgunDisabled and p.DoNotDuplicate, "no physgun, no dupe" )
 
-	local function count( cls ) return #ents.FindByClass( cls ) end
+	local function count( cls ) local n = 0 for _, e in ipairs( ents.GetAll() ) do if e:GetClass() == cls then n = n + 1 end end return n end
 	local before = count( "bone_capsule" ) + count( "gr_item" )
 	local pox = Needs.Get and Needs.Get( b, "Pox" ) or nil
 	T.Check( p:Search( b ), "the first search finds something" )
