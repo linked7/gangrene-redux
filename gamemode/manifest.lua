@@ -53,5 +53,7 @@ return {
 		"sh_interact.lua",
 		"sh_medicine.lua",
 		"sh_police.lua",
+		"sh_kaiser.lua",
+		"cl_kaiser.lua",
 	},
 }
