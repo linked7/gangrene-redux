@@ -54,6 +54,8 @@ Interact.Add( "stockpile_pry", {
 
 if CLIENT then return end
 
+Fates.SpeedMods.crate = function( ply ) return IsValid( ply.GR_HeldCrate ) and Crates.CARRY_SPEED or 1 end
+
 -- Registry: press -> { crate = true }, so the cap never searches the world (P2).
 local waiting = setmetatable( {}, { __mode = "k" } )
 
@@ -96,9 +98,7 @@ function Crates.Hold( ply, crate )
 	Crates.Release( ply )
 	crate.GR_Holder = ply
 	ply.GR_HeldCrate = crate
-	ply.GR_CarrySpeeds = { ply:GetWalkSpeed(), ply:GetRunSpeed() }
-	ply:SetWalkSpeed( ply:GetWalkSpeed() * Crates.CARRY_SPEED )
-	ply:SetRunSpeed( ply:GetRunSpeed() * Crates.CARRY_SPEED )
+	Fates.ApplySpeed( ply )
 end
 
 -- `ply` lets go of whatever crate they carry. keepSpeed: a new life already set the speeds.
@@ -110,12 +110,7 @@ function Crates.Release( ply, keepSpeed )
 		crate.GR_LastHolder = ply
 		crate.GR_LetGoAt = CurTime()
 	end
-	local speeds = ply.GR_CarrySpeeds
-	ply.GR_CarrySpeeds = nil
-	if speeds and not keepSpeed then
-		ply:SetWalkSpeed( speeds[ 1 ] )
-		ply:SetRunSpeed( speeds[ 2 ] )
-	end
+	if not keepSpeed then Fates.ApplySpeed( ply ) end
 end
 
 hook.Add( "OnPlayerPhysicsPickup", "gr_crates", function( ply, ent )

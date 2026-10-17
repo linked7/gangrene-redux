@@ -129,7 +129,7 @@
   - Use the lore names in code. Don't use the old `liverman`, `arrhythmian` or `kidneystani` IDs.
 - **Name validation:** one shared `ValidateName` with a correct character whitelist (B12). Only needed if players get to name themselves.
 - **Pace and atmosphere:** the remake should feel darker and slower than the original.
-  - Walk and run speeds come from one config table (slower than GMod defaults; start at walk 130, run 200). A fate may scale them with `SpeedMulti`, and nothing else sets speed.
+  - Walk and run speeds come from one config table (slower than GMod defaults; start at walk 130, run 200). Speed = config × the fate's `SpeedMulti` × the needs weakness (step 6). Nothing else sets speed.
   - One client file, `cl_atmosphere.lua`, applies a desaturated colour correction and fog. It is presentation only and has no gameplay state.
 - **Done when:** a fate change shows the right model on every client with no flicker. Test with 2 clients and lag simulated with `net_fakelag`. Movement uses the configured speeds, and the atmosphere is visible on every client.
 
@@ -139,8 +139,12 @@
   ```lua
   Needs.Define("Emptiness", {rate = 1/24, max = 100, field = OWNER, onTick = ..., thresholds = {[80] = "starving"}})
   ```
-  - Core needs: **Emptiness, Dryness, Despair, Pox**. Pox (lowers max HP) is core because dirty water causes it (step 8).
-  - **Pace:** survival is meant to be hard. Dryness fills in about 25 min (`rate = 1/15`) and Emptiness in about 40 min (`rate = 1/24`). At 100, either one drains HP until the player dies. In a 60-minute round a player has to eat about twice and drink two or three times.
+  - Core needs: **Emptiness, Dryness, Despair, Pox**. Pox (lowers max HP, but never below 5) is core because dirty water and full thirst cause it (step 8).
+  - **Pace:** survival is meant to be hard. Dryness fills in about 25 min (`rate = 1/15`) and Emptiness in about 40 min (`rate = 1/24`). In a 60-minute round a player has to eat about twice and drink two or three times.
+  - **Hunger and thirst never deal damage.** They wear the player down instead:
+    - **Weakness:** from 50 to 100, the higher of Emptiness and Dryness scales the player down linearly: movement speed ×1.0 → ×0.7 (step 5), damage dealt ×1.0 → ×0.6 (a `Damage.Scale` hook), and consciousness regen ×1.0 → ×0.25.
+    - **Full thirst:** while Dryness is 100, Pox slowly rises (+1 every 10 s).
+    - **Full hunger:** a player downed while Emptiness is 100 can't be revived (step 7).
   - **Dropped:** urine, parasites, organs and mutations.
 - **One mutator:** `Needs.Add(ply, name, amount, source)` with a fixed signature (R4).
   - Quirks and fates hook in through `Needs.Modifiers`: functions `(ply, name, amount, source) → amount`.
@@ -149,7 +153,7 @@
 - **Despair at 100:** heart attack, death, −1 stem cell (kept from the original).
 - **Food and drink** are items whose `Use` calls `Needs.Add`.
   - **Food is scarce by design.** There are no free food spawns. Rations only exist because a prole or slave made them (step 11.1). The only free drink is dirty water from the pump (step 8).
-- **Done when:** the needs rise on their own, eating lowers Emptiness, and despair at 100 kills and costs a stem cell. A bot with no food or water dies of thirst in about 30 minutes.
+- **Done when:** the needs rise on their own, eating lowers Emptiness, and despair at 100 kills and costs a stem cell. Hunger and thirst never reduce HP directly. A bot with no food or water gets steadily slower and weaker from about minute 12, and its Pox starts rising once Dryness hits 100.
 
 ### Step 7: Damage, downed, death, corpse
 
@@ -172,13 +176,13 @@
     - `Injured` is a PUBLIC field that caps max HP at 50. It does not wear off. A korpsman treats it (step 11.2).
     - Getting up is its own small wake-up path (like waking from a pass-out). It isn't a revive.
   - **Bleed out (dying only):** after `bleedout_time` (default 120 s) without a revive, the player dies and becomes a ghost. `Crime.Judge` runs against the player who downed them.
-  - **Revive (either state):** a korpsman uses the body. This is a timed action (rule 6) and calls `Fates.Apply(ply, sameFate, {reason="revive"})`. The fee comes from step 11.2. A revived player has no `Injured`. There is one revive function (R2).
+  - **Revive (either state):** a korpsman uses the body. **Exception:** a player downed while Emptiness is 100 can't be revived. The body has nothing left to bring back. A wounded starving player still gets up on their own; a dying one is lost. This is a timed action (rule 6) and calls `Fates.Apply(ply, sameFate, {reason="revive"})`. The fee comes from step 11.2. A revived player has no `Injured`. There is one revive function (R2).
   - **Finish off (either state):** an explicit context action on a downed body (a short timed action, about 3 s), not just stray damage. It calls `Crime.Judge` (step 10), and the player becomes a ghost. This is the only instant death.
 - **Consciousness** stays separate: at 0 the player passes out into a short stun and wakes with no injury.
 - **Done when:**
   - A bot downed by a light hit gets back up after 45 s at 25 HP, `Injured`, with max HP 50. A korpsman treatment clears it.
   - A bot downed by a hit 30 past 0 HP, or shot again while wounded, is dying, and becomes a ghost after 120 s unless revived. The downer is judged at that point.
-  - Revive works in both states with inventory intact. Finish off works in both states.
+  - Revive works in both states with inventory intact, and is refused for a body downed at full hunger. Finish off works in both states.
   - The corpse loop never calls `FindByClass`.
 
 ### Step 8: Inventory and items

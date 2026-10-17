@@ -193,6 +193,8 @@ function Corpse.Down( ply, dmg, attacker )
 	rec.state = "downed"
 	rec.downedAt = CurTime()
 	rec.downer = playerOrNil( hit and hit.attacker or attacker, ply )
+	-- Downed at full hunger: the body has nothing left to bring back (step 7). Getting up still works.
+	rec.starved = Needs.Get( ply, "Emptiness" ) >= 100
 	setDown( rec, overkill >= Config.LethalOverkill and "dying" or "wounded" )
 
 	ply.GR_RespawnAt = math.huge
@@ -270,6 +272,8 @@ end
 
 -- The one revive path (R2): the same fate, name and body, back where the corpse lies. No Injured.
 function Corpse.Revive( rag, reviver )
+	local rec = registry[ rag ]
+	if rec and rec.starved then return false end
 	return bringBack( rag, "revive", reviver )
 end
 
@@ -317,6 +321,10 @@ end
 function Corpse.StartRevive( ply, rag )
 	local rec = registry[ rag ]
 	if not rec or rec.state ~= "downed" or not ply:FateHas( "CanRevive" ) or ply:IsGhost() then return false end
+	if rec.starved then
+		Notify( ply, "There is nothing left in this body to bring back." )
+		return false
+	end
 	return Actions.Start( ply, "revive", rag, Corpse.REVIVE_TIME, {
 		label = "Reviving " .. rec.name,
 		canContinue = function() return rec.state == "downed" end,

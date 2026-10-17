@@ -1,5 +1,5 @@
 -- Consciousness, 0-100. Blunt hits lower it; at 0 the player passes out into a ragdoll, and
--- wakes when it climbs back to WAKE_AT. It recovers about a point a second, slower when hungry.
+-- wakes when it climbs back to WAKE_AT. It recovers about 3 points a second, slower when weak.
 Consciousness = Consciousness or {}
 
 State.Field( "Consciousness", "UInt", 7, State.OWNER, 100 )
@@ -16,6 +16,7 @@ if CLIENT then
 end
 
 Consciousness.WAKE_AT = 50
+Consciousness.REGEN = 1 / 0.3  -- points a second, before weakness
 Consciousness.BLUNT_SCALE = 1.5  -- consciousness lost per point of blunt damage
 local BLUNT = bit.bor( DMG_CLUB, DMG_CRUSH, DMG_FALL )
 
@@ -72,8 +73,8 @@ Sched.EachPlayer( "consciousness", 1, function( ply )
 	if not ply:Alive() or ply:IsGhost() then return end
 	local v = Consciousness.Get( ply )
 	if v < 100 then
-		-- 1 point per (0.3 + emptiness/100) seconds, as in the original's ConsciousThink.
-		set( ply, v + 1 / ( 0.3 + Needs.Get( ply, "Emptiness" ) / 100 ) )
+		-- 1 point per 0.3 s (the original's ConsciousThink), slowed by hunger and thirst (step 6).
+		set( ply, v + Consciousness.REGEN * Needs.WeakScale( ply, Needs.WEAK_CONSCIOUSNESS ) )
 	end
 	if ply:GetPassedOut() then
 		local rag = Corpse.Of( ply )
