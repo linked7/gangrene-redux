@@ -61,5 +61,6 @@ return {
 		"sh_kit.lua",
 		"sh_crates.lua",
 		"sh_build.lua",
+		"sv_soak.lua",
 	},
 }
