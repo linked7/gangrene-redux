@@ -46,5 +46,8 @@ return {
 		"sh_items.lua",
 		"sh_inventory.lua",
 		"cl_inventory.lua",
+		"sh_worldstate.lua",
+		"sh_econ.lua",
+		"sv_econ.lua",
 	},
 }
