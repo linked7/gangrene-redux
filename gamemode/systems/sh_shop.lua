@@ -10,21 +10,7 @@ Shop.RANGE = 100
 Shop.CLASS = "stockpile_port"
 Shop.SOUNDS = { "placenta/coinkeeper1.wav", "placenta/coinkeeper2.wav", "placenta/coinkeeper3.wav", "placenta/coinkeeper4.wav" }
 
-Items.Define( "fear_beer", {
-	Name = "Fear Beer",
-	Description = "Brewed in a bathtub. It drowns the dread, a little.",
-	Weight = 1,
-	Model = "models/props_junk/garbage_glassbottle003a.mdl",
-	Effects = { Despair = -15 },
-} )
-
-Items.Define( "spirits", {
-	Name = "Spirits",
-	Description = "Clear, strong and nameless.",
-	Weight = 1,
-	Model = "models/props_junk/glassjug01.mdl",
-	Effects = { Despair = -40 },
-} )
+-- fear_beer, spirits and knife are defined in sh_items.lua (spirits cure the pox; sh_brewing.lua).
 
 -- In menu order. `kind` picks the icon outline, as in the original.
 Shop.LIST = {

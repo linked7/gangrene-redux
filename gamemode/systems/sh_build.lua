@@ -21,8 +21,12 @@ Build.KINDS = {
 	-- The original's proletariatConstructs: proles only (FateHas "Proletariat"). It cost 8 metal,
 	-- 4 mech and 4 tech there; Redux has no materials, so it costs bones.
 	munitionizer = { name = "Munitionizer", cost = 60, class = "munitionizer", stand = true, need = "Proletariat" },
+	brew_barrel = {
+		name = "Brew barrel", cost = 20, class = "brew_barrel", stand = true, need = "Proletariat",
+		cap = 6, count = function() return Brew.Count() end,
+	},
 }
-Build.ORDER = { "storage_crate", "water_barrel", "munitionizer" }
+Build.ORDER = { "storage_crate", "water_barrel", "munitionizer", "brew_barrel" }
 Build.RANGE = 150 -- from the builder's eyes to the spot
 
 -- Built entities network their builder's key as the "BuiltBy" string. Clients only ever ask about

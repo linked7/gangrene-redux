@@ -19,6 +19,7 @@ Econ.GOOD_DEFAULTS = {
 -- The C-menu shop (step 9) sells these at sell.<good>, out of the same stock counts. Every good
 -- here but the ration starts each round with `shop_stock` in the stockpile.
 Econ.SHOP = { "ration", "fear_beer", "spirits", "knife" }
+Econ.BREWED = { fear_beer = true, spirits = true } -- brewed in a brew_barrel, never seeded
 Econ.SHOP_SET = {}
 for _, good in ipairs( Econ.SHOP ) do Econ.SHOP_SET[ good ] = true end
 -- The bread line hands out this good.

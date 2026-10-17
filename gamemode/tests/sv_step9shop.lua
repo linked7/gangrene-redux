@@ -8,8 +8,10 @@ return function( T )
 	Econ.ResetRound()
 	local seed = Econ.Setting( "shop_stock" )
 	T.Equal( seed, 10, "shop_stock defaults to 10" )
-	for _, good in ipairs( { "fear_beer", "spirits", "knife" } ) do
-		T.Equal( Econ.Stock( good ), seed, good .. " is seeded at round start" )
+	T.Equal( Econ.Stock( "knife" ), seed, "knife is seeded at round start" )
+	for _, good in ipairs( { "fear_beer", "spirits" } ) do
+		T.Equal( Econ.Stock( good ), 0, good .. " is brewed, not seeded" )
+		WorldState.Set( "stock." .. good, seed )
 	end
 	T.Equal( Econ.Setting( "sell.fear_beer" ), 35, "fear beer costs 35" )
 	T.Equal( Econ.Setting( "sell.spirits" ), 85, "spirits cost 85" )

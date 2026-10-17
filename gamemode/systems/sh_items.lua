@@ -98,10 +98,10 @@ Items.Define( "fear_beer", {
 
 Items.Define( "spirits", {
 	Name = "Spirits",
-	Description = "A jug of strong liquor. It eases the sickness and the sadness, but it burns.",
+	Description = "A jug of surgical spirit. It cures the pox, but it burns.",
 	Weight = 1,
 	Model = "models/props_junk/glassjug01.mdl",
-	Effects = { Dryness = -25, Despair = -30, Pox = -30 },
+	Effects = { Dryness = -25, Pox = -100 },
 	OnUse = function( ply ) ply:TakeDamage( 10 ) end,
 } )
 

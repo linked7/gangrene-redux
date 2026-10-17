@@ -72,6 +72,7 @@ return {
 		"sh_uitour.lua",
 		"sh_locks.lua",
 		"sh_lunch.lua",
+		"sh_brewing.lua",
 		"sh_givebones.lua",
 		"sh_weapons.lua",
 		"sh_movement.lua",
