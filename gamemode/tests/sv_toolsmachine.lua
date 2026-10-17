@@ -100,8 +100,8 @@ return function( T )
 	b:TakeDamageInfo( dmg )
 	T.Check( b:GetBroken(), "the boulder breaks" )
 	T.Check( Econ.Stock( "ore" ) >= ore + 3, "into ore in stock" )
-	ToolsMachine.RestoreBoulder( b )
-	T.Check( not b:GetBroken() and b:GetIntegrity() == ToolsMachine.BOULDER_INTEGRITY, "and comes back whole" )
+	T.Wait( 0.1 )
+	T.Check( not IsValid( b ), "and is gone" )
 
 	for _, e in ipairs( made ) do if IsValid( e ) then e:Remove() end end
 end
