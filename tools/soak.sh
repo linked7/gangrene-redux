@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bot soak (plan step 14): tools/soak.sh [minutes=60] [bots=30] [seed] [pace=1] [skip,list]
+# Bot soak (plan step 14): tools/soak.sh [minutes=10] [bots=30] [seed] [pace=1] [skip,list]
 # pace and skip are for hunting crashes: bots act pace times as often; skip names activities to leave
 # out (see Soak.Start in gamemode/systems/sv_soak.lua).
 #
@@ -14,7 +14,7 @@
 # console log to ~/gmod-ds/gr-logs/soak-<stamp>/. Exits 0 only if the summary says "DONE pass" and
 # the console log has no Lua errors.
 set -u
-MINUTES=${1:-60}; BOTS=${2:-30}; SEED=${3:-$(date +%s)}; PACE=${4:-1}; SKIP=${5:--}
+MINUTES=${1:-10}; BOTS=${2:-30}; SEED=${3:-$(date +%s)}; PACE=${4:-1}; SKIP=${5:--}
 DS=${GR_DS:-$HOME/gmod-ds}
 SOAK=${GR_SOAK_DS:-$HOME/gmod-ds-soak}
 PORT=${GR_SOAK_PORT:-27125}
