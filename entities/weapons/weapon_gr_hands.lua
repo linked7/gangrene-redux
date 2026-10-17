@@ -24,3 +24,11 @@ SWEP.HitWallSound = { "physics/body/body_medium_break2.wav", "physics/body/body_
 SWEP.SwingSound = { "npc/vort/claw_swing1.wav", "npc/vort/claw_swing2.wav" }
 
 function SWEP:DrawWorldModel() end
+
+if CLIENT then
+	-- The original's hands: holstered, the arms are pushed far out of view; out, the fists show.
+	function SWEP:GetViewModelPosition( pos, ang )
+		if not self:IsOut() then return pos - ang:Forward() * 666, ang end
+		return pos, ang
+	end
+end

@@ -23,6 +23,7 @@ Fates.Define( "slave", {
 	Cost = 0,
 	ForNewPlayers = true,
 	DecayOverride = 30, -- a slave rots fast
+	NoItemWeapons = true, -- carries weapon items but never gets the weapon (the original's slave)
 	Footstep = function( ply ) ply:EmitSound( SHUFFLE[ math.random( #SHUFFLE ) ], ply:GetVelocity():Length2D() < 150 and 35 or 75 ) end,
 	PainSounds = {}, -- not the prole's: the plain grunts
 	DeathSounds = { "npc/zombie_poison/pz_warn1.wav", "npc/zombie_poison/pz_warn2.wav" },

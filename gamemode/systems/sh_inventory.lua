@@ -111,7 +111,10 @@ Net.Pool( "gr_inv" )
 local function syncWeapon( ply, def, n )
 	if not def.Weapon then return end
 	if n > 0 then
-		if ply:Alive() and not ply:IsGhost() and not ply:HasWeapon( def.Weapon ) then ply:Give( def.Weapon ) end
+		-- The original never hands a slave the weapon of an item it carries.
+		if ply:Alive() and not ply:IsGhost() and not ply:FateHas( "NoItemWeapons" ) and not ply:HasWeapon( def.Weapon ) then
+			ply:Give( def.Weapon )
+		end
 	elseif ply:HasWeapon( def.Weapon ) then
 		ply:StripWeapon( def.Weapon )
 	end
@@ -253,6 +256,7 @@ end )
 
 function Inventory.Drop( ply, id, n )
 	if not living( ply ) then return end
+	if Items.Get( id ).Droppable == false then return end
 	n = math.min( math.floor( n or 1 ), Inventory.Count( ply, id ) )
 	if n < 1 or not Inventory.Remove( ply, id, n ) then return end
 
@@ -268,6 +272,17 @@ end
 function Inventory.PickUp( ply, ent )
 	if not IsValid( ent ) or ent:GetClass() ~= "gr_item" or ent.GR_Taken or not living( ply ) then return 0 end
 	local id, count = ent:GetItemId(), ent:GetCount()
+	-- OnPickup can use one up on the spot (Bullets load straight into the gun in hand).
+	local def = Items.Get( id )
+	if def.OnPickup and def.OnPickup( ply, def ) then
+		if count <= 1 then
+			ent.GR_Taken = true
+			ent:Remove()
+		else
+			ent:SetCount( count - 1 )
+		end
+		return 1
+	end
 	local n = math.min( count, Inventory.Fits( ply, id ) )
 	if n < 1 then
 		Notify( ply, "You can't carry any more." )

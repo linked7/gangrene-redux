@@ -160,13 +160,22 @@ function Weapons.SetHolstered( ply, holstered )
 	if IsValid( wep ) and wep.Holsterable == false then holstered = false end
 	if ply:GetHolstered() == holstered then return end
 	ply:SetHolstered( holstered )
-	if IsValid( wep ) then wep:SetNextPrimaryFire( CurTime() + 0.6 ) end
+	if IsValid( wep ) then
+		wep:SetNextPrimaryFire( CurTime() + 0.6 )
+		local cb = holstered and wep.OnHolster or wep.OnUnholster
+		if cb then cb( wep ) end
+	end
 	Fates.ApplySpeed( ply )
 	if not holstered and IsValid( wep ) then hook.Run( "GR_Unholstered", ply, wep ) end
 end
 
+-- B does nothing with the build tools in hand (the original's client check).
+Weapons.NO_HOLSTER = { weapon_physgun = true, gmod_tool = true, weapon_physcannon = true }
+
 function Weapons.ToggleHolster( ply )
 	if ply:GetPassedOut() or ply:IsGhost() or not ply:Alive() then return end
+	local wep = ply:GetActiveWeapon()
+	if IsValid( wep ) and Weapons.NO_HOLSTER[ wep:GetClass() ] then return end
 	Weapons.SetHolstered( ply, not ply:GetHolstered() )
 end
 
