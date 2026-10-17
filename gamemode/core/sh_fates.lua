@@ -26,6 +26,8 @@ local SCHEMA = {
 	Appearance = { "table", "function" }, -- { model, skin, bodygroups = { name = value }, race = id }
 	Names = { "table", "function" }, -- list of names, or function( ply ) -> name; nil = Steam name
 	Color = { "table" },           -- for HUD and chat
+	Faction = { "string" },        -- fates sharing a faction answer to each other (step 10)
+	Authority = { "number" },      -- rank inside the faction; higher outranks lower
 	OnEnter = { "function" },      -- ( ply, reason )
 	OnLeave = { "function" },      -- ( ply, newFate )
 }

@@ -10,6 +10,9 @@ Fates.Define( "kaiser", {
 	Health = 100,
 	Armor = 75,
 	Radio = { "state" },
+	Sovereign = true, -- the law itself: kills by the head of state are never crimes
+	Faction = "state",
+	Authority = 3, -- leader
 	Names = function() return math.random( 100 ) == 1 and "Watch Kaiser Thule" or "Witch Kaiser Thule" end,
 	Appearance = { model = "models/player/breen.mdl", race = "gangral" },
 } )
