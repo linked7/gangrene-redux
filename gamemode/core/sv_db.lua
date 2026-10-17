@@ -210,10 +210,16 @@ end
 
 hook.Add( "Initialize", "gr_db", migrate )
 
-hook.Add( "CheckPassword", "gr_db_bans", function( steamid64 )
+-- What CheckPassword runs: false and the message for a banned steamid, nil to let them in.
+function DB.CheckBan( steamid64 )
 	local ban = DB.GetBan( steamid64 )
-	if ban then return false, "Banned: " .. ban.reason end
-end )
+	if not ban then return end
+	local untilTime = tonumber( ban[ "until" ] ) or 0
+	local left = untilTime == 0 and "permanently" or string.format( "for %d more minutes", math.ceil( ( untilTime - os.time() ) / 60 ) )
+	return false, string.format( "Banned %s: %s", left, ban.reason )
+end
+
+hook.Add( "CheckPassword", "gr_db_bans", DB.CheckBan )
 
 hook.Add( "PlayerInitialSpawn", "gr_db", function( ply )
 	DB.LoadPlayer( ply )

@@ -176,19 +176,4 @@ hook.Add( "GR_RoundStart", "gr_rank", function()
 	end
 end )
 
--- Console: gr_setrank <name or steamid64> <rank 0-3>, server console or superadmins.
-concommand.Add( "gr_setrank", function( caller, _, args )
-	if IsValid( caller ) and not caller:IsSuperAdmin() then return end
-	local who, r = args[ 1 ] or "", tonumber( args[ 2 ] or "" )
-	if not r or not Rank.NAMES[ r ] then return print( "usage: gr_setrank <name|steamid64> <0-3>" ) end
-	for _, p in player.Iterator() do
-		if p:SteamName() == who or ( not p:IsBot() and p:SteamID64() == who ) then
-			p:SetRank( r )
-			DB.FlushPlayer( p )
-			Log.Info( "rank", "%s set %s (%s) to %s", IsValid( caller ) and caller:SteamName() or "console",
-				p:SteamName(), DB.Key( p ), Rank.Name( r ) )
-			return
-		end
-	end
-	print( "gr_setrank: no such player " .. who )
-end )
+-- Staff set ranks with gr_setrank / !setrank (sv_admin.lua).

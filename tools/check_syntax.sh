@@ -14,5 +14,10 @@ if grep -rnE --include='*.lua' '^([^-]|-[^-])*FindByClass' gamemode entities; th
 	echo "FindByClass is not allowed (P2): keep a registry"
 	fail=1
 fi
+# S1/S2: every receiver goes through Net.Receive (core/sh_net.lua), which rate-limits and checks the sender.
+if grep -rnE --include='*.lua' '^(([^-]|-[^-])*[^A-Za-z0-9_.-])?net\.Receive[[:space:]]*\(' gamemode entities | grep -v '^gamemode/core/sh_net.lua:'; then
+	echo "raw net.Receive is not allowed (S1, S2): use Net.Receive"
+	fail=1
+fi
 [ "$fail" = 0 ] && echo "syntax ok"
 exit "$fail"

@@ -10,12 +10,39 @@
 --   range  with target, the sender must be within this many units of it
 --   ghost  sender must be a ghost
 -- Server handler: fn(ply, target, len). Client handler: fn(len).
+--
+-- Registry (server): Net.Pools[ name ] = true for every pooled name, Net.Receivers[ name ] =
+-- { rate, opts } for every client->server receiver. The step 14 test checks it against
+-- net.Receivers, so a raw net.Receive (also banned by tools/check_syntax.sh) shows up.
+--
+-- Payload helpers for handlers: Net.ReadString( max ) returns nil for a string longer than
+-- `max` (default Net.MAX_STRING); Net.Finite( n | Vector ) is false for NaN and infinities.
 Net = Net or {}
+Net.Pools = Net.Pools or {}
+Net.Receivers = Net.Receivers or {}
+Net.MAX_STRING = 64
 
 local buckets = setmetatable( {}, { __mode = "k" } )
 
 function Net.Pool( name )
-	if SERVER then util.AddNetworkString( name ) end
+	if SERVER then
+		util.AddNetworkString( name )
+		Net.Pools[ name ] = true
+	end
+end
+
+function Net.ReadString( max )
+	local s = net.ReadString()
+	if #s > ( max or Net.MAX_STRING ) then return nil end
+	return s
+end
+
+local function finite( n ) return n == n and n ~= math.huge and n ~= -math.huge end
+
+function Net.Finite( v )
+	if isnumber( v ) then return finite( v ) end
+	if isvector( v ) then return finite( v.x ) and finite( v.y ) and finite( v.z ) end
+	return false
 end
 
 local function isGhost( ply )
@@ -54,8 +81,10 @@ function Net.Receive( name, opts, fn )
 		return
 	end
 
+	if not istable( opts ) then error( "Net.Receive: server receiver " .. name .. " needs an opts table", 2 ) end
 	Net.Pool( name )
 	local rate = opts.rate or 4
+	Net.Receivers[ name ] = { rate = rate, opts = opts }
 
 	net.Receive( name, function( len, ply )
 		if not IsValid( ply ) then return end
@@ -77,6 +106,15 @@ function Net.Receive( name, opts, fn )
 		local ok, err = xpcall( fn, debug.traceback, ply, target, len )
 		if not ok then Log.Error( "net", "%s handler: %s", name, err ) end
 	end )
+end
+
+-- GMod's own libraries listen with raw net.Receive ("properties", "editvariable"). Adopting one
+-- puts its handler behind the same rate limit and sender checks and registers it like ours.
+function Net.Adopt( name, opts )
+	if CLIENT then return end
+	local raw = net.Receivers[ string.lower( name ) ]
+	if not raw or Net.Receivers[ name ] then return end
+	Net.Receive( name, opts, function( ply, _, len ) raw( len, ply ) end )
 end
 
 -- Ready handshake: the client says when it has finished loading, and the server runs
