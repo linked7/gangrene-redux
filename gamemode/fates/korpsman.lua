@@ -1,4 +1,5 @@
--- Placeholder: step 11 adds reviving for a fee, faster regeneration and surgery.
+-- The revive and healing loop (step 11.2). The rules live in systems/sh_medicine.lua and read these
+-- fields: RegenMulti, ReviveFee, Surgeon, Lovebox.
 local NAMES = { "Medic", "Doctor", "Physician", "Helix", "Haruspex", "Bachelor", "Dissector", "Surgeon", "Nurse",
 	"Practitioner", "Traumist", "Paramedic" }
 
@@ -12,6 +13,16 @@ Fates.Define( "korpsman", {
 	Citizen = true,
 	Radio = { "medic" },
 	CanRevive = true,
+	ReviveFee = true, -- takes the Economy's revive_fee percent of the patient's carried bones
+	RegenMulti = 3,
+	Surgeon = true,
+	Lovebox = true,   -- only once the Kaiser buys the korpsman upgrade
+	-- A fresh korpsman gets a set of surgical tools; a revived one keeps what the body held.
+	OnEnter = function( ply, reason )
+		if SERVER and reason ~= "revive" and Inventory.Count( ply, "surgical_tools" ) < 1 then
+			Inventory.Add( ply, "surgical_tools", 1, true )
+		end
+	end,
 	Names = function() return NAMES[ math.random( #NAMES ) ] .. " #" .. math.random( 100 ) end,
 	Appearance = function()
 		return { model = string.format( "models/player/group03m/male_0%d.mdl", math.random( 9 ) ), race = "gangral" }
