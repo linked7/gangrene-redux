@@ -135,7 +135,7 @@ Items.Define( "baton", {
 	Description = "A heavy stick for keeping order.",
 	Weight = 2,
 	Model = "models/weapons/w_stunbaton.mdl",
-	Weapon = "weapon_stunstick",
+	Weapon = "weapon_gr_baton",
 } )
 
 Items.Define( "pistol", {
@@ -143,7 +143,7 @@ Items.Define( "pistol", {
 	Description = "A sidearm. Owning one without a permit is a crime.",
 	Weight = 2,
 	Model = "models/weapons/w_pistol.mdl",
-	Weapon = "weapon_pistol",
+	Weapon = "weapon_gr_pistol",
 } )
 
 local function showPermit( ply, def )
