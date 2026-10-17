@@ -3,6 +3,7 @@
 **Scope:**
 
 - **Four fates:** Kaiser, Sanitar, Prole, Korpsman.
+- **Plus Slave:** the probation fate for new players. It works like a Prole with restrictions. New players can only play Slave until they survive a round or another player commends them (step 11.5 and step 13).
 - **Ghost** stays as the dead/lobby state. It isn't a fate you pick.
 - **Platform:** a Garry's Mod gamemode in Lua, with **SQLite** persistence through GMod's built-in `sql.*` library (replacing mysqloo).
 - **Background:** `01-systems.md` explains what each system did, and `02-pitfalls.md` explains why it is rebuilt differently. IDs like P1, R3 and S2 refer to `02-pitfalls.md`.
@@ -94,7 +95,7 @@
   5. Gives the loadout and initialises needs (step 6).
   6. Calls the new fate's `OnEnter(ply, reason)`.
 - **`Fates.CanTake(ply, id)`** is shared between server and client and returns `ok, reason`. It checks, in order:
-  1. rank
+  1. rank. A **Foolish** (new) player may only take fates marked `ForNewPlayers = true`, which is only Slave. Everyone else can't take Slave.
   2. stem cells ≥ cost
   3. free slots, where `Slots(pop)` is a function on the fate replacing `Limit`/`DynamicLimits`
   4. the player's death cooldown for this fate
@@ -104,7 +105,8 @@
   - On use it calls `CanTake`, then charges stem cells, then calls `Apply`.
   - Potentials are **dropped**.
 - **Done when:**
-  - A ghost can take each of four placeholder fates.
+  - A ghost can take each of five placeholder fates.
+  - A Foolish player is refused everything except Slave, and a Friend is refused Slave.
   - Slot limits hold when 10 bots try at once.
   - Dying sends you back to ghost with a per-fate cooldown.
 
@@ -194,7 +196,7 @@
   - Victim is a citizen → "murder", death-wanted for 300 s, −1 stem cell, +30 despair.
 - **Done when:** each rule fires in a scripted bot scenario, and wanted status counts down only while out of sight.
 
-### Step 11: The four fates
+### Step 11: The fates
 
 Build them in this order, so each one has something to act on.
 
@@ -221,11 +223,36 @@ Build them in this order, so each one has something to act on.
      - Forgiving an economic crime costs 300.
    - **Upgrades:** **one** receiver `nKaiserUpgrade(targetFate)` reading a data table `{prole = 125, korpsman = 150}` (R3).
    - **On death:** taxes go to 50% with a global announcement and a 600 s cooldown for the role.
+5. **Slave**: probation for new players. It is a Prole with restrictions, so build it as a variant of the Prole definition: `Fates.Define("slave", {Base = "prole", ...})`.
+   - **Who:** every Foolish-rank player, and only them. Cost 0, unlimited slots, a short death cooldown (15 s, like Prole).
+   - **Same as Prole:** the work loop, wages and labor tax, needs, inventory, and being revived by korpsmen.
+   - **Different from Prole:**
+     - Barcode name: `"<Drone|Serf|Peon…> #<last digits of SteamID>"`.
+     - Slave model and clothing, plus a PUBLIC marker so everyone can see who is new.
+     - Gets `weapon_cc_slave` (hands/tool only). **Can't deal damage to players**: a `Damage.Scale` hook zeroes it (from the original).
+     - **Can't build Constructions.** New players can't spend bones on world objects.
+     - **Can't be made wanted or collect evidence** (from the original). Killing a slave is still judged as murder of a citizen, so they are protected.
+     - The corpse decomposes in 30 s.
+   - **Leaving slavery** (both paths call `Rank.Free(ply, how)`):
+     - **Survive a round:** at `Round.End`, every player who is a Slave, alive and not downed, and has been a Slave for at least `slave_min_round_time` (default 20 min of this round), is freed. Joining just before the round ends doesn't count.
+     - **Commendation:** a non-slave uses the context-menu "Commend" on a slave. This is a validated receiver:
+       - The commender is alive, not a ghost and not a slave.
+       - The commender's rank is at least Friend.
+       - The target is a Slave within 200 units.
+       - Each commender gets **one commendation per round**, stored as a SERVER field, to limit alt-account farming. Every commendation is logged.
+     - `Rank.Free` does the following:
+       - Sets the player's rank to Friend and flushes it to the DB straight away. This is the one exception to write-behind, so freedom is never lost.
+       - Broadcasts the big chat line *"<name> has been freed by <commender / surviving the round>!"*.
+       - Gives the freed player +1 stem cell.
+       - Gives a commender +1 stem cell.
+       - If the freed slave is alive, they stay a Slave until they die. On the ghost screen they can then pick any fate (no forced kill, unlike the original's ascend).
+   - Banishing is dropped. Kicking and banning are admin tools (step 14).
 - **Done when:** a 4-player session (Kaiser, Sanitar, Korpsman, Prole) can play one full loop:
   1. The prole works and pays tax.
   2. The Kaiser is paid and sentences the prole.
   3. The sanitar executes the prole and earns Teeth.
   4. The korpsman revives someone for a fee.
+  5. A fresh account joins as a Slave, works for wages, can't hurt anyone, and is freed by a commendation. A second fresh account is freed at the end of the round.
 
 ### Step 12: Chat and radio
 
@@ -242,9 +269,18 @@ Build them in this order, so each one has something to act on.
   - Lost to unjust kills and despair deaths.
   - Spent on fates.
   - Each one spent gives 25 bones.
-- **Ranks:** Foolish, Friend, Kapitan and Kaiser are enough for the core. Keep auto-promotion from Friend to Kapitan at the stem-cell threshold. Admin ranks are separate from the game's ranks.
-- **Foolish players** can only be Prole, instead of a separate slave fate.
-- **Done when:** a new player can, over time, unlock and take the Kaiser fate.
+- **Ranks:**
+  - Foolish, Friend, Kapitan and Kaiser are enough for the core.
+  - New accounts start at **Foolish**, which can only play Slave (step 11.5). Friend comes from `Rank.Free`.
+  - Keep auto-promotion from Friend to Kapitan at the stem-cell threshold.
+  - Admin ranks are separate from the game's ranks.
+- **Rounds (minimal):** the slave rule needs a round end, and the original only had one through Doom (deferred).
+  - `Round.Start` happens on map load.
+  - `Round.End(reason)` fires when the round timer (`round_length`, default 3 h) runs out or an admin ends it. It frees surviving slaves, flushes the DB, shows an end screen, then changes level.
+  - Doom, war and the Kaiser's fall can trigger `Round.End` later.
+- **Done when:**
+  - A new player starts as a Slave and is freed either by commendation or by surviving to `Round.End`.
+  - The new player can then, over time, unlock and take the Kaiser fate.
 
 ### Step 14: Hardening and playtest
 

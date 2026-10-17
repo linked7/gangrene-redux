@@ -77,6 +77,15 @@ Each fate exists to create a relationship:
 
 Even with only four fates, the core loop has the full shape of the original.
 
+**Slave** is how you enter this machine.
+
+- Every new player starts at the bottom: harmless, named by barcode, working for wages, and visibly marked as new.
+- **The point:** it is in-fiction probation. It protects the city from newcomers who kill at random, and it puts newcomers below everyone else, which fits the setting.
+- **Ways out:**
+  - Endure a whole round.
+  - Have someone vouch for you. Being commended turns "teach the new guy" into a social act that is part of the game.
+
+
 ## Things to preserve in the remake
 
 - **The vocabulary:** bones, stem cells, teeth, despair, Gangrene, Witch Kaiser, sanitar, korpsman, prole, "purpose in life", ghost suffering. Half the vibe is in the names.

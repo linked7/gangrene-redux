@@ -92,7 +92,17 @@ There are two ways in:
   - Losing the last one with `punishment` adds 50 despair.
 - **Ranks** run Foolish → Friend → Kapitan → Liaison → Kaiser → Lockmaster → Necromancer.
   - Friend is auto-promoted to Kapitan at `KapitanRankCost` stem cells.
-  - Foolish players are forced into the "slave" fate.
+  - Foolish players are forced into the **Slave** fate (`fates/list/slave.lua`):
+    - Barcode name ("Drone #1234…"), respirator and helmet, and the `weapon_cc_slave` hands.
+    - Can't use weapons or harm others, and can't be made wanted or collect evidence.
+    - The corpse decomposes in 30 s.
+    - The intro tells them to find a Liaison who will teach them.
+  - **Leaving slavery:** only the **trainer** fate could free a slave, with the context-menu `nCAscend` (`LM/framework/contextmenu/sv_context.lua:699`).
+    - Ascending kills the slave and sets their rank to Friend.
+    - It pays +1 stem cell to the slave, and +10 stem cells and 300 bones to the trainer.
+    - It pays 100 bones to the Kaiser.
+  - **Banishing:** the trainer could instead use `nCBanish` to ban the slave for 1 day.
+  - **Rounds:** a round ends when the city hits Doom (`LM/framework/sv_doom.lua`). That means an end screen, a wipe, and a changelevel 2 minutes later.
   - Higher ranks gate fates and admin tools: the physgun/toolgun by trust, and noclip only for Necromancer.
 - **Insight** is a set of thresholds derived from stem cells (25…666) that unlock fates.
 
