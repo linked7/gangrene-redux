@@ -5,10 +5,12 @@
 --       label = "Inspect" | function( ply, ent ) -> string,
 --       range = 120,
 --       show( ply, ent ) -> bool,   shared; the client uses it to build the menu
---       run( ply, ent ),            server; runs after show() passes again there
+--       run( ply, ent, choice ),    server; runs after show() passes again there
+--       choices( ply, ent ) -> { { label, value }, ... },   optional, client: the option becomes a
+--                                   submenu and run() gets the picked value (a string; validate it)
 --   } )
 --
--- Server code (and tests) can call Interact.Run( ply, id, ent ) directly; the receiver does the same.
+-- Server code (and tests) can call Interact.Run( ply, id, ent, choice ) directly; the receiver does the same.
 Interact = Interact or {}
 local list = Interact.list or {}
 Interact.list = list
@@ -44,15 +46,18 @@ function Interact.For( ply, ent )
 end
 
 if SERVER then
-	function Interact.Run( ply, id, ent )
+	function Interact.Run( ply, id, ent, choice )
 		local d = Interact.Get( id )
 		if not d or not d.run or not allowed( ply, d, ent ) then return false end
-		d.run( ply, ent )
+		d.run( ply, ent, choice )
 		return true
 	end
 
 	Net.Receive( "gr_interact", { rate = 4, alive = true, target = "any", range = 400 }, function( ply, ent )
-		Interact.Run( ply, Net.ReadString(), ent )
+		local id = Net.ReadString()
+		local choice = Net.ReadString() -- "" when the option has no choices
+		if not id or not choice then return end
+		Interact.Run( ply, id, ent, choice ~= "" and choice or nil )
 	end )
 	return
 end
@@ -64,15 +69,27 @@ hook.Add( "OnContextMenuOpen", "gr_interact", function()
 	if not IsValid( ent ) then return end
 	local opts = Interact.For( ply, ent )
 	if #opts == 0 then return end
+	local function send( d, choice )
+		net.Start( "gr_interact" )
+		net.WriteEntity( ent )
+		net.WriteString( d.id )
+		net.WriteString( choice or "" )
+		net.SendToServer()
+	end
 	menu = DermaMenu()
 	for _, d in ipairs( opts ) do
 		local label = isfunction( d.label ) and d.label( ply, ent ) or d.label or d.id
-		menu:AddOption( label, function()
-			net.Start( "gr_interact" )
-			net.WriteEntity( ent )
-			net.WriteString( d.id )
-			net.SendToServer()
-		end )
+		if d.choices then
+			local list = d.choices( ply, ent ) or {}
+			if #list > 0 then
+				local sub = menu:AddSubMenu( label )
+				for _, c in ipairs( list ) do
+					sub:AddOption( c[ 1 ], function() send( d, tostring( c[ 2 ] ) ) end )
+				end
+			end
+		else
+			menu:AddOption( label, function() send( d ) end )
+		end
 	end
 	menu:Open( ScrW() / 2, ScrH() / 2 )
 end )
