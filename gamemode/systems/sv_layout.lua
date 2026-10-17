@@ -42,6 +42,11 @@ Layout.CLASSES = {
 	corpse_washer = {},
 	-- The lunch machine (systems/sh_lunch.lua): it works with the nearest boiler.
 	line_boiler = {},
+	-- The tools machine chain (systems/sh_toolsmachine.lua).
+	machine_generator = {},
+	machine_tools = {},
+	vat_metal = {},
+	boulder = {},
 	lunch_machine = {
 		output = function( v ) return Lunch.OUTPUTS[ v ] ~= nil end,
 	},

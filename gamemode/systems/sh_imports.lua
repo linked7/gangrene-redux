@@ -4,7 +4,9 @@
 -- any other crate (Crates.Deliver), which is the only way its stock rises. Coats come first.
 --   Imports.GOODS[ good ] = true     Imports.IsImport( good )     Imports.Order( ply, good )
 Imports = Imports or {}
-Imports.GOODS = { coat = true }
+Imports.GOODS = { coat = true, scrap = true, biofuel = true }
+-- These go straight into stock, no crate (the tools machine chain's raw inputs).
+Imports.TO_STOCK = { scrap = true, biofuel = true }
 
 function Imports.IsImport( good ) return Imports.GOODS[ good ] == true end
 
@@ -32,6 +34,11 @@ function Imports.Order( ply, good )
 	if not Econ.Transfer( Econ.TREASURY, Econ.UPGRADE_FUND, price, "import " .. good ) then
 		Notify( ply, string.format( "The treasury can't cover the %d bones this import costs.", price ) )
 		return false
+	end
+	if Imports.TO_STOCK[ good ] then
+		Econ.AddStock( good, 1 )
+		Notify( ply, "The import is in the stockpile." )
+		return true
 	end
 	local crate = Crates.Spawn( good, Imports.GatePos( ply ) )
 	Notify( ply, "An import crate has arrived at the gate. Have it hauled to the stockpile." )

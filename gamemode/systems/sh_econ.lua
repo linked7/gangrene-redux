@@ -8,7 +8,10 @@
 Econ = Econ or {}
 
 -- Goods the stockpile holds, with the default prices the state pays and charges for them.
-Econ.GOODS = { "ration", "clean_water", "fear_beer", "spirits", "knife", "coat" }
+Econ.GOODS = { "ration", "clean_water", "fear_beer", "spirits", "knife", "coat",
+	-- The tools machine chain (systems/sh_toolsmachine.lua). Placeholder prices.
+	"scrap", "biofuel", "ore", "material_metal_pot", "material_metal_ballistic", "formic_steel",
+	"pipe", "hammer", "crowbar", "bat", "fryingpan", "pickaxe", "axe", "shovel", "meatsaw", "crackhammer" }
 Econ.GOOD_DEFAULTS = {
 	ration = { buy = 20, sell = 15 },
 	clean_water = { buy = 20, sell = 15 },
@@ -16,6 +19,22 @@ Econ.GOOD_DEFAULTS = {
 	spirits = { buy = 60, sell = 85 },
 	knife = { buy = 30, sell = 40 },
 	coat = { buy = 30, sell = 40 },
+	scrap = { buy = 10, sell = 15 },
+	biofuel = { buy = 15, sell = 20 },
+	ore = { buy = 10, sell = 15 },
+	material_metal_pot = { buy = 20, sell = 30 },
+	material_metal_ballistic = { buy = 50, sell = 80 },
+	formic_steel = { buy = 90, sell = 140 },
+	pipe = { buy = 20, sell = 30 },
+	hammer = { buy = 30, sell = 40 },
+	crowbar = { buy = 30, sell = 40 },
+	bat = { buy = 20, sell = 30 },
+	fryingpan = { buy = 25, sell = 35 },
+	pickaxe = { buy = 40, sell = 55 },
+	axe = { buy = 40, sell = 55 },
+	shovel = { buy = 30, sell = 40 },
+	meatsaw = { buy = 80, sell = 110 },
+	crackhammer = { buy = 120, sell = 160 },
 }
 -- The C-menu shop (step 9) sells these at sell.<good>, out of the same stock counts. Every good
 -- here but the ration starts each round with `shop_stock` in the stockpile.
