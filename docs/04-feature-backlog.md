@@ -27,6 +27,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | Kaiser recruits sanitars (context menu); sanitar station dropped | `accepted` | Steps 4, 11.4. |
 | Deadly wasteland water (1:1 port: damage + Pox by water level) | `accepted` | Step 8. |
 | XOMBOKOM as big red screen text | `accepted` | Step 11.4. |
+| Wading slowdown (x0.8/0.6/0.5 by water level) | `accepted` | Step 8. |
 | Gate makes migrants Proles; Kaiser recruits korpsmen in-world | `accepted` | Steps 11.4, 13. |
 | Sanitar Summon (1:1 port, 16 rp_slumtown spots) | `accepted` | Step 10. |
 | Immigration Kontrol Konsole in the Gate Antechamber (papers → passport) | `accepted` | Step 13. |
@@ -109,5 +110,6 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Wasteland water | 1:1 port of the original wade damage and Pox in the wasteland box. | User: the water should be horrible in the wasteland. |
 | 2026-10-17 | XOMBOKOM | Kaiser broadcast as large red top-centre text plus sound, not chat; 120 chars, 30 s cooldown. | User's choice. |
 | 2026-10-17 | Sanitar Summon | 1:1 port of the original summoner with its 16 rp_slumtown spots. | User asked. |
+| 2026-10-17 | Wading slowdown | Movement slowed by water level in all water; new, the original had none. | User asked. |
 | 2026-10-17 | In-world fate pick | Konsole stamps migrants as Proles, no fate list; Kaiser "Recruit as Korpsman" like sanitar recruiting. | User asked. |
 | 2026-10-17 | Immigration konsole | New `konsole_immigration` at the Gate Antechamber is the papers → passport point; none existed in the original. | User asked. |

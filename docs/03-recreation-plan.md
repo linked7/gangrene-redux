@@ -227,6 +227,7 @@
   - **Cost:** +2 Pox; a 1/6 chance of a random parasite; a 1/8 chance of AAT red *"NAME slices their hand open on something sharp!"* and 10–20 damage. Nobody is exempt.
   - **UI:** crosshair text: the name, then *"Use to dumpster dive.\nIt isn't healthy to do, and you'll probably catch something nasty."* or *"You must wait before there is more to take."*
 - **Wasteland water (1:1 port of `sv_player.lua:3421-3437`):** the map layout may set a `Wasteland` box (rp_slumtown: `Vector(1667,-1529,1276)` to `Vector(12122,7142,-809)`). Every 1 s, a living non-ghost player with `WaterLevel() > 0` inside the box takes `WaterLevel()` damage and gains `WaterLevel()` Pox (no Pox with a Respirator or race Outsider). The `aquatic` quirk is exempt. Wading slows ×0.7 (level 1–2) / ×0.55 (level 3) through the speed modifier (`sh_player.lua:1316`). Leeches stay out.
+- **Wading slowdown (new, not in the original):** in `SetupMove`, shared, any water: speed x0.8 at `WaterLevel()` 1, x0.6 at 2, x0.5 at 3. No net traffic.
 - **Done when:** pick up, drop and use work, the weight limit holds, and the corpse holds the dead player's items. The pump gives dirty water, and drinking it sometimes adds Pox. A trash search drops 1–3 items, adds 2 Pox and empties the pile; a second search says "There is nothing." until it refills. A bot standing waist-deep in wasteland water loses 2 HP and gains 2 Pox each second; with a Respirator it only loses HP; city water does nothing.
 
 ### Step 9: Economy (fixed bone supply, treasury, stockpile, prices)
