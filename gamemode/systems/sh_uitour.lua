@@ -17,7 +17,7 @@ if SERVER then
 			local d = ent:GetClass() == class and ent:GetPos():DistToSqr( ply:GetPos() )
 			if d and ( not bestD or d < bestD ) then best, bestD = ent, d end
 		end
-		local clearDir
+		local clearDir, spawned
 		if not IsValid( best ) and spawn then
 			-- Put it in open floor: the first of eight directions with room for the player hull and the entity.
 			local origin = ply:GetPos()
@@ -31,7 +31,7 @@ if SERVER then
 			clearDir = clearDir or ply:GetForward()
 			local e = ents.Create( class )
 			if IsValid( e ) then
-				e:SetPos( origin + clearDir * 200 + Vector( 0, 0, 20 ) )
+				e:SetPos( origin + clearDir * 80 + Vector( 0, 0, 4 ) ) -- close enough to be lit and in frame
 				e:SetAngles( Angle( 0, clearDir:Angle().y + 180, 0 ) ) -- its front faces the player
 				e:Spawn()
 				e:Activate()
@@ -53,7 +53,7 @@ if SERVER then
 	end
 
 	-- name -> { class, aim, spawn, dist }
-	local function centre( e ) return e:WorldSpaceCenter() end
+	local function centre( e ) return e:LocalToWorld( e:OBBCenter() ) end
 	local TARGET = {
 		fate_station = { "fate_station" },
 		lunch_machine = { "lunch_machine", function( m ) return m:LocalToWorld( Vector( 13, 4, 18 ) ) end }, -- the button row
@@ -61,11 +61,11 @@ if SERVER then
 		line_boiler = { "line_boiler", function( b ) return Lunch.HandlePos( b, "vent" ) end },
 		boiler_build = { "line_boiler", function( b ) return Lunch.HandlePos( b, "build" ) end },
 		boiler_dial = { "line_boiler", centre, false, 110 },
-		state_stockpile = { "state_stockpile", centre, true, 80 },
-		water_barrel = { "water_barrel", centre, true, 50 },
-		bone_capsule = { "bone_capsule", centre, true, 50 },
-		meat_chunk = { "meat_chunk", centre, true, 50 },
-		storage_crate = { "storage_crate", centre, true, 60 },
+		state_stockpile = { "state_stockpile", centre, true },
+		water_barrel = { "water_barrel", centre, true },
+		bone_capsule = { "bone_capsule", centre, true },
+		meat_chunk = { "meat_chunk", centre, true },
+		storage_crate = { "storage_crate", centre, true },
 	}
 
 	hook.Add( "GR_PlayerReady", "gr_uitour", function( ply )
