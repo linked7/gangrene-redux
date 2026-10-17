@@ -54,6 +54,7 @@ return {
 		"sh_medicine.lua",
 		"sh_police.lua",
 		"sh_kaiser.lua",
+		"sh_recruit.lua",
 		"cl_kaiser.lua",
 		"sh_rank.lua",
 		"sh_round.lua",

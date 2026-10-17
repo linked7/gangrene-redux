@@ -12,6 +12,7 @@ Fates.Define( "kaiser", {
 	Health = 100,
 	Armor = 75,
 	Radio = { "state" },
+	Recruits = { from = "prole", to = "sanitar" }, -- recruits proles as sanitars (sh_recruit.lua)
 	RunsEconomy = true,     -- sets the Economy table, grants and fines (step 9); no wage
 	StockpileAccess = true, -- takes from the stockpile for free
 	PainSounds = { "placenta/pain/sanitar1.wav", "placenta/pain/sanitar2.wav", "placenta/pain/sanitar3.wav", "placenta/pain/sanitar4.wav" },

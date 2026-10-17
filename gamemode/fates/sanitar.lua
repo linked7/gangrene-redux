@@ -27,6 +27,7 @@ Fates.Define( "sanitar", {
 	Footstep = function( ply )
 		if ply:GetVelocity():Length2D() >= 150 then ply:EmitSound( BOOTS[ math.random( #BOOTS ) ], 75, math.random( 85, 95 ) ) end
 	end,
+	Recruited = true,       -- no fate station; the Kaiser recruits proles (sh_recruit.lua)
 	StockpileAccess = true, -- guarding the stockpile is part of the job
 	Wage = 40,              -- default wage.sanitar in the Economy table
 	Faction = "state",

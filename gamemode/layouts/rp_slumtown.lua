@@ -5,7 +5,7 @@
 -- liverfailurewar/gamemode/liverfailure-modules/maps/list/rp_slumtown.lua (plan step 4, map layouts).
 -- Positions and angles are copied unchanged; entries commented out there stay out.
 --   GM.Purposes      purpose_in_life for the kept fates -> fate_station:
---                    kommandant -> kaiser, sanitator -> sanitar, korpsman -> korpsman, proletariat -> prole
+--                    kommandant -> kaiser, sanitator dropped (sanitars are recruited), korpsman -> korpsman, proletariat -> prole
 --   GM.OtherEnts     machine_lunch (four spots in one room) -> one lunch_machine at the first spot
 --                    and its line_boiler at the spot beside it (the old generator's job)
 --                    faucet -> water_pump candidates; two are enabled (step 8: one or two per map)
@@ -20,11 +20,6 @@ return {
 	-- Purposes
 	{ class = "fate_station", pos = Vector( 1157, -427, 401 ), ang = Angle( 0, -178, 0 ), kv = { fate = "kaiser" }, drop = true },
 
-	{ class = "fate_station", pos = Vector( -773, -417, 129 ), ang = Angle( 0, -45, 0 ), kv = { fate = "sanitar" }, drop = true },
-	{ class = "fate_station", pos = Vector( -773, -446, 1 ), ang = Angle( 0, -44, 0 ), kv = { fate = "sanitar" }, drop = true }, -- bunker
-	{ class = "fate_station", pos = Vector( 1068, 117, 273 ), ang = Angle( 0, -177, 0 ), kv = { fate = "sanitar" }, drop = true },
-	{ class = "fate_station", pos = Vector( -766, -512, 129 ), ang = Angle( 1, 46, 0 ), kv = { fate = "sanitar" }, drop = true },
-	{ class = "fate_station", pos = Vector( 940, 120, 273 ), ang = Angle( 0, -178, 1 ), kv = { fate = "sanitar" }, drop = true }, -- gate area
 
 	{ class = "fate_station", pos = Vector( -1291, -129, 1 ), ang = Angle( 0, 180, 0 ), kv = { fate = "korpsman" }, drop = true },
 
