@@ -1,46 +1,27 @@
--- Brewing (step 11): beer and surgical spirit are made by proles, not seeded into the stock.
+-- Brewing (step 11): beer and surgical spirit are made by hand, not seeded into the stock. No timer.
 --
---   brew_barrel   a prole drops in one loaf (Econ.BREAD) and picks beer or spirit; the barrel seals
---                 and ferments for Config.BrewTime s. Anyone can smash a sealed barrel (Integrity
---                 Brew.INTEGRITY) or carry it off; only a prole opens a finished one: Brew.YIELD
---                 bottles fall out. Beer lowers despair, spirit cures the pox (sh_items.lua).
---   Bottles sell back at a stockpile_port for their buy price (Shop.Sell, sh_shop.lua).
+--   brew_barrel   the original's "Booze Bucket". A two-position lever on its rim (use on it) picks
+--                 beer or spirits. A ration touching the barrel is swallowed (it must be empty);
+--                 then Brew.HITS melee hits or hard shakes (bumps over Brew.SHAKE_SPEED) finish
+--                 the batch: Brew.YIELD bottles go straight into the stockpile (the port sells them).
+--                 Beer lowers despair, spirit cures the pox (sh_items.lua).
 --
--- Server API: Brew.Track( ent ), Brew.Count(), Brew.Fill( ply, ent, kind ), Brew.Open( ply, ent ),
---             Brew.Think()  (Sched "brew", every second)
+-- Server API: Brew.Track( ent ), Brew.Count(), Brew.FlipLever( ent ), Brew.Feed( ent, item ),
+--             Brew.Agitate( ent ), Brew.Use( ply, ent )
 Brew = Brew or {}
 
-Brew.IDLE, Brew.BREWING, Brew.DONE = 0, 1, 2
-Brew.KINDS = { "fear_beer", "spirits" }          -- index = the barrel's Brew NetworkVar
+Brew.IDLE, Brew.BREWING = 0, 1
+Brew.KINDS = { "fear_beer", "spirits" }          -- index = the barrel's Brew NetworkVar (the lever)
 Brew.KIND_INDEX = { fear_beer = 1, spirits = 2 }
 Brew.YIELD = 3
-Brew.INTEGRITY = 100
-Brew.RANGE = 100
+Brew.HITS = 8
+Brew.SHAKE_SPEED = 120
+Brew.SHAKE_GAP = 0.25 -- debounce so one bump isn't counted twice
 
-local function living( ply ) return IsValid( ply ) and ply:Alive() and not ply:IsGhost() end
-local function isBarrel( ent ) return IsValid( ent ) and ent:GetClass() == "brew_barrel" end
-local function prole( ply ) return living( ply ) and ply:FateHas( "Proletariat" ) end
-
-Interact.Add( "brew_fill", {
-	label = "Brew",
-	range = Brew.RANGE,
-	show = function( ply, ent )
-		return isBarrel( ent ) and ent:GetState() == Brew.IDLE and prole( ply ) and Inventory.Count( ply, Econ.BREAD ) > 0
-	end,
-	choices = function()
-		local out = {}
-		for i, id in ipairs( Brew.KINDS ) do table.insert( out, { Items.Get( id ).Name, id } ) end
-		return out
-	end,
-	run = function( ply, ent, choice ) Brew.Fill( ply, ent, choice ) end,
-} )
-
-Interact.Add( "brew_open", {
-	label = "Open the barrel",
-	range = Brew.RANGE,
-	show = function( ply, ent ) return isBarrel( ent ) and ent:GetState() == Brew.DONE and prole( ply ) end,
-	run = function( ply, ent ) Brew.Open( ply, ent ) end,
-} )
+local LEVER = Vector( 0, 12, 40 )
+local LEVER_TOLERANCE = 7
+function Brew.LeverPos( ent ) return ent:LocalToWorld( LEVER ) end
+function Brew.OnLever( ent, pos ) return Brew.LeverPos( ent ):Distance( pos ) <= LEVER_TOLERANCE end
 
 if CLIENT then return end
 
@@ -55,53 +36,60 @@ function Brew.Count()
 	return n
 end
 
-function Brew.Fill( ply, ent, kind )
-	if not isBarrel( ent ) or ent:GetState() ~= Brew.IDLE or not prole( ply ) then return false end
-	local idx = Brew.KIND_INDEX[ kind or "" ]
-	if not idx then return false end
-	if Inventory.Count( ply, Econ.BREAD ) < 1 or not Inventory.Remove( ply, Econ.BREAD, 1 ) then
-		Notify( ply, "You need a loaf to brew." )
-		return false
-	end
-	ent:SetBrew( idx )
-	ent:SetState( Brew.BREWING )
-	ent:SetFinishAt( CurTime() + Config.BrewTime )
-	ent:SetIntegrity( Brew.INTEGRITY )
-	ent:EmitSound( "physics/wood/wood_box_impact_hard3.wav" )
-	Log.Info( "brew", "%s sealed a barrel of %s", ply:Nick(), kind )
+local function isBarrel( ent ) return IsValid( ent ) and ent:GetClass() == "brew_barrel" end
+
+function Brew.FlipLever( ent )
+	if not isBarrel( ent ) then return false end
+	ent:SetBrew( ent:GetBrew() == 1 and 2 or 1 )
+	ent:EmitSound( "buttons/lever" .. math.random( 1, 8 ) .. ".wav", 70 )
 	return true
 end
 
-function Brew.Open( ply, ent )
-	if not isBarrel( ent ) or ent:GetState() ~= Brew.DONE or not prole( ply ) then return false end
-	local id = Brew.KINDS[ ent:GetBrew() ]
-	if not id then return false end
+-- A ration touching an empty barrel is swallowed (the original's gulp and splash).
+function Brew.Feed( ent, item )
+	if not isBarrel( ent ) or ent:GetState() ~= Brew.IDLE then return false end
+	if not IsValid( item ) or item.GR_Gone or item:GetClass() ~= "gr_item" or item:GetItemId() ~= Econ.BREAD then return false end
+	item.GR_Gone = true
+	item:EmitSound( "npc/barnacle/barnacle_gulp" .. math.random( 1, 2 ) .. ".wav" )
+	local e = EffectData()
+	e:SetOrigin( item:GetPos() )
+	e:SetScale( 0.5 )
+	util.Effect( "StriderBlood", e )
+	item:Remove()
+	ent:SetState( Brew.BREWING )
+	ent:SetHits( 0 )
+	return true
+end
+
+-- One melee hit or shake. The last one empties the batch into the stockpile.
+function Brew.Agitate( ent )
+	if not isBarrel( ent ) or ent:GetState() ~= Brew.BREWING then return false end
+	ent:SetHits( ent:GetHits() + 1 )
+	ent:EmitSound( "ambient/levels/canals/toxic_slime_sizzle" .. math.random( 1, 4 ) .. ".wav", 60, math.random( 70, 90 ) )
+	if ent:GetHits() < Brew.HITS then return true end
+	local id = Brew.KINDS[ ent:GetBrew() ] or Brew.KINDS[ 1 ]
+	Econ.AddStock( id, Brew.YIELD )
 	ent:SetState( Brew.IDLE )
-	ent:SetBrew( 0 )
-	ent:SetFinishAt( 0 )
-	ent:EmitSound( "ambient/water/water_splash1.wav" )
-	return Items.SpawnMany( { { id, 1 }, { id, 1 }, { id, 1 } }, ent:GetPos() + Vector( 0, 0, 50 ), ent:GetAngles() )
+	ent:SetHits( 0 )
+	ent:EmitSound( "ambient/levels/canals/toxic_slime_gurgle6.wav", 70, math.random( 90, 100 ) )
+	ent:EmitSound( "ambient/materials/flush" .. math.random( 1, 2 ) .. ".wav", 70, math.random( 90, 100 ) )
+	local e = EffectData()
+	e:SetOrigin( ent:GetPos() )
+	e:SetScale( 0.6 )
+	util.Effect( "BloodImpact", e )
+	Log.Info( "brew", "a barrel finished %d %s into the stockpile", Brew.YIELD, id )
+	return id
 end
 
--- A sealed barrel that has been hit loses Integrity (brew_barrel's OnTakeDamage); at 0 it bursts.
-function Brew.Smash( ent )
-	ent:EmitSound( "physics/wood/wood_crate_break" .. math.random( 1, 5 ) .. ".wav" )
-	local fx = EffectData()
-	fx:SetOrigin( ent:WorldSpaceCenter() )
-	util.Effect( "WaterSplash", fx )
-	ent:Remove()
+function Brew.Shake( ent, speed )
+	if speed < Brew.SHAKE_SPEED or ( ent.GR_NextShake or 0 ) > CurTime() then return false end
+	ent.GR_NextShake = CurTime() + Brew.SHAKE_GAP
+	return Brew.Agitate( ent )
 end
 
-function Brew.Think()
-	local now = CurTime()
-	for ent in pairs( barrels ) do
-		if not IsValid( ent ) then
-			barrels[ ent ] = nil
-		elseif ent:GetState() == Brew.BREWING and now >= ent:GetFinishAt() then
-			ent:SetState( Brew.DONE )
-			ent:EmitSound( "ambient/levels/canals/toxic_slime_gurgle4.wav" )
-		end
-	end
+-- Use on the lever flips it; anywhere else picks the barrel up.
+function Brew.Use( ply, ent )
+	local tr = util.TraceLine( { start = ply:GetShootPos(), endpos = ply:GetShootPos() + ply:GetAimVector() * 96, filter = ply } )
+	if tr.Entity == ent and Brew.OnLever( ent, tr.HitPos ) then return Brew.FlipLever( ent ) end
+	if not ent:IsPlayerHolding() then ply:PickupObject( ent ) end
 end
-
-Sched.Every( "brew", 1, Brew.Think )
