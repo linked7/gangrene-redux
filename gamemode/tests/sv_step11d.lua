@@ -2,6 +2,7 @@
 -- every target check, forgiveness paid by the forgiven, upgrades into the fund with zero drift and
 -- cleared at round reset, the ledger fetch, and the Economy table reset on the final death only.
 return function( T )
+	Config.SlaveGating = true -- these checks cover the gate itself; it is off by default for now
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t11d_%'" )
 
 	local told = {}

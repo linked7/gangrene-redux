@@ -168,6 +168,35 @@ function Admin.Noclip( by )
 	return true
 end
 
+-- Dev shortcuts: die on the spot (no downed state), and come straight back as a fate (the last
+-- one played by default) without the ghost walk.
+function Admin.Die( by )
+	if not ( IsValid( by ) and Admin.IsStaff( by ) ) then return refuse( by, "You are not staff." ) end
+	if by:IsGhost() then return refuse( by, "You are already a ghost." ) end
+	if not by:Alive() then
+		local rag = Corpse.Of( by )
+		if IsValid( rag ) then Corpse.Die( rag, "admin" ) end
+		return true
+	end
+	by.GR_DevFate = by:GetFateDef().id
+	by.GR_DiesOutright = "admin"
+	by:Kill()
+	return true
+end
+
+function Admin.Respawn( by, fateId )
+	if not ( IsValid( by ) and Admin.IsStaff( by ) ) then return refuse( by, "You are not staff." ) end
+	local f = Fates.Get( tostring( fateId or by.GR_DevFate or "prole" ) )
+	if not f then return refuse( by, "There is no such fate." ) end
+	if not by:Alive() then
+		local rag = Corpse.Of( by )
+		if IsValid( rag ) then Corpse.Die( rag, "admin" ) end
+		by:Spawn()
+	end
+	Fates.Apply( by, f.id, { reason = "admin" } )
+	return true
+end
+
 -- GMod's own receivers: properties are off in base-derived gamemodes (GM:CanProperty) and
 -- variable editing is admin-only (GM:CanEditVariable), but both still read messages, so they
 -- get the same rate limit as ours.
@@ -210,6 +239,16 @@ local COMMANDS = {
 		usage = "noclip",
 		noargs = true,
 		run = function( by ) return Admin.Noclip( by ) end,
+	},
+	die = {
+		usage = "die",
+		noargs = true,
+		run = function( by ) return Admin.Die( by ) end,
+	},
+	respawn = {
+		usage = "respawn [fate id]",
+		noargs = true,
+		run = function( by, args ) return Admin.Respawn( by, args[ 1 ] ) end,
 	},
 	setfate = {
 		usage = "setfate <player> <fate id>",

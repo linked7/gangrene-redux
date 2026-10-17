@@ -5,6 +5,7 @@ local function setup( ply, rank, stem )
 end
 
 return function( T )
+	Config.SlaveGating = true -- these checks cover the gate itself; it is off by default for now
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t4_%'" )
 
 	T.Equal( Fates.Get( "ghost" ).index, FATE_GHOST, "ghost is fate 1" )

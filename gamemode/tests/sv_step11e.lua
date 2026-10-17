@@ -1,6 +1,7 @@
 -- Step 11.5: the Slave. Fate gating by rank, the public marker, commendation (success and every
 -- refusal) and freeing at the end of the round (alive vs downed vs too little time).
 return function( T )
+	Config.SlaveGating = true -- these checks cover the gate itself; it is off by default for now
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t11e_%'" )
 
 	local function bot( name, rank, stem )
