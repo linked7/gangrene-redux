@@ -35,5 +35,6 @@ return {
 		"cl_hello.lua",
 		"sv_lifecycle.lua",
 		"sh_ghost.lua",
+		"sh_needs.lua",
 	},
 }
