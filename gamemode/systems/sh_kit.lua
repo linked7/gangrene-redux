@@ -51,6 +51,9 @@ end
 
 hook.Add( "EntityFireBullets", "gr_kit", function( ent, data )
 	if not IsValid( ent ) or not ent:IsPlayer() then return end
+	-- weapon_gr_base weapons apply AccuracyMulti and RecoilMulti themselves (sh_weapons.lua).
+	local wep = ent:GetActiveWeapon()
+	if IsValid( wep ) and wep.GR_Base then return end
 	-- Only answer when changed: a returned value stops the hooks after this one.
 	if Kit.ModifyBullets( ent, data ) then return true end
 end )

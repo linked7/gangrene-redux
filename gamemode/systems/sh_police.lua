@@ -46,7 +46,7 @@ Items.Define( "shotgun", {
 	Description = "For clearing a room of filth.",
 	Weight = 4,
 	Model = "models/weapons/w_shotgun.mdl",
-	Weapon = "weapon_shotgun",
+	Weapon = "weapon_gr_shotgun",
 } )
 
 Items.Define( "smg", {
@@ -54,7 +54,7 @@ Items.Define( "smg", {
 	Description = "The state's answer to a crowd.",
 	Weight = 3,
 	Model = "models/weapons/w_smg1.mdl",
-	Weapon = "weapon_smg1",
+	Weapon = "weapon_gr_smg",
 } )
 
 local function isPolice( ply ) return IsValid( ply ) and ply:IsPlayer() and ply:Alive() and ply:FateHas( "Police" ) end
