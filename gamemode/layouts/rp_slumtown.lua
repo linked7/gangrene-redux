@@ -38,7 +38,7 @@ return {
 	-- the sanitation station in the sanitars' room.
 	{ class = "fate_station", pos = Vector( 612, 349, 30 ), ang = Angle( 0, 228, 0 ), kv = { fate = "slave" }, drop = true },
 	{ class = "state_stockpile", pos = Vector( 1249, -141, 430 ), ang = Angle( 0, 252, 0 ), kv = {}, drop = true },
-	{ class = "gr_shop", pos = Vector( 1300, -60, 430 ), ang = Angle( 0, 252, 0 ), kv = {}, drop = true },
+	{ class = "stockpile_port", pos = Vector( 1300, -60, 430 ), ang = Angle( 0, 252, 0 ), kv = {}, drop = true },
 	{ class = "sanitation_station", pos = Vector( -733, -377, 158 ), ang = Angle( 0, 225, 0 ), kv = {}, drop = true },
 	-- the corpse washer, beside it: cops bring rotted bodies here.
 	{ class = "corpse_washer", pos = Vector( -700, -420, 158 ), ang = Angle( 0, 135, 0 ), kv = {}, drop = true },

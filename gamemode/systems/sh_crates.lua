@@ -77,12 +77,14 @@ function Crates.Stolen( crate, ply )
 end
 
 -- Makes a crate of `kind` at `pos`, stamped with `crew` (a Crates.Crew set) and counted against `station`.
-function Crates.Spawn( kind, pos, crew, station )
+-- `work` is { [DB.Key] = points }, the steps each worker put into it (server-only GR_Work).
+function Crates.Spawn( kind, pos, crew, station, work )
 	local crate = ents.Create( "ent_crate" )
 	if not IsValid( crate ) then return end
 	crate.GR_Kind = kind
 	crate.GR_Crew = crew and table.Copy( crew ) or nil
 	crate.GR_Station = station
+	crate.GR_Work = work and table.Copy( work ) or {}
 	crate:SetKind( kind )
 	crate:SetPos( pos )
 	crate:Spawn()
@@ -194,14 +196,53 @@ function Crates.Payees( ply, crate )
 	return out
 end
 
--- `ply` brings `crate` to `stockpile`: the stock rises and the buy price is paid, split evenly
--- across the crew when `ply` crewed it. Returns the bones paid, or false if it wasn't a delivery.
+-- Splits `price` for a crate: half to its workers by points (floor), the rest to the hauler.
+-- Returns { {key, amount}, ... } with the hauler (haulerKey) last.
+function Crates.Split( price, work, haulerKey )
+	local total, keys = 0, {}
+	for k, pts in pairs( work or {} ) do
+		if pts > 0 then total = total + pts table.insert( keys, k ) end
+	end
+	table.sort( keys )
+	local out, given = {}, 0
+	if total > 0 then
+		local half = math.floor( price / 2 )
+		for _, k in ipairs( keys ) do
+			local amt = math.floor( half * work[ k ] / total )
+			if amt > 0 then table.insert( out, { k, amt } ) given = given + amt end
+		end
+	end
+	table.insert( out, { haulerKey, price - given } )
+	return out
+end
+
+-- `ply` brings `crate` to `stockpile`: the stock rises and the buy price is paid, half to the
+-- crate's workers by work points and half (plus remainders) to the hauler, stolen or not.
+-- Returns the bones `ply` was paid, or false if it wasn't a delivery.
 function Crates.Deliver( ply, crate, stockpile )
 	if not living( ply ) or not isClass( crate, "ent_crate" ) or not isClass( stockpile, "state_stockpile" ) then return false end
 	if crate.GR_Taken or not Econ.GOOD_DEFAULTS[ crate.GR_Kind ] then return false end
 	take( crate )
 	reportTheft( ply, crate )
-	local paid = Econ.Deliver( ply, crate.GR_Kind, Crates.Payees( ply, crate ) )
+	local kind = crate.GR_Kind
+	Econ.AddStock( kind, 1 )
+	local price = Econ.Setting( "buy." .. kind )
+	local paid = 0
+	if Econ.Treasury() < price then
+		Notify( ply, "The treasury is empty. Your delivery was not paid for." )
+	else
+		local byKey = {}
+		for _, p in player.Iterator() do byKey[ DB.Key( p ) ] = p end
+		local hauler = DB.Key( ply )
+		for _, row in ipairs( Crates.Split( price, crate.GR_Work, hauler ) ) do
+			local to = row[ 1 ] == hauler and ply or byKey[ row[ 1 ] ]
+			-- A worker who has left gets nothing; their share stays with the hauler.
+			if not IsValid( to ) then to = ply end
+			if row[ 2 ] > 0 and Econ.Transfer( Econ.TREASURY, to, row[ 2 ], "crate" ) and to == ply then
+				paid = paid + row[ 2 ]
+			end
+		end
+	end
 	hook.Run( "GR_CrateDelivered", ply, crate )
 	crate:Remove()
 	return paid

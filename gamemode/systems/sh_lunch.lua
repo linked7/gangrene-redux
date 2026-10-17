@@ -386,12 +386,14 @@ function Lunch.TurnValve( ply, boiler, dir, amount )
 	if not isClass( boiler, "line_boiler" ) then return false end
 	amount = amount or Lunch.VALVE_RATE
 	Lunch.SetPressure( boiler, boiler:GetPressure() + ( dir == "build" and amount or -amount ) )
-	if CurTime() >= ( boiler.GR_NextSqueak or 0 ) then
+	local step = CurTime() >= ( boiler.GR_NextSqueak or 0 )
+	if step then
 		boiler.GR_NextSqueak = CurTime() + 0.7
 		boiler:EmitSound( "ambient/machines/squeak_" .. math.random( 8 ) .. ".wav", 60 )
 	end
 	local machine = Lunch.MachineOf( boiler )
-	if machine and living( ply ) then Lunch.Crew( machine, ply ) end
+	-- A held valve turns every tick; it earns a work point once per squeak.
+	if machine and living( ply ) then Lunch.Crew( machine, ply, step and 1 or 0 ) end
 	return true
 end
 
@@ -403,12 +405,20 @@ end )
 
 -- The machine -----------------------------------------------------------------------------------
 
-function Lunch.Crew( machine, ply )
+-- `ply` worked on `machine`: on the crew, plus `points` (default 1) toward the next crate's pay.
+function Lunch.Crew( machine, ply, points )
+	local key = DB.Key( ply )
 	machine.GR_Crew = machine.GR_Crew or {}
-	machine.GR_Crew[ DB.Key( ply ) ] = true
+	machine.GR_Crew[ key ] = true
+	points = points or 1
+	if points > 0 then
+		machine.GR_Work = machine.GR_Work or {}
+		machine.GR_Work[ key ] = ( machine.GR_Work[ key ] or 0 ) + points
+	end
 end
 
 function Lunch.CrewOf( machine ) return machine.GR_Crew or {} end
+function Lunch.WorkOf( machine ) return machine.GR_Work or {} end
 
 -- Why the panel is lit or dark, as a Lunch.STATUS_TEXT key. "on" and "overload" are lit.
 function Lunch.Status( machine )
@@ -437,6 +447,8 @@ function Lunch.Feed( machine, ent )
 	Crates.Forget( ent )
 	gone( ent )
 	machine:SetBiomass( machine:GetBiomass() + add )
+	local feeder = ent.GetPhysicsAttacker and ent:GetPhysicsAttacker( 10 )
+	if living( feeder ) then Lunch.Crew( machine, feeder ) end
 	machine:EmitSound( "npc/barnacle/barnacle_pull" .. math.random( 3 ) .. ".wav" )
 	local e = EffectData()
 	e:SetOrigin( ent:GetPos() )
@@ -516,15 +528,15 @@ function Lunch.Finish( machine )
 	local kind = Lunch.OUTPUTS[ machine:GetOutput() ] and machine:GetOutput() or "ration"
 	local need = Lunch.OUTPUTS[ kind ]
 	local boiler = Lunch.BoilerOf( machine )
-	local crew = Lunch.CrewOf( machine )
-	machine.GR_Crew = {}
+	local crew, work = Lunch.CrewOf( machine ), Lunch.WorkOf( machine )
+	machine.GR_Crew, machine.GR_Work = {}, {}
 	Lunch.Reroll( machine )
 	if need.biomass > 0 and machine:GetBiomass() < need.biomass then
 		Lunch.Explode( machine )
 		return nil
 	end
 	if not boiler or boiler:GetWater() < need.water then return nil end
-	local crate = Crates.Spawn( kind, outputPos( machine, Crates.Waiting( machine ) ), crew, machine )
+	local crate = Crates.Spawn( kind, outputPos( machine, Crates.Waiting( machine ) ), crew, machine, work )
 	if not crate then return nil end
 	machine:SetBiomass( machine:GetBiomass() - need.biomass )
 	boiler:SetWater( boiler:GetWater() - need.water )
@@ -684,7 +696,7 @@ function Lunch.Reset()
 	for _, m in ipairs( Lunch.All( "lunch_machine" ) ) do
 		m:SetBiomass( 0 )
 		m:SetOutput( "ration" )
-		m.GR_Crew = {}
+		m.GR_Crew, m.GR_Work = {}, {}
 		Lunch.Reroll( m )
 	end
 	for _, b in ipairs( Lunch.All( "water_barrel" ) ) do Lunch.SetBarrelFull( b, false ) end
