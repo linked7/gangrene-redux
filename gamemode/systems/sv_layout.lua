@@ -134,7 +134,7 @@ end
 function Layout.DefaultSet()
 	local set = {}
 	for _, f in ipairs( Fates.All() ) do
-		if f.index ~= FATE_GHOST then table.insert( set, { class = "fate_station", kv = { fate = f.id } } ) end
+		if f.index ~= FATE_GHOST and not f.Recruited then table.insert( set, { class = "fate_station", kv = { fate = f.id } } ) end
 	end
 	table.insert( set, { class = "state_stockpile", kv = {} } )
 	for _, class in ipairs( { "lunch_machine", "line_boiler", "capsule_spawn", "capsule_spawn", "capsule_spawn", "water_barrel", "water_barrel" } ) do
