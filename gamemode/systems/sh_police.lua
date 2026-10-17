@@ -150,7 +150,7 @@ table.insert( Crime.ReportRules, INSPECT_RULE )
 -- The crate `ply` is carrying, if someone else made it. Crates (step 11.1) may not be loaded.
 function Police.StolenCrate( ply )
 	local crate = Crates and Crates.HeldBy and Crates.HeldBy( ply )
-	if crate and crate.GR_MadeBy and crate.GR_MadeBy ~= DB.Key( ply ) then return crate end
+	if crate and Crates.Stolen( crate, ply ) then return crate end
 end
 
 -- Returns { stolenCrate, evidence, wanted } and tells the inspector. Interact has already

@@ -69,5 +69,7 @@ return {
 		"cl_help.lua",
 		"sv_soak.lua",
 		"sh_storage.lua",
+		"sh_lunch.lua",
+		"sh_givebones.lua",
 	},
 }

@@ -69,7 +69,7 @@ return function( T )
 	T.Check( not Crime.SeenByPolice( p1 ), "the thief is out of sight" )
 	Crime.Report( p1, "theft", { madeBy = DB.Key( p2 ) } )
 	T.Check( Crime.Evidence( p1 ).theft and not p1:IsWanted(), "unseen theft leaves evidence only" )
-	carried[ p1 ] = { GR_MadeBy = DB.Key( p2 ) }
+	carried[ p1 ] = { GR_Crew = { [ DB.Key( p2 ) ] = true } }
 
 	-- Out of range, then a non-police inspector: both refused, nothing changes.
 	at( p1, 150 )
@@ -89,7 +89,7 @@ return function( T )
 	T.Check( not Crime.Evidence( p1 ).theft, "the evidence is used up" )
 
 	-- Own crate, no evidence: nothing to find.
-	carried[ p1 ] = { GR_MadeBy = DB.Key( p1 ) }
+	carried[ p1 ] = { GR_Crew = { [ DB.Key( p1 ) ] = true } }
 	Crime.ClearWanted( p1 )
 	r = Police.Inspect( s, p1 )
 	T.Check( not r.stolenCrate and r.evidence == "" and not p1:IsWanted(), "an honest worker inspects clean" )
