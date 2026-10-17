@@ -227,6 +227,7 @@
   - **Cost:** +2 Pox; a 1/6 chance of a random parasite; a 1/8 chance of AAT red *"NAME slices their hand open on something sharp!"* and 10–20 damage. Nobody is exempt.
   - **UI:** crosshair text: the name, then *"Use to dumpster dive.\nIt isn't healthy to do, and you'll probably catch something nasty."* or *"You must wait before there is more to take."*
 - **Wasteland water (1:1 port of `sv_player.lua:3421-3437`):** the map layout may set a `Wasteland` box (rp_slumtown: `Vector(1667,-1529,1276)` to `Vector(12122,7142,-809)`). Every 1 s, a living non-ghost player with `WaterLevel() > 0` inside the box takes `WaterLevel()` damage and gains `WaterLevel()` Pox (no Pox with a Respirator or race Outsider). The `aquatic` quirk is exempt. Wading slows ×0.7 (level 1–2) / ×0.55 (level 3) through the speed modifier (`sh_player.lua:1316`). Leeches stay out.
+- **Wading slowdown (new, not in the original):** in `SetupMove`, shared, any water: speed x0.8 at `WaterLevel()` 1, x0.6 at 2, x0.5 at 3. No net traffic.
 - **Done when:** pick up, drop and use work, the weight limit holds, and the corpse holds the dead player's items. The pump gives dirty water, and drinking it sometimes adds Pox. A trash search drops 1–3 items, adds 2 Pox and empties the pile; a second search says "There is nothing." until it refills. A bot standing waist-deep in wasteland water loses 2 HP and gains 2 Pox each second; with a Respirator it only loses HP; city water does nothing.
 
 ### Step 9: Economy (fixed bone supply, treasury, stockpile, prices)
@@ -304,6 +305,13 @@
   - **Theft, caught in the act:** if any police can see the player at that moment (the same prefiltered trace as wanted expiry), they become torment-wanted for 180 s, with the reason "theft from the People".
   - **Stockpile break-in:** breaking the stockpile's lock (step 11.1) makes the player judgment-wanted for 300 s. The first hit on the lock sends an alarm on the `"state"` radio channel with the stockpile's location.
 - **Done when:** each rule fires in a scripted bot scenario, and wanted status counts down only while out of sight. Each theft rule also fires in a bot scenario.
+
+- **Sanitar Summon** (`summoner`, 1:1 port of `entities/entities/summoner.lua`). Model `combine_smallmonitor001`. Net vars On, Blink, NextToggle, Area. Use and damage go through a validated receiver.
+  - Civilian use: turns on (auto-stop 60 s); police get "ACHTUNG -- <name> triggered a Sanitar Summon! Sanitar Squad must appear to <Area> immediately!" Civilian use while on: "You'll have to hit it... but that's a crime!"
+  - Police/Kaiser use: on → off, "The <Area> situation was resolved. Gangrene Eternal!", 180 s cooldown; off → on, "<name> requests backup!". Use during cooldown: frighten + "Shh. It's sleeping."
+  - While on: `placenta/summoning.wav` every 6 s (pitch 80-100); auto-stop plays `kidneydagger/scramble1.wav`. Non-crush damage turns it off; a non-police attacker gets evidence 60 "obstruction of sanitation", a police attacker sets the cooldown.
+  - Police see "CALLING SS - <AREA>" through walls, flashing red. 3D2D screen: noise when off, red pulse when on, with "THEY'RE COMING" / "Relaxing for X..." / "Use to request help".
+  - rp_slumtown layout `summoners` (16, from the original map list): Lunch Factory, Water Treatment Plant, Tools Factory, Hothouse, Arms Factory, Device Factory, Soup Pit, Wetmarket, Crawling Horror, Klinic, Morgue, Gatehouse, Gate Antechamber, Garage, Foreman's Office, Underground Refineries. Copy pos/ang from `maps/list/rp_slumtown.lua:853`.
 
 ### Step 11: The fates
 
@@ -419,6 +427,7 @@ Build them in this order, so each one has something to act on.
      - Forgiving a theft costs 300. The forgiven player pays it to the treasury through `Econ.Transfer`, and the forgiveness fails if they can't afford it.
    - **Upgrades:** **one** receiver `nKaiserUpgrade(targetFate)` reading a data table `{prole = 125, korpsman = 150}` (R3). It is paid from the treasury, and the bones are held in an upgrade fund that is part of the step 9 invariant. They are not destroyed.
    - **Recruit as Sanitar:** a context-menu action on a living Prole within 100 units. Validated receiver (sender is Kaiser and alive, target in range, a sanitar slot is free). The target gets a yes/no prompt; on yes they become a Sanitar at no stem-cell cost. There is no sanitar fate station.
+   - **Recruit as Korpsman:** same action and checks for a Korpsman slot (cap after 10 min = korpsmen lost this round). No stem-cell cost.
    - **XOMBOKOM:** `/xombokom <text>` (alias `/xk`), Kaiser only, max 120 characters, 30 s cooldown. Every client shows the text upper case in large red (180,0,0) at top centre for about 8 s, then it fades; a new one replaces it. A random `kidneydagger/broadcast1-7.wav` plays globally at pitch 80–120. Nothing goes to chat (original: `sh_chat.lua:1380`).
    - **On death:** the `Economy` table goes back to its defaults, with a global announcement and a 600 s cooldown for the role.
 5. **Slave**: probation for new players. It has **full parity with Prole**: build it as a variant of the Prole definition, `Fates.Define("slave", {Base = "prole", ...})`, that only overrides presentation and who may take it.
@@ -482,7 +491,7 @@ Build them in this order, so each one has something to act on.
   - **Round flow:**
     - At 10 min every `fate_station` is removed. Ghosts after that can only join as migrants.
     - Every 1 min a migrant wave spawns in the wasteland: each waiting ghost spawns as a Migrant (a Prole variant, race Outsider) carrying a `papers` item.
-    - At the city gate (rp_slumtown: the "Gates of Gangrene" by the gatehouse, about 1400 -64 64; the layout holds a `city_gate` entry), using the gate with `papers` swaps them for a `passport` and opens a list of city fates under their cap. The pick is permanent for the round. Korpsman cap after 10 min = korpsmen lost this round. Kaiser is never listed.
+    - At the city gate, a `konsole_immigration` ("Immigration Kontrol Konsole", new: the original had none) stands in the Gate Antechamber (rp_slumtown about 1409 52 91 ang 2 -90 1, offset ~40 units from the summoner there; layout entry `immigration`). Using it with `papers` swaps them for a `passport` and makes the migrant a Prole. There is no fate list: the only way up is the Kaiser (Recruit as Sanitar / Recruit as Korpsman, step 11.4). Kaiser is never reachable this way.
     - New players still start as Slave (step 11.5); slaves skip the migrant path.
     - Original refs: `ref_proletariat_wasteland.lua`, `ref_korpsman_wasteland.lua`, `items/list/permit_passport.lua`.
   - Only stem cells, rank and playtime carry over to the next round.

@@ -46,6 +46,7 @@ return {
 	-- Four water barrels (plan step 4) in a row across the hall, clear of the machine's front (not in the old file).
 	{ class = "water_barrel", pos = Vector( -2439, 530, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "water_barrel", pos = Vector( -2439, 570, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
+	{ class = "konsole_immigration", pos = Vector( 1409, 52, 91 ), ang = Angle( 2, -90, 1 ), kv = {} },
 	{ class = "water_barrel", pos = Vector( -2439, 610, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "water_barrel", pos = Vector( -2479, 610, 166 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 
