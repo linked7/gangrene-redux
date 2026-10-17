@@ -9,6 +9,8 @@ return {
 		"sh_net.lua",
 		"sv_test.lua",
 		"sv_db.lua",
+		"sh_state.lua",
+		"sh_fields.lua",
 	},
 	systems = {
 		"sv_hello.lua",
