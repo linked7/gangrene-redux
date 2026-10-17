@@ -35,7 +35,10 @@ return function( T )
 	T.Wait( 2 )
 	T.Check( IsValid( door ) and door:GetNoDraw() and door.GR_Burst, "and it stays burst" )
 
-	-- Props
+	-- Props. Dropped wood chunks pile up here and would group into a campfire (sh_campfire.lua),
+	-- eating the drops before they're counted, so fire-building is off for these checks.
+	local buildCount = Campfire and Campfire.BUILD_COUNT
+	if Campfire then Campfire.BUILD_COUNT = math.huge end
 	local wood0, scrap0 = count( "wood" ), count( "scrap" )
 	local crate = ents.Create( "prop_physics" )
 	crate:SetModel( "models/props_junk/wood_crate001a.mdl" )
@@ -72,6 +75,7 @@ return function( T )
 		T.Check( count( id ) > before, "a broken brush drops " .. id )
 		b:Remove()
 	end
+	if Campfire then Campfire.BUILD_COUNT = buildCount end
 	local glass = ents.Create( "func_breakable" )
 	glass:SetKeyValue( "material", "0" )
 	glass:Spawn()
