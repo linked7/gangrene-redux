@@ -190,6 +190,7 @@
     - `Injured` is a PUBLIC field that caps max HP at 50. It does not wear off. A korpsman treats it (step 11.2).
     - Getting up is its own small wake-up path (like waking from a pass-out). It isn't a revive.
   - **Bleed out (dying only):** after `bleedout_time` (default 120 s) without a revive, the player dies and becomes a ghost. `Crime.Judge` runs against the player who downed them.
+  - **Give up (dying only):** the bleed-out screen shows a clickable line, *"click ->HERE<- to die instantly!!"*, so nobody has to wait out a hopeless revive. Clicking it sends one validated, rate-limited request; the server checks the player is still dying, then they bleed out at once (same death, same `Crime.Judge` against the downer). This replaces the original's kill sentences. It is the only way to choose death, and `CanPlayerSuicide` stays false.
   - **Revive (either state):** a korpsman uses the body. **Exception:** a player downed while Emptiness is 100 can't be revived. The body has nothing left to bring back. A wounded starving player still gets up on their own; a dying one is lost. This is a timed action (rule 6) and calls `Fates.Apply(ply, sameFate, {reason="revive"})`. The fee comes from step 11.2. A revived player has no `Injured`. There is one revive function (R2).
   - **Finish off (either state):** an explicit context action on a downed body (a short timed action, about 3 s), not just stray damage. It calls `Crime.Judge` (step 10), and the player becomes a ghost. This is the only instant death.
 - **Consciousness** stays separate: at 0 the player passes out into a short stun and wakes with no injury.
@@ -406,7 +407,7 @@ Build them in this order, so each one has something to act on.
 - **Local chat:** say, yell, whisper, `/me` and OOC, with ranges from one table. **OOC is off by default** (user decision); staff can turn it on.
 - **Radio:** `/r` reaches everyone whose fate's `Radio` channel list shares a channel with yours (e.g. `"state"` for Kaiser and Sanitar, `"medic"` for Korpsman). Fate names are never hard-coded (R9).
 - **Dead players:** ghosts talk only to ghosts.
-- Race speech mangling (`Accent`, `RacialQuirks`) is dropped (user decision). `AutoGrammar`, chat ranges, babble sounds, thoughtcrime and kill sentences are parity items (05 §8).
+- Race speech mangling (`Accent`, `RacialQuirks`) is dropped (user decision). `AutoGrammar`, chat ranges, babble sounds, and thoughtcrime are parity items (05 §8). Kill sentences are dropped and replaced by the step 7 give-up button.
 - **Done when:** radio reaches exactly the right people and ranges hold.
 
 ### Step 13: Meta-progression
