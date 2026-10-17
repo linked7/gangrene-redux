@@ -43,5 +43,8 @@ return {
 		"sh_corpse.lua",
 		"sh_consciousness.lua",
 		"sh_chat.lua",
+		"sh_items.lua",
+		"sh_inventory.lua",
+		"cl_inventory.lua",
 	},
 }
