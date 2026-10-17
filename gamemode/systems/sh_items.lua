@@ -85,6 +85,32 @@ Items.Define( "clean_water", {
 	Effects = { Dryness = -50 },
 } )
 
+-- Shop goods (step 9), with the original's models.
+Items.Define( "fear_beer", {
+	Name = "Fear Beer",
+	Description = "A bottle of cheap beer. It isn't filling, but it takes the edge off.",
+	Weight = 1,
+	Model = "models/props_junk/garbage_glassbottle003a.mdl",
+	Effects = { Dryness = -40, Despair = -15 },
+} )
+
+Items.Define( "spirits", {
+	Name = "Spirits",
+	Description = "A jug of strong liquor. It eases the sickness and the sadness, but it burns.",
+	Weight = 1,
+	Model = "models/props_junk/glassjug01.mdl",
+	Effects = { Dryness = -25, Despair = -30, Pox = -30 },
+	OnUse = function( ply ) ply:TakeDamage( 10 ) end,
+} )
+
+-- No knife weapon exists yet; for now it is a carried item with the original's world model.
+Items.Define( "knife", {
+	Name = "Knife",
+	Description = "A short blade.",
+	Weight = 1,
+	Model = "models/weapons/w_knife_t.mdl",
+} )
+
 Items.Define( "dirty_water", {
 	Name = "Dirty Water",
 	Description = "Pumped from the ground. It quenches, a little. It might make you sick.",
