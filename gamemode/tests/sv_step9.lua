@@ -91,6 +91,7 @@ return function( T )
 	T.Equal( Econ.Treasury(), supply - 5, "and the bones went back to the treasury" )
 	T.Equal( Econ.Stock( "ration" ), 0, "the stock count fell" )
 	T.Check( given[ 1 ] and given[ 1 ][ 1 ] == a and given[ 1 ][ 3 ] == "buy", "the buyer was handed the good" )
+	T.Equal( Inventory.Count( a, "ration" ), 1, "the ration is in the buyer's inventory" )
 	T.Check( not Econ.Buy( a, "ration" ), "the counter can't sell what it doesn't have" )
 	T.Check( not Econ.Buy( a, "gold" ), "unknown goods are refused" )
 

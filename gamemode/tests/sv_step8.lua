@@ -205,6 +205,7 @@ return function( T )
 	T.Equal( next( Inventory.Items( a ) ), nil, "becoming a ghost clears the inventory" )
 	Inventory.Add( b, "ration", 1 )
 	b:Kill()
+	Corpse.Die( Corpse.Of( b ), "test" ) -- skip the bleed-out (step 7)
 	T.WaitUntil( function() return b:Alive() and b:IsGhost() end, 6, "b dies and comes back a ghost" )
 	T.Equal( Inventory.Count( b, "ration" ), 0, "the next life starts with nothing" )
 end

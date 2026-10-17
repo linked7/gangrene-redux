@@ -183,6 +183,7 @@ return function( T )
 	Crime.Report( p1, "theft", { madeBy = "someone" } )
 	Crime.MakeWanted( p1, WANTED_DEATH, 100, "test" )
 	p1:Kill()
+	Corpse.Die( Corpse.Of( p1 ), "test" ) -- skip the bleed-out (step 7)
 	T.WaitUntil( function() return p1:Alive() end, 6, "p1 respawns" )
 	T.Check( not p1:IsWanted() and not Crime.Evidence( p1 ).theft, "a new life is clean" )
 

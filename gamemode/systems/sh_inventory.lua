@@ -328,3 +328,9 @@ hook.Add( "GR_PlayerRevived", "gr_inventory", function( ply, rag )
 	-- Emptied in place, since the corpse system may hold the same table.
 	for id in pairs( corpse.inventory ) do corpse.inventory[ id ] = nil end
 end )
+
+-- Goods bought or taken at the stockpile counter (step 9) arrive as items. The sale is already
+-- paid, so the weight limit doesn't refuse it.
+hook.Add( "GR_StockpileDispense", "gr_inventory", function( ply, good )
+	if Items.Get( good ) then Inventory.Add( ply, good, 1, true ) end
+end )
