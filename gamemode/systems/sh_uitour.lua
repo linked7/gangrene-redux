@@ -39,7 +39,17 @@ if SERVER then
 				if IsValid( phys ) then phys:EnableMotion( false ) end
 				best = e
 				spawned = origin
-				ply:Flashlight( true ) -- spawned props sit in unlit floor; the torch lights the shot
+				ply:Flashlight( true ) -- spawned props sit in unlit floor; the torch and a short-lived lamp light the shot
+				local lamp = ents.Create( "light_dynamic" )
+				if IsValid( lamp ) then
+					lamp:SetKeyValue( "_light", "255 240 220 400" )
+					lamp:SetKeyValue( "distance", "300" )
+					lamp:SetKeyValue( "brightness", "4" )
+					lamp:SetPos( origin + clearDir * 40 + Vector( 0, 0, 70 ) )
+					lamp:Spawn()
+					lamp:Fire( "TurnOn" )
+					SafeRemoveEntityDelayed( lamp, 8 )
+				end
 				print( "[gr:uitour] spawned a " .. class )
 			end
 		end
