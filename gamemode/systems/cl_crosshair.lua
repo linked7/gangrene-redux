@@ -477,3 +477,14 @@ HUD.Layer( 130, "crosshair", function( ply )
 		prog = 0
 	end
 end )
+
+-- Holstering or swapping to the fists flashes the weapon list on the weapon in hand
+local lastW, lastOut
+hook.Add( "Think", "gr_weaponselect_holster", function()
+	local ply = LocalPlayer()
+	if not IsValid( ply ) or not ply:Alive() then lastW = nil return end
+	local w = ply:GetActiveWeapon()
+	local out = IsValid( w ) and w.IsOut and w:IsOut() or false
+	if lastW ~= nil and ( w ~= lastW or out ~= lastOut ) and not wsOpen() then scroll( ply, 0 ) end
+	lastW, lastOut = w, out
+end )
