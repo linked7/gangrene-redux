@@ -13,7 +13,7 @@
   - Chat body uses **Verdana**. Radio uses **Lucida Console 16**.
 - **Content:** models (`models/IN/...`, everyman), materials (vignette, hallucination overlays, clothes) and sounds (`placenta/...`: UI hover, speech, ascension, screams) come from the original content packs.
   - The active `resource.AddWorkshop` is only the magick-hand addon (2751041637). The rest are commented out in `config/sv_resource.lua`, so the real content collection was probably set on the server.
-  - ⚠ **Open question for the user:** which Workshop collection or content addon holds the original assets? Parity depends on reusing them.
+  - **Answered 2026-10-17 by the user:** the content pack is Workshop item 3067207405 (https://steamcommunity.com/sharedfiles/filedetails/?id=3067207405). Add it with `resource.AddWorkshop("3067207405")`.
 
 ## 2. HUD (`gui/cl_hud.lua`)
 

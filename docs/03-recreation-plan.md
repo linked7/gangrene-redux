@@ -431,7 +431,7 @@ Built alongside steps 11–13. It must hold before step 14's playtest with peopl
   - The HUD bars, crosshair, cross-texts with weapon select, Stutter, vignette, notifications and big event lines.
   - The bleed-out screen, damage and scare effects, constant bloom and aberrations.
   - The F3 player menu, the C context menu, the chat box, and the scoreboard rank icons.
-  - Fonts (Smash), the Derma skin and UI sounds from the original content.
+  - Fonts (Smash), the Derma skin and UI sounds from the original content: the content pack is Workshop item 3067207405 (https://steamcommunity.com/sharedfiles/filedetails/?id=3067207405), sent to clients with `resource.AddWorkshop("3067207405")`.
   - Use the optimisation exceptions in 05 §6: cached Stutter, entity registries instead of `ents.GetAll`, no leaked globals, values read from the state cache, and a `gr_lowfx` option.
 - **Done when:** every element works in a real client, not only with bots, including over `net_fakelag`. Side-by-side screenshots against the original match, and the HUD costs under 1 ms a frame with 30 players.
 
