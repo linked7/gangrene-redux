@@ -18,7 +18,9 @@ return function( T )
 	end
 
 	local made = {}
-	hook.Add( "GR_CrateMade", "t11a", function( crate ) table.insert( made, crate ) end )
+	hook.Add( "GR_CrateMade", "t11a", function( crate ) table.insert( made, crate ) timer.Simple( 0, function() if IsValid( crate ) then crate:SetLocked( false ) end end ) end )
+	local sanitarHook = hook.GetTable().GR_CrateMade and hook.GetTable().GR_CrateMade.gr_sanitar -- sealed crates are sv_sanitarwork's business
+	hook.Remove( "GR_CrateMade", "gr_sanitar" )
 	local delivered = {}
 	hook.Add( "GR_CrateDelivered", "t11a", function( ply, crate )
 		table.insert( delivered, { ply = ply, crate = crate, kind = crate.GR_Kind } )
@@ -143,6 +145,7 @@ return function( T )
 
 	local before, treasury = p1:GetBones(), Econ.Treasury()
 	Crates.Hold( p1, crate )
+	crate:SetLocked( false )
 	T.Equal( Crates.Deliver( p1, crate, stockpile ), 20, "delivering pays the buy price" )
 	T.Equal( p1:GetBones(), before + 20, "the deliverer has the bones" )
 	T.Equal( Econ.Treasury(), treasury - 20, "out of the treasury" )
@@ -252,6 +255,7 @@ return function( T )
 	for _, e in ipairs( { box, press, boiler, stockpile } ) do if IsValid( e ) then e:Remove() end end
 	Lunch.OVERLOAD_CHANCE = saved.overload
 	hook.Remove( "GR_CrateMade", "t11a" )
+	if sanitarHook then hook.Add( "GR_CrateMade", "gr_sanitar", sanitarHook ) end
 	hook.Remove( "GR_CrateDelivered", "t11a" )
 	Notify = realNotify
 end

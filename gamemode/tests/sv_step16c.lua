@@ -15,7 +15,9 @@ return function( T )
 	Lunch.OVERLOAD_CHANCE = 0
 
 	local made, exploded = {}, {}
-	hook.Add( "GR_CrateMade", "t16c", function( crate ) table.insert( made, crate ) end )
+	hook.Add( "GR_CrateMade", "t16c", function( crate ) table.insert( made, crate ) timer.Simple( 0, function() if IsValid( crate ) then crate:SetLocked( false ) end end ) end )
+	local sanitarHook = hook.GetTable().GR_CrateMade and hook.GetTable().GR_CrateMade.gr_sanitar -- sealed crates are sv_sanitarwork's business
+	hook.Remove( "GR_CrateMade", "gr_sanitar" )
 	hook.Add( "GR_LunchExplode", "t16c", function( m ) table.insert( exploded, m ) end )
 
 	local function bot( name, fate, rank )
@@ -375,7 +377,7 @@ return function( T )
 	T.Equal( p3:GetBones(), b3, "the watcher gets nothing" )
 	T.Check( not Crime.Evidence( p1 ).theft, "no theft" )
 
-	local stolen = Crates.Spawn( "ration", m:GetPos() + m:GetForward() * 50 + Vector( 0, 0, 30 ), Crates.Crew( { p1, p2 } ), m )
+	local stolen = Crates.Spawn( "ration", m:GetPos() + m:GetForward() * 50 + Vector( 0, 0, 30 ), Crates.Crew( { p1, p2 } ), m ) stolen:SetLocked( false )
 	b1, b3 = p1:GetBones(), p3:GetBones()
 	T.Equal( Crates.Deliver( p3, stolen, stockpile ), price, "an outsider's delivery pays" )
 	T.Equal( p3:GetBones(), b3 + price, "all of it to them" )
@@ -383,11 +385,11 @@ return function( T )
 	T.Check( Crime.Evidence( p3 ).theft ~= nil, "and it is reported as theft" )
 	Crime.TakeEvidence( p3, "theft" )
 
-	local opened = Crates.Spawn( "ration", m:GetPos() + m:GetForward() * 50 + Vector( 0, 0, 30 ), Crates.Crew( { p1, p2 } ), m )
+	local opened = Crates.Spawn( "ration", m:GetPos() + m:GetForward() * 50 + Vector( 0, 0, 30 ), Crates.Crew( { p1, p2 } ), m ) opened:SetLocked( false )
 	T.Check( Crates.Open( p3, opened ), "an outsider opens the crew's crate" )
 	T.Check( Crime.Evidence( p3 ).theft ~= nil, "theft" )
 	Crime.TakeEvidence( p3, "theft" )
-	local own = Crates.Spawn( "ration", m:GetPos() + m:GetForward() * 50 + Vector( 0, 0, 30 ), Crates.Crew( { p1, p2 } ), m )
+	local own = Crates.Spawn( "ration", m:GetPos() + m:GetForward() * 50 + Vector( 0, 0, 30 ), Crates.Crew( { p1, p2 } ), m ) own:SetLocked( false )
 	T.Check( Crates.Open( p2, own ), "a crew member opens it" )
 	T.Check( not Crime.Evidence( p2 ).theft, "no theft" )
 
@@ -437,6 +439,7 @@ return function( T )
 	for _, e in ipairs( made ) do if IsValid( e ) then e:Remove() end end
 	for k, v in pairs( saved ) do Lunch[ k ] = v end
 	hook.Remove( "GR_CrateMade", "t16c" )
+	if sanitarHook then hook.Add( "GR_CrateMade", "gr_sanitar", sanitarHook ) end
 	hook.Remove( "GR_LunchExplode", "t16c" )
 	Lunch.Reset()
 	for _, b in ipairs( all ) do b:Kick( "test" ) end
