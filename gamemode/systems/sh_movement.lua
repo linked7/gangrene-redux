@@ -149,3 +149,16 @@ Sched.Every( "drag", 0.05, Drag.Tick )
 
 hook.Add( "GR_FateEnter", "gr_movement", function( ply ) Drag.Stop( ply ) end )
 hook.Add( "PlayerDisconnected", "gr_movement", function( ply ) Drag.Stop( ply ) end )
+
+-- Wading slowdown (new, not in the original): any water, shared so it predicts. No net traffic.
+Movement.WADE = { 0.8, 0.6, 0.5 }
+function Movement.WadeScale( level ) return Movement.WADE[ level ] or 1 end
+
+hook.Add( "SetupMove", "gr_wading", function( ply, mv )
+	local s = Movement.WadeScale( ply:WaterLevel() )
+	if s == 1 then return end
+	mv:SetMaxClientSpeed( mv:GetMaxClientSpeed() * s )
+	mv:SetMaxSpeed( mv:GetMaxSpeed() * s )
+	mv:SetForwardSpeed( mv:GetForwardSpeed() * s )
+	mv:SetSideSpeed( mv:GetSideSpeed() * s )
+end )
