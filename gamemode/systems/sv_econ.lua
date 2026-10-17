@@ -421,6 +421,46 @@ Net.Receive( "nShopBuy", { rate = 4, alive = true }, function( ply )
 	if good then Econ.ShopBuy( ply, good ) end
 end )
 
+-- The stockpile port's materials ------------------------------------------------------------
+
+Econ.PORT_DROP = 40 -- bought materials come out this far in front of the port
+
+-- Buys `qty` of material `m` at the stockpile `port`: qty times the sell price goes to the
+-- treasury, the stock falls by qty and one stack appears at the port. Returns ok, the reason
+-- when refused (told to the player) and the spawned gr_item on success.
+function Econ.PortBuyMaterial( ply, port, m, qty )
+	local function refuse( why ) Notify( ply, why ) return false, why end
+	if not Econ.CanShop( ply ) then return false, "dead" end
+	if not IsValid( port ) or port:GetClass() ~= "state_stockpile" then return false, "not a port" end
+	if not isstring( m ) or not Econ.MATERIAL_SET[ m ] then return refuse( "The port doesn't sell that." ) end
+	local price = Econ.MaterialPrice( m )
+	if not price then return refuse( "The port doesn't sell " .. m .. " yet." ) end
+	if not isnumber( qty ) or qty ~= math.floor( qty ) or qty < 1 or qty > Econ.MATERIAL_MAX then
+		return refuse( "That isn't a count the port can fill." )
+	end
+	if Econ.MaterialAvailable( m ) < qty then return refuse( "There isn't that much " .. m .. " in stock." ) end
+	local cost = price * qty
+	if not Econ.Transfer( ply, Econ.TREASURY, cost, "port" ) then
+		return refuse( string.format( "You can't afford that. It costs %d bones.", cost ) )
+	end
+	addStock( m, -qty )
+
+	local fwd = port:GetForward()
+	local pos = port:WorldSpaceCenter() + fwd * Econ.PORT_DROP
+	local tr = util.TraceLine( { start = port:WorldSpaceCenter(), endpos = pos, filter = port } )
+	if tr.Hit then pos = tr.HitPos + tr.HitNormal * 8 end
+	local ent = Items.Spawn( m, qty, pos, Angle( 0, port:GetAngles().y, 0 ) )
+	port:EmitSound( Econ.SHOP_SOUNDS[ math.random( #Econ.SHOP_SOUNDS ) ] )
+	hook.Run( "GR_PortBuyMaterial", ply, m, qty, ent )
+	return true, nil, ent
+end
+
+Net.Receive( "nShopBuyMaterial", { rate = 4, alive = true, target = "entity", range = Econ.COUNTER_RANGE }, function( ply, port )
+	local m = Net.ReadString( 32 )
+	local qty = net.ReadUInt( 8 )
+	if m then Econ.PortBuyMaterial( ply, port, m, qty ) end
+end )
+
 -- Wages ------------------------------------------------------------------------------------
 
 -- Pays every living player their fate's wage from the treasury. A wage the treasury can't

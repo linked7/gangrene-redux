@@ -32,4 +32,8 @@ function ENT:Use( activator )
 		table.insert( lines, string.format( "%s: %d in stock, %d bones", good, Econ.Stock( good ), Econ.Setting( "sell." .. good ) ) )
 	end
 	Notify( activator, table.concat( lines, "; " ) .. ". (gr_counter buy|take|free <good>)" )
+	-- The port panel: the materials side section (sh_econ.lua's Econ.OpenPort).
+	net.Start( "gr_port_open" )
+	net.WriteEntity( self )
+	net.Send( activator )
 end
