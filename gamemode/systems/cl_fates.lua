@@ -1,117 +1,89 @@
--- The fate picker: every fate a ghost could take, with its description, cost, slots and the
--- player's cooldown, greyed out with the reason Fates.CanTake gives (the same function the server
--- runs, R7). Opens by itself on becoming a ghost; F2 or `gr_fates` toggles it. Taking sends
--- gr_take_fate; the server checks everything again (Fates.Request in core/sh_fates.lua).
-local C = HUD.COLORS
+-- The fate menu (F2 or `gr_fates`), ported from the original's potentials/sh_fatemenu.lua:
+-- a 691 x 835 "To dwell is to suffer" frame, the ALL / NEUTRAL / EVIL / LOYAL tabs over a
+-- backdrop, and one 680 x 96 row per fate with "Name — N STEM CELLS" and an ENVISION button.
+-- The original listed potentials in the world; the remake lists every fate a ghost could take.
+-- ENVISION is disabled, with Fates.CanTake's reason as its tooltip (the same check the server
+-- runs, R7), and sends gr_take_fate; the server checks again (Fates.Request in core/sh_fates.lua).
+-- Opens by itself on becoming a ghost and once after joining (everyone joins as one).
 local frame
+local tab = 1
+local TABS = {
+	{ "ALL", nil, "All of the potential this world has to offer." },
+	{ "NEUTRAL", Color( 200, 200, 75 ), "Men only looking out for their own good, be it for better or worse." },
+	{ "EVIL", Color( 250, 75, 75 ), "An antagonistic force who, one way or another, seeks to murder GANGRENE." },
+	{ "LOYAL", Color( 75, 75, 250 ), "Souls loyal to the city of GANGRENE, ready to give their lives for it's existence." },
+}
+
+-- Which tab a fate sits under: a fate's own MenuType, else the law and the Kaiser are LOYAL.
+local function category( f )
+	if f.MenuType then return f.MenuType end
+	if f.Police or f.Kaiser or f.id == "kaiser" then return 4 end
+	return 2
+end
 
 local function close()
 	if IsValid( frame ) then frame:Remove() end
 end
 
-local function slotsText( f )
-	local limit = Fates.SlotLimit( f )
-	if limit == math.huge then return "Open to all" end
-	return string.format( "Taken %d / %d", Fates.Count( f.id ), limit )
+local function costText( f )
+	local cost = f.Cost or 0
+	if cost == 0 then return "FREE" end
+	return cost .. " STEM CELLS"
 end
 
-local function infoText( ply, f )
-	local parts = { ( f.Cost or 0 ) > 0 and string.format( "%d stem cell%s", f.Cost, f.Cost == 1 and "" or "s" ) or "Free", slotsText( f ) }
-	if f.ForNewPlayers then table.insert( parts, "New players only" ) end
-	if f.MinRank then table.insert( parts, Rank.Name( f.MinRank ) .. " or above" ) end
-	local wait = ply[ "GetCooldown_" .. f.id ]( ply ) - CurTime()
-	if wait > 0 then table.insert( parts, string.format( "Cooldown %d s", math.ceil( wait ) ) ) end
-	return table.concat( parts, "    " )
-end
+local function addRow( pane, f, y )
+	local F_SMALL, F_MEDIUM = HUD.Font( "LabelSmall" ), HUD.Font( "LabelMedium" )
+	local row = vgui.Create( "DPanel" )
+	row:SetPos( 0, y )
+	row:SetSize( 680, 96 )
+	row.Paint = function( _, w, h )
+		surface.SetDrawColor( 0, 0, 0, 70 )
+		surface.DrawRect( 0, 0, w, h )
+		surface.SetDrawColor( 0, 0, 0, 100 )
+		surface.DrawOutlinedRect( 0, 0, w, h )
+	end
 
-local function addEntry( list, f )
-	local pad = HUD.S( 10 )
-	local entry = list:Add( "DPanel" )
-	entry:Dock( TOP )
-	entry:DockMargin( 0, 0, 0, HUD.S( 6 ) )
-	entry:DockPadding( pad, pad, pad, pad )
+	local name = HUD.Label( row, f.Name .. " — " .. costText( f ), F_MEDIUM, 10, 5, f.Color or Color( 255, 0, 0 ) )
+	local d = HUD.FormatLine( f.MenuDescription or f.Description or "", F_SMALL, 480 )
+	HUD.Label( row, d, F_SMALL, 10, 29 )
 
-	local take = vgui.Create( "DButton", entry )
-	take:Dock( RIGHT )
-	take:SetWide( HUD.S( 110 ) )
-	take:SetFont( "gr_hud" )
-	take:SetText( "Take" )
+	local take = vgui.Create( "DButton", row )
+	take:SetFont( F_SMALL )
+	take:SetText( "ENVISION" )
+	take:SetPos( 540, 25 )
+	take:SetSize( 128, 42 )
 	take.DoClick = function()
 		net.Start( "gr_take_fate" )
 		net.WriteString( f.id )
 		net.SendToServer()
 	end
 
-	local name = vgui.Create( "DLabel", entry )
-	name:Dock( TOP )
-	name:SetFont( "gr_hud_big" )
-	name:SetText( f.Name )
-	name:SizeToContentsY()
-
-	local desc = vgui.Create( "DLabel", entry )
-	desc:Dock( TOP )
-	desc:DockMargin( 0, HUD.S( 2 ), pad, 0 )
-	desc:SetFont( "gr_hud_small" )
-	desc:SetTextColor( C.text )
-	desc:SetWrap( true )
-	desc:SetAutoStretchVertical( true )
-	desc:SetText( f.Description )
-
-	local info = vgui.Create( "DLabel", entry )
-	info:Dock( TOP )
-	info:DockMargin( 0, HUD.S( 4 ), 0, 0 )
-	info:SetFont( "gr_hud_small" )
-	info:SetTextColor( C.dim )
-	info:SizeToContentsY()
-
-	local why = vgui.Create( "DLabel", entry )
-	why:Dock( TOP )
-	why:SetFont( "gr_hud_small" )
-	why:SetTextColor( C.blood )
-	why:SetWrap( true )
-	why:SetAutoStretchVertical( true )
-
-	local col = f.Color or C.text
 	local nextCheck = 0
-	entry.Paint = function( self, w, h )
-		draw.RoundedBox( 4, 0, 0, w, h, take:IsEnabled() and C.panel or C.back )
-		surface.SetDrawColor( col )
-		surface.DrawRect( 0, 0, HUD.S( 3 ), h )
-	end
-	entry.Think = function( self )
+	row.Think = function()
 		if RealTime() < nextCheck then return end
 		nextCheck = RealTime() + 0.25
 		local ply = LocalPlayer()
 		local ok, reason = Fates.CanTake( ply, f.id )
 		take:SetEnabled( ok )
-		name:SetTextColor( ok and col or C.dim )
-		info:SetText( infoText( ply, f ) )
-		why:SetText( ok and "" or reason or "" )
-		-- Wrapped labels stretch on their own; the entry is as tall as what it holds.
-		local h = pad * 2 + name:GetTall() + HUD.S( 2 ) + desc:GetTall() + HUD.S( 4 ) + info:GetTall()
-		if not ok then h = h + why:GetTall() end
-		why:SetVisible( not ok )
-		self:SetTall( math.max( h, HUD.S( 60 ) ) )
+		local wait = ply[ "GetCooldown_" .. f.id ]( ply ) - CurTime()
+		take:SetText( wait > 0 and not ok and ( math.ceil( wait ) .. "s" ) or "ENVISION" )
+		take:SetTooltip( ok and ( f.Tooltip or false ) or reason or false )
+		name:SetText( f.Name .. " — " .. costText( f ) )
+		name:SizeToContents()
 	end
-	entry:Think()
+	row:Think()
+	pane:AddItem( row )
 end
 
 local function open()
 	close()
-	local ply = LocalPlayer()
-	frame = vgui.Create( "DFrame" )
-	frame:SetTitle( "" )
-	frame:SetSize( math.min( HUD.S( 620 ), ScrW() - 40 ), math.min( HUD.S( 720 ), ScrH() - 40 ) )
-	frame:Center()
-	frame:MakePopup()
-	frame:SetKeyboardInputEnabled( false )
-	frame:DockPadding( HUD.S( 14 ), HUD.S( 34 ), HUD.S( 14 ), HUD.S( 14 ) )
-	frame.Paint = function( self, w, h )
-		draw.RoundedBox( 6, 0, 0, w, h, C.back )
-		draw.SimpleText( "A Purpose in Life", "gr_hud", HUD.S( 14 ), HUD.S( 8 ), C.text )
-		draw.SimpleText( string.format( "%d stem cells    %s", ply:GetStemCells(), Rank.Name( ply:GetRank() ) ),
-			"gr_hud_small", w - HUD.S( 40 ), HUD.S( 10 ), C.dim, TEXT_ALIGN_RIGHT )
+	local fates = {}
+	for _, f in ipairs( Fates.All() ) do
+		if f.index ~= FATE_GHOST and ( tab == 1 or category( f ) == tab ) then table.insert( fates, f ) end
 	end
+
+	frame = HUD.Frame( 691, 835, "To dwell is to suffer" )
+	local ply = LocalPlayer()
 	local baseThink = frame.Think
 	frame.Think = function( self )
 		-- Taking a fate (or being revived) ends the menu's purpose.
@@ -122,18 +94,64 @@ local function open()
 		baseThink( self )
 	end
 
-	local hint = vgui.Create( "DLabel", frame )
-	hint:Dock( BOTTOM )
-	hint:DockMargin( 0, HUD.S( 8 ), 0, 0 )
-	hint:SetFont( "gr_hud_small" )
-	hint:SetTextColor( C.dim )
-	hint:SetText( "F2 closes and reopens this. F1 explains how to live." )
-	hint:SizeToContentsY()
-
-	local list = vgui.Create( "DScrollPanel", frame )
-	list:Dock( FILL )
+	local any = 0
 	for _, f in ipairs( Fates.All() ) do
-		if f.index ~= FATE_GHOST then addEntry( list, f ) end
+		if f.index ~= FATE_GHOST then any = any + 1 end
+	end
+	if any == 0 then
+		HUD.Label( frame, "THERE IS NO POTENTIAL IN THIS WORLD", HUD.Font( "LabelGiant" ), 20, 30 )
+	else
+		HUD.Label( frame, "I BESTOW UPON YOU THESE FATES", HUD.Font( "LabelGiant" ), 70, 30 )
+	end
+
+	local buttons = vgui.Create( "DPanel", frame )
+	buttons:SetSize( 691, 55 )
+	buttons:SetPos( 0, 75 )
+	buttons.Paint = function( _, w, h )
+		surface.SetDrawColor( 0, 0, 0, 70 )
+		surface.DrawRect( 0, 0, w, h )
+		surface.SetDrawColor( 0, 0, 0, 100 )
+		surface.DrawOutlinedRect( 0, 0, w, h )
+	end
+	for i, t in ipairs( TABS ) do
+		local b = vgui.Create( "DButton", buttons )
+		b:SetFont( HUD.Font( "LabelSmall" ) )
+		b:SetText( t[ 1 ] )
+		if t[ 2 ] then b:SetColor( t[ 2 ] ) end
+		b:SetTooltip( t[ 3 ] )
+		b:SetPos( ( i - 1 ) * 172, 0 )
+		b:SetSize( 172, 55 )
+		b:SetEnabled( i ~= tab )
+		b.DoClick = function()
+			tab = i
+			open()
+		end
+	end
+
+	local pane = vgui.Create( "DScrollPanel", frame )
+	pane:SetSize( 700, 700 )
+	pane:SetPos( 0, 134 )
+	local backdrop = "fm" .. tab
+	pane.Paint = function( _, w, h )
+		surface.SetDrawColor( 30, 30, 30, 255 )
+		surface.DrawRect( 0, 0, w, h )
+		surface.SetDrawColor( 20, 20, 20, 100 )
+		surface.DrawOutlinedRect( 0, 0, w, h )
+		local mat = HUD.Mat( backdrop )
+		if mat then
+			surface.SetDrawColor( 255, 255, 255, 100 )
+			surface.SetMaterial( mat )
+			surface.DrawTexturedRect( 0, 0, w, h )
+		end
+	end
+
+	if #fates == 0 then
+		HUD.Label( pane, "THE ENDLESS EMPTY", HUD.Font( "LabelStupid" ), 75, 300 )
+	end
+	local y = 0
+	for _, f in ipairs( fates ) do
+		addRow( pane, f, y )
+		y = y + 101
 	end
 end
 
@@ -143,7 +161,7 @@ local function toggle()
 	elseif LocalPlayer():IsGhost() then
 		open()
 	else
-		chat.AddText( C.dim, "Only the dead choose a purpose." )
+		HUD.Notify( "Only the dead choose a purpose.", Color( 200, 0, 0 ) )
 	end
 end
 
@@ -156,7 +174,6 @@ hook.Add( "PlayerBindPress", "gr_fates", function( _, bind, pressed )
 	end
 end )
 
--- Open on becoming a ghost, and once after joining (everyone joins as one).
 hook.Add( "GR_StateChanged", "gr_fates", function( idx, name, v )
 	local me = LocalPlayer()
 	if name == "Fate" and v == FATE_GHOST and IsValid( me ) and idx == me:EntIndex() then open() end

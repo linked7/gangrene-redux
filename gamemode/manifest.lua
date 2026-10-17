@@ -75,5 +75,12 @@ return {
 		"sh_givebones.lua",
 		"sh_weapons.lua",
 		"sh_movement.lua",
+		"cl_skin.lua",
+		"sh_fx.lua",
+		"cl_effects.lua",
+		"cl_view.lua",
+		"cl_crosshair.lua",
+		"cl_chatbox.lua",
+		"cl_music.lua",
 	},
 }

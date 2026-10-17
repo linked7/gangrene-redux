@@ -1,6 +1,7 @@
 -- The Kaiser's economy panel: `gr_kaiser` in the console, /kaiser in chat, or using the strategy
 -- book. Four tabs: Economy (every Econ.Schema setting), Citizens (Grant, Fine, Sentence, Forgive),
 -- Upgrades and Ledger. It only reads public state and sends requests; the server checks them all.
+-- A CombineControl frame (HUD.Frame); the controls take the skin from cl_skin.lua.
 local frame
 local ledger = { rows = {}, inflow = {}, outflow = {} }
 
@@ -29,7 +30,7 @@ local function economyTab( parent )
 
 		local name = vgui.Create( "DLabel", row )
 		name:SetText( def.key )
-		name:SetDark( true )
+		name:SetTextColor( HUD.COLORS.text )
 		name:Dock( LEFT )
 		name:SetWide( 160 )
 
@@ -127,7 +128,7 @@ local function upgradesTab( parent )
 	if not istable( prices ) then return panel end
 	local fund = vgui.Create( "DLabel", panel )
 	fund:Dock( TOP )
-	fund:SetDark( true )
+	fund:SetTextColor( HUD.COLORS.text )
 	fund:SetText( string.format( "Treasury %d, upgrade fund %d", Econ.Treasury(), Econ.UpgradeFund() ) )
 	for fateId, price in SortedPairs( prices ) do
 		local f = Fates.Get( fateId )
@@ -177,7 +178,7 @@ local function ledgerTab( parent )
 
 	panel.Flows = vgui.Create( "DLabel", panel )
 	panel.Flows:Dock( TOP )
-	panel.Flows:SetDark( true )
+	panel.Flows:SetTextColor( HUD.COLORS.text )
 	panel.Flows:SetTall( 34 )
 	panel.Flows:SetWrap( true )
 
@@ -201,11 +202,7 @@ local function open()
 		return
 	end
 	if not LocalPlayer():FateHas( "RunsEconomy" ) then return end
-	frame = vgui.Create( "DFrame" )
-	frame:SetTitle( "The Kaiser's Office" )
-	frame:SetSize( math.min( 620, ScrW() - 20 ), math.min( 480, ScrH() - 20 ) )
-	frame:Center()
-	frame:MakePopup()
+	frame = HUD.Frame( math.min( 620, ScrW() - 20 ), math.min( 480, ScrH() - 20 ), "The Kaiser's Office" )
 
 	local sheet = vgui.Create( "DPropertySheet", frame )
 	sheet:Dock( FILL )

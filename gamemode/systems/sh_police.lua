@@ -123,12 +123,13 @@ if CLIENT then
 				if pos.visible then
 					local y = pos.y
 					if p:IsWanted() then
+						-- The original's overhead style: PlayerFont, shadowed, through Stutter (cl_hud.lua).
 						local text = string.format( "WANTED: %s (%d s)", p:GetWantedReason(), math.ceil( Crime.WantedLeft( p ) ) )
-						draw.SimpleText( text, "DermaDefaultBold", pos.x, y, LEVEL_COLOR[ p:GetWanted() ] or color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
-						y = y - 14
+						HUD.TextShadow( HUD.Stutter( text ), HUD.Font( "PlayerFont" ), pos.x, y - 20, LEVEL_COLOR[ p:GetWanted() ] or color_white, color_black, 1 )
+						y = y - 20
 					end
 					if summary then
-						draw.SimpleText( "Evidence: " .. summary, "DermaDefault", pos.x, y, EVIDENCE_COLOR, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
+						HUD.TextShadow( HUD.Stutter( "Evidence: " .. summary ), HUD.Font( "LabelTiny" ), pos.x, y - 18, EVIDENCE_COLOR, color_black, 1 )
 					end
 				end
 			end

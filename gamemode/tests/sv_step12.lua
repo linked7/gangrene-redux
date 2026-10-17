@@ -1,6 +1,8 @@
 -- Step 12: chat ranges from the one table, radio by fate channel, and ghosts kept to themselves.
 -- The parity details (muffling, commands, thoughtcrime, the downed) are in sv_step16e.lua.
 return function( T )
+	local oldOOC = Config.OOCDelay
+	Config.OOCDelay = 0 -- OOC is off by default; these checks are about who hears it
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t12_%'" )
 
 	local function bot( name, fate, rank )
@@ -137,4 +139,5 @@ return function( T )
 	Chat.Send( k, "ooc", "brb" )
 	T.Equal( got and got.text, "brb", "OOC is as typed" )
 	hook.Remove( "GR_Chat", "t12" )
+	Config.OOCDelay = oldOOC
 end

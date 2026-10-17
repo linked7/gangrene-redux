@@ -155,15 +155,14 @@ if CLIENT then
 	end )
 
 	-- /roll leans the view over and back (the original's ViewRoll target of -300 for half a second).
-	-- Chat.ViewRoll() is the current lean; the view code may add it itself, and this hook only
-	-- steps in while a roll is on.
+	-- Chat.ViewRoll() steps and returns the current lean; cl_view.lua's CalcView calls it once a
+	-- frame and adds it to the roll (one CalcView answers, so there is no hook here).
 	local rollUntil, viewRoll = 0, 0
-	function Chat.ViewRoll() return viewRoll end
-	hook.Add( "CalcView", "gr_chat_roll", function( ply, origin, angles, fov )
+	function Chat.ViewRoll()
 		viewRoll = Lerp( 0.03, viewRoll, CurTime() < rollUntil and -300 or 0 )
-		if math.abs( viewRoll ) < 0.5 then viewRoll = 0 return end
-		return { origin = origin, angles = Angle( angles.p, angles.y, angles.r + viewRoll ), fov = fov }
-	end )
+		if math.abs( viewRoll ) < 0.5 then viewRoll = 0 end
+		return viewRoll
+	end
 
 	Net.Receive( "gr_chat_self", nil, function()
 		local what = net.ReadString()
