@@ -23,6 +23,7 @@ if CLIENT then
 end
 
 function ENT:Initialize()
+	-- The original's purpose in life: a sawblade with the Combine interface material (no hologram).
 	self:SetModel( "models/props_junk/sawblade001a.mdl" )
 	self:SetMaterial( "models/props_combine/masterinterface01c" )
 	self:PhysicsInit( SOLID_VPHYSICS )

@@ -158,6 +158,10 @@ function Econ.ResetRound()
 	WorldState.Set( "upgrade_fund", 0 )
 	WorldState.Set( "treasury", supply )
 	Econ.ResetSettings()
+	local seed = Econ.Setting( "shop_stock" )
+	for _, good in ipairs( Econ.SHOP ) do
+		if good ~= Econ.BREAD then WorldState.Set( "stock." .. good, seed ) end
+	end
 	Log.Info( "econ", "new round: the treasury holds all %d bones", supply )
 	hook.Run( "GR_EconReset" )
 end
@@ -368,6 +372,53 @@ end
 Net.Receive( "gr_counter", { rate = 4, alive = true, target = "entity", range = Econ.COUNTER_RANGE }, function( ply, ent )
 	local action = net.ReadUInt( 2 )
 	Econ.Counter( ply, ent, action, Net.ReadString() )
+end )
+
+-- The shop (step 9) ------------------------------------------------------------------------
+
+Econ.SHOP_SOUNDS = { "placenta/coinkeeper1.wav", "placenta/coinkeeper2.wav", "placenta/coinkeeper3.wav", "placenta/coinkeeper4.wav" }
+Econ.SHOP_DROP = 40   -- the bought item lands this far in front of the buyer
+
+-- Buys one `good` from the C-menu shop: the sell price goes to the treasury, the stock count
+-- falls by one and the item appears in front of the buyer. The loaf obeys the reserve and the
+-- ration limit as at the counter. Returns ok, the reason when refused (told to the player) and
+-- the spawned gr_item on success.
+function Econ.ShopBuy( ply, good )
+	local function refuse( why ) Notify( ply, why ) return false, why end
+	if not Econ.CanShop( ply ) then return false, "dead" end
+	if not Econ.SHOP_SET[ good ] or not Items.Get( good ) then return refuse( "The shop doesn't sell that." ) end
+	local reserve = good == Econ.BREAD and Econ.Setting( "reserve." .. good ) or 0
+	if Econ.Stock( good ) <= reserve then return refuse( "That is sold out." ) end
+
+	local bought
+	if good == Econ.BREAD then
+		local limit = Econ.Setting( "ration_limit" )
+		bought = recentPurchases( DB.Key( ply ) )
+		if limit > 0 and #bought >= limit then return refuse( "You have bought your share. Come back later." ) end
+	end
+
+	local price = Econ.Setting( "sell." .. good )
+	if not Econ.Transfer( ply, Econ.TREASURY, price, "shop" ) then
+		return refuse( string.format( "You can't afford that. It costs %d bones.", price ) )
+	end
+	if bought then table.insert( bought, CurTime() ) end
+	addStock( good, -1 )
+
+	local fwd = ply:GetForward()
+	fwd.z = 0
+	fwd:Normalize()
+	local pos = ply:GetPos() + fwd * Econ.SHOP_DROP + Vector( 0, 0, 40 )
+	local tr = util.TraceLine( { start = ply:EyePos(), endpos = pos, filter = ply } )
+	if tr.Hit then pos = tr.HitPos + tr.HitNormal * 8 end
+	local ent = Items.Spawn( good, 1, pos, Angle( 0, ply:EyeAngles().y, 0 ) )
+	ply:EmitSound( Econ.SHOP_SOUNDS[ math.random( #Econ.SHOP_SOUNDS ) ] )
+	hook.Run( "GR_ShopBuy", ply, good, ent )
+	return true, nil, ent
+end
+
+Net.Receive( "nShopBuy", { rate = 4, alive = true }, function( ply )
+	local good = Net.ReadString()
+	if good then Econ.ShopBuy( ply, good ) end
 end )
 
 -- Wages ------------------------------------------------------------------------------------
