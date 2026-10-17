@@ -18,7 +18,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 |---|---|---|
 | Maladies (random round-long threat; first: WINTER) | `accepted` | Step 13. |
 | Falling boulders (`boulder`, sv_think spawner every 15-30 s) | `idea` | Recommend: yes, cheap physical hazard, one entity, layout spots. |
-| Campfire / cooker (cook raw food, warmth) | `idea` | Recommend: yes if food has a raw state; gives labor a second step without menus. |
+| Campfire / cooker (cook raw food, warmth) | `idea` | Original `campfire.lua` was never finished, so this is a new design, not a port. Recommend: yes, as WINTER warmth plus cooking if food gets a raw state. |
 | Ghost haunting (Deferred 4, light slice) | `idea` | Recommend: yes, a small version only (ghosts flicker lights, knock props); keeps dead players busy in a short round. |
 | Starter quirks (Deferred 1, 3-4 quirks) | `idea` | Recommend: later; adds replay value but needs balance passes. |
 | Bell / alarm (`bell`, `alarm`) | `idea` | Recommend: yes, a physical way to call people, pairs with Sanitar Summon. |
