@@ -121,7 +121,7 @@
   - Model and material are the original's (ground rule 9): `models/props_junk/sawblade001a.mdl` with material `models/props_combine/masterinterface01c` (`purpose_in_life.lua:37-38`). No charple hologram.
   - On use it calls `CanTake`, then charges stem cells, then calls `Apply`.
   - Potentials are **dropped**.
-- **Map layouts:** each round places the world entities from a per-map layout. These are the fate stations, `state_stockpile`, the lunch machine's posts (`lunch_machine`, `line_boiler`), `capsule_spawn` points, loose `water_barrel`s, `water_pump`, and `sanitation_station`.
+- **Map layouts:** each round places the world entities from a per-map layout. These are the fate stations, `state_stockpile`, the lunch machine's posts (`lunch_machine`, `line_boiler`), `capsule_spawn` points, loose `water_barrel`s, `water_pump`, `sanitation_station`, and `trash_pile`s.
   - The layout source, in priority order: a staff-saved `data/gangrene/layouts/<map>.json`, then a shipped `gamemode/layouts/<map>.lua`, then a fallback ring around the first spawn. Staff edit it with `gr_layout_add/remove/save/list`.
   - **The core map is `rp_slumtown`.** Its shipped layout is converted from the original's `gamemode/liverfailure-modules/maps/list/rp_slumtown.lua`, which holds the old positions. Entries commented out there stay out.
     - `purpose_in_life` entries for the kept fates become `fate_station`s: `kommandant` → kaiser, `sanitator` → sanitar, `korpsman` → korpsman, `proletariat` → prole.
@@ -130,7 +130,8 @@
     - The `faucet` positions are the candidates for `water_pump`. Only as many as step 8 allows are enabled.
     - The old file has no position for the stockpile, the slave station or the sanitation station. The shipped layout adds them at free floor spots probed on the real map: the slave station by the town-centre proles (612 349 0), the stockpile by the Kaiser (1249 -141 400), and the sanitation station in the sanitars' room (-733 -377 128).
     - Staff can still move any shipped entry with `gr_layout_add/remove/save`.
-    - Every other class in the old file (loot, gangs, war and machines) is ignored.
+    - The `GM.Lootables` positions become `trash_pile`s, keeping each entry's model and name ("Wet Garbage" / "Garbage"). Commented-out entries stay out.
+    - Every other class in the old file (gangs, war and machines) is ignored.
 - **Done when:**
   - A ghost can take each of five placeholder fates.
   - A Foolish player is refused everything except Slave, and a Friend is refused Slave.
@@ -150,7 +151,8 @@
 - **Pace and atmosphere:** the remake should feel darker and slower than the original.
   - Walk and run speeds come from one config table (slower than GMod defaults; start at walk 130, run 200). Speed comes from **one function**: config × the fate's `SpeedMulti` × registered modifiers (the needs weakness from step 6, and walk-only while carrying a crate from step 11.1). Nothing else sets speed.
   - One client file, `cl_atmosphere.lua`, applies a desaturated colour correction and fog. It is presentation only and has no gameplay state.
-- **Done when:** a fate change shows the right model on every client with no flicker. Test with 2 clients and lag simulated with `net_fakelag`. Movement uses the configured speeds, and the atmosphere is visible on every client.
+  - **Weather (ported from the original's `sh_weather.lua`), visual only.** Cycle: clear for 900 ±30 s, then night for 100–130 s, then randomly clear, yellow smog or red meat sky. The server networks the weather; clients lerp fog at `FrameTime()*0.25` and repaint the sky. Fog: clear {200,100,200, 500–1000, 0}; night {0,0,0, 0–300, 1}; meat {50,0,0, 0–666, 1}; yellow {200,175,75, 300–1500, 0.4}. Sky: night black with stars; meat red with `models/flesh` stars; yellow dusk with a yellow bottom. Each change prints the original's chat lines (night in red, plus a random `placenta/impendingdoom{1,2,4}.wav`). Ritual and per-area forced weathers hook in when those systems are ported.
+- **Done when:** a fate change shows the right model on every client with no flicker. Test with 2 clients and lag simulated with `net_fakelag`. Movement uses the configured speeds, and the atmosphere is visible on every client. Weather cycles and every client sees the same fog and sky.
 
 ### Step 6: Needs component
 
@@ -171,7 +173,7 @@
 - **One scheduled job:** `Needs.Tick` runs once a second per player and applies rates and threshold effects.
 - **Despair at 100:** heart attack, death, −1 stem cell (kept from the original).
 - **Food and drink** are items whose `Use` calls `Needs.Add`.
-  - **Food is scarce by design.** There are no free food spawns. Rations only exist because a prole or slave made them (step 11.1). The only free drink is dirty water from the pump (step 8). Clean water only comes from the lunch machine.
+  - **Food is scarce by design.** There are no free food spawns, apart from the rare rotten food from a trash pile (step 8). Rations only exist because a prole or slave made them (step 11.1). The only free drink is dirty water from the pump (step 8). Clean water only comes from the lunch machine, apart from a rare find in a trash pile.
 - **Done when:** the needs rise on their own, eating lowers Emptiness, and despair at 100 kills and costs a stem cell. Hunger and thirst never reduce HP directly. A bot with no food or water gets steadily slower and weaker from about minute 12, and its Pox starts rising once Dryness hits 100.
 
 ### Step 7: Damage, downed, death, corpse
@@ -218,7 +220,13 @@
 - **Persistence:** inventory is not persistent, as in the original. It belongs to the character's life and drops to the corpse on death.
 - **Starting set:** about 10 items to start: ration, clean water, dirty water, scrap, medical tools, the baton, the pistol and permits.
 - **`water_pump` entity:** one or two per map, usable by anyone. Each use gives one dirty water, with a short per-player cooldown. Dirty water lowers Dryness less than clean water and has a 25% chance to add Pox. Clean water is only sold from the stockpile (step 9). Pumps are for personal drinking only. The lunch machine's water comes from barrels (step 11.1).
-- **Done when:** pick up, drop and use work, the weight limit holds, and the corpse holds the dead player's items. The pump gives dirty water, and drinking it sometimes adds Pox.
+- **`trash_pile` entity (ported from the original's `lootable.lua`, features and UI identical, code refactored).** It is static and can't be physgunned, toolgunned or duped. It networks `NextLoot` and `LootName`.
+  - **Search (Use):** if it is empty: `nFrighten` + red *"There is nothing."* Otherwise it is empty for 300 + 120–360 s. A random rustle sound (the original's 9 plastic/plaster/cardboard break sounds) plays, then an AAT emote *"NAME sifts through the garbage."* (random from the original's 9 actions). 1–3 items drop at the eye trace, capped at 100 units.
+  - **Loot (weights out of 16):** `bone_capsule` 14 (spawned as the entity), `rotten_food` 1, clean water 1. No white mold.
+  - **`rotten_food` (new item):** eating it lowers Emptiness a little and adds Pox.
+  - **Cost:** +2 Pox; a 1/6 chance of a random parasite; a 1/8 chance of AAT red *"NAME slices their hand open on something sharp!"* and 10–20 damage. Nobody is exempt.
+  - **UI:** crosshair text: the name, then *"Use to dumpster dive.\nIt isn't healthy to do, and you'll probably catch something nasty."* or *"You must wait before there is more to take."*
+- **Done when:** pick up, drop and use work, the weight limit holds, and the corpse holds the dead player's items. The pump gives dirty water, and drinking it sometimes adds Pox. A trash search drops 1–3 items, adds 2 Pox and empties the pile; a second search says "There is nothing." until it refills.
 
 ### Step 9: Economy (fixed bone supply, treasury, stockpile, prices)
 
@@ -511,7 +519,7 @@ These are ordered by how much they add to the feel compared with their cost:
 
 1. Quirks, through `Needs.Modifiers` and fate hooks.
 2. ~~Corpse decomposition stages.~~ Moved into step 7 (2026-10-17).
-3. Day/night weather.
+3. ~~Day/night weather.~~ Accepted into step 5 (2026-10-17).
 4. Ghost haunting and Suffering.
 5. Unions and gangs.
 6. Dealer stocks and contraband.
