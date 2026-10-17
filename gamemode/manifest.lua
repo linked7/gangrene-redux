@@ -103,5 +103,6 @@ return {
 		"sh_maladies.lua",
 		"sh_malady_winter.lua",
 		"sh_imports.lua",
+		"sh_breakables.lua",
 	},
 }
