@@ -1,0 +1,10 @@
+"gangreneredux"
+{
+	"base"			"base"
+	"title"			"Gangrene Redux"
+	"maps"			""
+	"menusystem"	"1"
+	"settings"
+	{
+	}
+}
