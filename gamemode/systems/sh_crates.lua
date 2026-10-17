@@ -2,8 +2,8 @@
 --
 --   ration_press   working it is a timed action; when it ends an ent_crate of the press's good
 --                  appears beside it. At most Crates.PER_STATION crates per press wait in the world.
---                  Any class in Crates.STATIONS works the same way (GetGood() names its good); the
---                  prole-built factory_site joins it in sh_factory.lua.
+--                  Any class in Crates.STATIONS works the same way (GetGood() names its good).
+--                  Only the presses the map layout places exist; players can't build production.
 --   ent_crate      a ~30 kg prop carried with GMod's own +use pickup. The carrier's weapon is
 --                  holstered and they can only walk; the crate drops where it is when they are hit,
 --                  go down or jump, and it can be pushed along the ground. Touching it to a
@@ -200,7 +200,7 @@ function Crates.Work( ply, station )
 		return false
 	end
 	local ok = Actions.Start( ply, "press", station, Crates.PRESS_TIME, {
-		label = ( station.WorkVerb or "Pressing" ) .. " " .. ( Items.Get( good ) and Items.Get( good ).Name or good ),
+		label = "Pressing " .. ( Items.Get( good ) and Items.Get( good ).Name or good ),
 		onDone = function( p, st ) Crates.FinishWork( p, st ) end,
 	} )
 	if not ok then Notify( ply, "You are busy." ) end

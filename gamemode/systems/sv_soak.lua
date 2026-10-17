@@ -93,7 +93,7 @@ local function skipped( what ) return S.skip[ what ] end
 local function count( what ) S.counts[ what ] = ( S.counts[ what ] or 0 ) + 1 end
 
 -- Registries of what the soak watches, filled by hooks (no FindByClass).
-local tracked = { gr_item = {}, ent_crate = {}, factory_site = {}, storage_crate = {} }
+local tracked = { gr_item = {}, ent_crate = {}, storage_crate = {} }
 
 hook.Add( "OnEntityCreated", "gr_soak", function( ent )
 	if not S then return end
@@ -484,9 +484,7 @@ local function transient()
 	local n = { gr_item = 0, ent_crate = 0, bodies = 0, buildings = 0 }
 	for ent in pairs( tracked.gr_item ) do if IsValid( ent ) then n.gr_item = n.gr_item + 1 end end
 	for ent in pairs( tracked.ent_crate ) do if IsValid( ent ) then n.ent_crate = n.ent_crate + 1 end end
-	for _, class in ipairs( { "factory_site", "storage_crate" } ) do
-		for ent in pairs( tracked[ class ] ) do if IsValid( ent ) then n.buildings = n.buildings + 1 end end
-	end
+	for ent in pairs( tracked.storage_crate ) do if IsValid( ent ) then n.buildings = n.buildings + 1 end end
 	for rag in pairs( Corpse.All() ) do if IsValid( rag ) then n.bodies = n.bodies + 1 end end
 	return n
 end

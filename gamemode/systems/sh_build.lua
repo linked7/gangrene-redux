@@ -1,21 +1,20 @@
 -- Construction (step 11.1). Anyone carrying an item tagged Builds (the permit tool) can hold C
--- while looking at open ground and pick Build: a factory site or a storage crate. The price goes to
--- the treasury through Econ.Transfer, and the server checks the spot is in reach and in sight.
+-- while looking at open ground and pick Build: a storage crate. The price goes to the treasury
+-- through Econ.Transfer, and the server checks the spot is in reach and in sight. Players can't
+-- build production: the only presses are the ones the map layout places (sv_layout.lua).
 --
---   Build.KINDS[ kind ] = { name, cost, class, max }    max: how many one player may have standing
+--   Build.KINDS[ kind ] = { name, cost, class }
 --   Build.Place( ply, kind, pos ) -> ent, or false and why     (the `gr_build` receiver calls it)
 --   Build.IsBuilder( ply, ent )   shared: did `ply` build `ent` (ent:GetBuiltBy() is the DB.Key)
---   Build.Count( ply, kind )      server: how many of `kind` built by `ply` still stand
 --   Built things belong to one round: GR_RoundStart removes them (ent.GR_RoundReset is set first,
 --   so a storage crate doesn't spill its contents on the floor of a new round).
 --   console: gr_build <kind>   builds at the spot you look at
 Build = Build or {}
 
 Build.KINDS = {
-	factory_site = { name = "Factory site", cost = 25, class = "factory_site", max = 2 },
 	storage_crate = { name = "Storage crate", cost = 35, class = "storage_crate" },
 }
-Build.ORDER = { "factory_site", "storage_crate" }
+Build.ORDER = { "storage_crate" }
 Build.RANGE = 150 -- from the builder's eyes to the spot
 
 -- Built entities network their builder's key as the "BuiltBy" string. Clients only ever ask about
@@ -72,14 +71,6 @@ end
 local built = Build.built or setmetatable( {}, { __mode = "k" } )
 Build.built = built
 
-function Build.Count( ply, kind )
-	local key, n = DB.Key( ply ), 0
-	for ent, k in pairs( built ) do
-		if k == kind and IsValid( ent ) and ent.GR_BuiltBy == key then n = n + 1 end
-	end
-	return n
-end
-
 hook.Add( "GR_RoundStart", "gr_build", function()
 	for ent in pairs( built ) do
 		if IsValid( ent ) then
@@ -104,9 +95,6 @@ function Build.Place( ply, kind, pos )
 	-- The spot must be in sight: nothing between the builder's eyes and it.
 	local tr = util.TraceLine( { start = ply:EyePos(), endpos = pos, filter = ply, mask = MASK_SOLID } )
 	if tr.HitPos:DistToSqr( pos ) > 16 * 16 then return refuse( "You can't reach there." ) end
-	if k.max and Build.Count( ply, kind ) >= k.max then
-		return refuse( string.format( "You already have %d %ss standing.", k.max, string.lower( k.name ) ) )
-	end
 
 	if not Econ.Transfer( ply, Econ.TREASURY, k.cost, "construction" ) then
 		return refuse( string.format( "A %s costs %d bones.", string.lower( k.name ), k.cost ) )

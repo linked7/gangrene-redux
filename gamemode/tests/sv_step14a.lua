@@ -70,7 +70,7 @@ return function( T )
 
 	Inventory.Add( user, "permit_tool", 1, true )
 	userBefore = user:GetBones()
-	T.Check( not Build.Place( user, "factory_site", Vector( 0 / 0, 0 / 0, 0 / 0 ) ), "a NaN build spot is refused" )
+	T.Check( not Build.Place( user, "storage_crate", Vector( 0 / 0, 0 / 0, 0 / 0 ) ), "a NaN build spot is refused" )
 	T.Equal( user:GetBones(), userBefore, "and costs nothing" )
 	T.Equal( ( Econ.Audit() ), 0, "the economy holds" )
 

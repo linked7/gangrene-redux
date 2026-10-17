@@ -7,7 +7,15 @@
 --     gamemode/layouts/<map>.lua          shipped with the gamemode: returns
 --                                         { { class, pos = Vector, ang = Angle, kv = { fate = "prole" } }, ... }
 --     a ring around the first info_player_start (Layout.Ring), with a warning in the log
---   If the map places any of these classes itself, nothing is spawned.
+--   If the map places any of these classes itself, nothing is spawned. A loaded layout is never
+--   topped up from the default set: a class or fate it lacks (rp_slumtown ships without a stockpile,
+--   a slave purpose and a sanitation station) is only warned about, for staff to place and save.
+--
+--   Optional entry flags:
+--     candidate = true   listed but not spawned: a spot staff may switch on (rp_slumtown's spare
+--                        pump spots). gr_layout_list marks it; edit the json to enable it.
+--     drop = true        pos is only near the floor (converted from another model's origin): the
+--                        first spawn traces down to the floor and stands the model on it.
 --
 --   Layout.Spawn( [map] )            spawn every entry not already standing; returns the count spawned
 --   Layout.Clear()                   remove what Layout spawned and forget the loaded layout
@@ -96,7 +104,8 @@ local function clean( raw )
 		if not keys[ k ] or not keys[ k ]( v ) then return nil, string.format( "bad key value %s=%s for %s", k, v, raw.class ) end
 		kv[ k ] = v
 	end
-	return { class = raw.class, pos = pos, ang = ang, kv = kv }
+	return { class = raw.class, pos = pos, ang = ang, kv = kv,
+		candidate = raw.candidate == true or nil, drop = raw.drop == true or nil }
 end
 
 local function cleanList( list, source )
@@ -198,6 +207,15 @@ function Layout.Load( map )
 end
 
 local function spawnEntry( entry )
+	if entry.drop then
+		local floor = Layout.Floor( entry.pos )
+		if floor then
+			entry.pos, entry.onFloor = floor, true
+		else
+			Log.Warn( "layout", "no floor under %s at %s; placing it as given", entry.class, tostring( entry.pos ) )
+		end
+		entry.drop = nil
+	end
 	local ent = ents.Create( entry.class )
 	if not IsValid( ent ) then return nil end
 	ent:SetPos( entry.pos )
@@ -217,6 +235,25 @@ local function spawnEntry( entry )
 	return ent
 end
 
+-- Logs what a loaded layout lacks against the default set (classes, and a purpose per fate).
+-- Nothing is placed for it: staff add it with gr_layout_add and keep it with gr_layout_save.
+function Layout.WarnMissing( list, map )
+	local have = {}
+	for _, e in ipairs( list ) do
+		if not e.candidate then have[ e.class .. ( e.kv.fate and ( ":" .. e.kv.fate ) or "" ) ] = true end
+	end
+	local missing = {}
+	for _, item in ipairs( Layout.DefaultSet() ) do
+		local key = item.class .. ( item.kv.fate and ( ":" .. item.kv.fate ) or "" )
+		if not have[ key ] and not table.HasValue( missing, key ) then table.insert( missing, key ) end
+	end
+	if #missing > 0 then
+		Log.Warn( "layout", "%s's layout has no %s. Staff: gr_layout_add <class> [fate=<id>], then gr_layout_save",
+			map, table.concat( missing, ", " ) )
+	end
+	return missing
+end
+
 function Layout.Spawn( map )
 	map = map or game.GetMap()
 	if Layout.MapPlaced() then
@@ -230,6 +267,7 @@ function Layout.Spawn( map )
 		entries, source = Layout.Load( map )
 		if entries then
 			Log.Info( "layout", "%s: %d entries from %s", map, #entries, source )
+			Layout.WarnMissing( entries, map )
 		else
 			local center = firstSpawn()
 			entries = center and Layout.Ring( center ) or {}
@@ -238,7 +276,7 @@ function Layout.Spawn( map )
 	end
 	local n = 0
 	for _, entry in ipairs( entries ) do
-		if not IsValid( spawned[ entry ] ) and spawnEntry( entry ) then n = n + 1 end
+		if not entry.candidate and not IsValid( spawned[ entry ] ) and spawnEntry( entry ) then n = n + 1 end
 	end
 	if n > 0 then Log.Info( "layout", "spawned %d of %d layout entities", n, #entries ) end
 	return n
@@ -313,7 +351,8 @@ function Layout.Save( by )
 	local out = {}
 	for _, e in ipairs( entries ) do
 		table.insert( out, { class = e.class, pos = { round1( e.pos.x ), round1( e.pos.y ), round1( e.pos.z ) },
-			ang = { round1( e.ang.p ), round1( e.ang.y ), round1( e.ang.r ) }, kv = e.kv } )
+			ang = { round1( e.ang.p ), round1( e.ang.y ), round1( e.ang.r ) }, kv = e.kv,
+			candidate = e.candidate, drop = e.drop } )
 	end
 	file.CreateDir( DATA_DIR )
 	local path = Layout.DataPath()
@@ -329,7 +368,8 @@ function Layout.List( by )
 	for i, e in ipairs( entries or {} ) do
 		local kv = {}
 		for k, v in pairs( e.kv ) do table.insert( kv, k .. "=" .. v ) end
-		table.insert( lines, string.format( "%d. %s %s %s", i, e.class, tostring( e.pos ), table.concat( kv, " " ) ) )
+		table.insert( lines, string.format( "%d. %s %s %s%s", i, e.class, tostring( e.pos ), table.concat( kv, " " ),
+			e.candidate and " (candidate, not spawned)" or "" ) )
 	end
 	local msg = string.format( "%s: %d entries. %s", Layout.map or game.GetMap(), #lines, table.concat( lines, "; " ) )
 	if IsValid( by ) then by:PrintMessage( HUD_PRINTCONSOLE, msg ) end
