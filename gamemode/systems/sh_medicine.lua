@@ -200,6 +200,7 @@ function Medicine.FinishSurgery( doctor, target, proc )
 	proc.done( doctor, target )
 	Notify( doctor, "The operation succeeded." )
 	Notify( target, "The operation succeeded." )
+	hook.Run( "GR_Treated", doctor, target )
 	Log.Debug( "medicine", "%s did %s on %s", doctor:Nick(), proc.id, target:Nick() )
 	return true
 end
@@ -217,5 +218,6 @@ function Medicine.Lovebox( ply, target )
 	ply.GR_LoveboxAt = CurTime()
 	Medicine.Heal( target, Medicine.LOVEBOX_HEAL )
 	Notify( target, ply:Nick() .. " soothes you with the lovebox." )
+	hook.Run( "GR_Treated", ply, target )
 	return true
 end

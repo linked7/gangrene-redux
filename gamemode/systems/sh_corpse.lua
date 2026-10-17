@@ -245,6 +245,7 @@ function Corpse.Die( rag, reason )
 	rec.state = "dead"
 	rec.decayAt = CurTime() + Corpse.DECAY
 	Corpse.Sync( rag )
+	hook.Run( "GR_CorpseDied", rag, rec, reason )
 	local ply = rec.owner
 	if IsValid( ply ) and ply.GR_Corpse == rag then
 		ply.GR_Corpse = nil

@@ -28,6 +28,12 @@ Fates.Define( "prole", {
 	Kit = { "permit_tool", { "scrap", "scrap_pipe", "scrap_gear" } },
 	AccuracyMulti = 1.25, -- bullet spread x1.25
 	RecoilMulti = 1.3,    -- view kick x1.3
+	PainSounds = { "placenta/pain/prole1.wav", "placenta/pain/prole2.wav", "placenta/pain/prole3.wav", "placenta/pain/prole4.wav", "placenta/pain/prole5.wav" },
+	DeathSounds = { "placenta/death/prole1.wav", "placenta/death/prole2.wav", "placenta/death/prole3.wav" },
+	IntroTexts = {
+		{ Color( 200, 200, 0 ), "You are an unpatriotic resident of Gangrene.\nYou're responsible for the industrial productivity of this shithole and can both operate and deploy certain devices (C menu)." },
+		{ Color( 100, 100, 100 ), "You were always known as the %name to the People." },
+	},
 	Names = function() return ADJ[ math.random( #ADJ ) ] .. " " .. NOUN[ math.random( #NOUN ) ] end,
 	Appearance = function()
 		return { model = string.format( "models/player/group01/male_0%d.mdl", math.random( 9 ) ), race = "gangral" }

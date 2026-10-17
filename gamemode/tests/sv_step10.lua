@@ -58,7 +58,7 @@ return function( T )
 	T.Equal( p1:GetWantedReason(), "murder", "wanted reason is public" )
 	T.Check( near( left( p1 ), 300 ), "murder is 300 s: " .. left( p1 ) )
 	T.Equal( p1:GetStemCells(), cells - 1, "murder costs a stem cell" )
-	T.Equal( Needs.Get( p1, "Despair" ), 30, "murder adds 30 despair" )
+	T.Equal( Needs.Get( p1, "Despair" ), 31, "murder adds 30 despair, and being wanted 1 more (step 17a)" )
 
 	o = Crime.Judge( p3, sl )
 	T.Equal( o and o.crime, "murder", "killing a slave is murder" )
