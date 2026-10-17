@@ -4,6 +4,13 @@ local root = GM.FolderName .. "/gamemode/"
 if SERVER then AddCSLuaFile( "manifest.lua" ) end
 local manifest = include( "manifest.lua" )
 
+-- Every file sent to clients, by path, so a test can check nothing client-side was missed.
+Loader = { Sent = {} }
+local function send( path )
+	AddCSLuaFile( path )
+	Loader.Sent[ path ] = true
+end
+
 local function loadFile( dir, name )
 	local path = root .. dir .. "/" .. name
 	-- Race and fate definitions are plain data used by both realms.
@@ -12,10 +19,10 @@ local function loadFile( dir, name )
 	if prefix == "sv_" then
 		if SERVER then include( path ) end
 	elseif prefix == "sh_" then
-		if SERVER then AddCSLuaFile( path ) end
+		if SERVER then send( path ) end
 		include( path )
 	elseif prefix == "cl_" then
-		if SERVER then AddCSLuaFile( path ) else include( path ) end
+		if SERVER then send( path ) else include( path ) end
 	else
 		ErrorNoHalt( "[gr] loader: no realm prefix on " .. path .. "\n" )
 	end

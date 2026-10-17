@@ -63,5 +63,9 @@ return {
 		"sh_build.lua",
 		"sv_admin.lua",
 		"sv_layout.lua",
+		"cl_hud.lua",
+		"cl_fates.lua",
+		"cl_scoreboard.lua",
+		"cl_help.lua",
 	},
 }
