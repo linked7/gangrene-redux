@@ -51,5 +51,7 @@ return {
 		"sv_econ.lua",
 		"sh_crime.lua",
 		"sh_interact.lua",
+		"sh_kaiser.lua",
+		"cl_kaiser.lua",
 	},
 }

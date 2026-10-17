@@ -430,9 +430,10 @@ Net.Receive( "nKaiserFine", { rate = 4, alive = true, fate = "RunsEconomy", targ
 	Econ.Fine( ply, target, net.ReadUInt( 24 ) )
 end )
 
--- The Economy table outlives no Kaiser: it goes back to its defaults when they die.
-hook.Add( "PlayerDeath", "gr_econ", function( ply )
-	if not ply:FateHas( "RunsEconomy" ) then return end
+-- The Economy table outlives no Kaiser: it goes back to its defaults when they die for good
+-- (a downed Kaiser who is revived keeps it).
+hook.Add( "GR_FinalDeath", "gr_econ", function( ply, f )
+	if not f.RunsEconomy then return end
 	Econ.ResetSettings()
 	for _, p in player.Iterator() do Notify( p, "The Kaiser is dead. The economy returns to its old ways." ) end
 	Log.Info( "econ", "the Kaiser died; Economy table reset" )

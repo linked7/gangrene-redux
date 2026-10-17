@@ -33,10 +33,13 @@ hook.Add( "PlayerDeath", "gr_lifecycle", function( ply )
 end )
 
 -- The life is over: start the fate's cooldown and bring the player back as a ghost.
+-- Systems that act on a final death (not a downing) listen to GR_FinalDeath( ply, fate ).
 function Lifecycle.FinalDeath( ply, fateId )
 	ply.GR_RespawnAt = CurTime() + 1
 	local f = fateId and Fates.Get( fateId )
-	if not f or f.index == FATE_GHOST or not f.DeathCooldown then return end
+	if not f or f.index == FATE_GHOST then return end
+	hook.Run( "GR_FinalDeath", ply, f )
+	if not f.DeathCooldown then return end
 
 	local untilTime = CurTime() + f.DeathCooldown
 	ply[ "SetCooldown_" .. f.id ]( ply, untilTime )
