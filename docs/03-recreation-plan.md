@@ -204,6 +204,9 @@
   - **Revive (either state):** a korpsman uses the body. **Exception:** a player downed while Emptiness is 100 can't be revived. The body has nothing left to bring back. A wounded starving player still gets up on their own; a dying one is lost. It is a short press sequence, not a timed action: the korpsman presses Use on the body 3 separate times, a few seconds apart at most, and the third press rolls success on the server. Stopping resets it; a failure can be retried. It calls `Fates.Apply(ply, sameFate, {reason="revive"})`. The fee comes from step 11.2. A revived player has no `Injured`. There is one revive function (R2).
   - **Finish off (either state):** an explicit context action on a downed body (a short timed action, about 3 s), not just stray damage. It calls `Crime.Judge` (step 10), and the player becomes a ghost. This is the only instant death.
 - **Consciousness** stays separate: at 0 the player passes out into a short stun and wakes with no injury.
+- **Breakables (as in the original, `DoorRammingEnabled`):**
+  - **Doors** take club/blast damage and burst open when their health runs out. A broken door stays broken: it never auto-repairs during the round.
+  - **Props** have health and break into gibs when it runs out. They never ignite on break. Wooden props drop `wood` chunks (campfire, step 13).
 - **Done when:**
   - A bot downed by a light hit gets back up after 45 s at 25 HP, `Injured`, with max HP 50. A korpsman treatment clears it.
   - A bot downed by a hit 30 past 0 HP, or shot again while wounded, is dying, and becomes a ghost after 120 s unless revived. The downer is judged at that point.
