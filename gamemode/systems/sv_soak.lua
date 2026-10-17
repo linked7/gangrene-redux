@@ -52,11 +52,20 @@ local function ground( pos )
 	return pos
 end
 
--- Puts `bot` on the ground about `r` units from `target` (an entity or a vector).
+-- Puts `bot` on the ground about `r` units from `target` (an entity or a vector), on a spot its
+-- hull fits (not inside a crate, body or player). Real players walk; a teleport while carrying a
+-- physics object, or into one, is something only this driver does, so it lets go first.
 local function goNear( bot, target, r )
 	local at = isvector( target ) and target or target:GetPos()
-	local a = math.random() * math.pi * 2
-	local pos = ground( at + Vector( math.cos( a ), math.sin( a ), 0 ) * ( r or 50 ) )
+	bot:DropObject()
+	local mins, maxs = bot:GetHull()
+	local pos
+	for _ = 1, 6 do
+		local a = math.random() * math.pi * 2
+		pos = ground( at + Vector( math.cos( a ), math.sin( a ), 0 ) * ( r or 50 ) )
+		local tr = util.TraceHull( { start = pos, endpos = pos, mins = mins, maxs = maxs, mask = MASK_PLAYERSOLID, filter = bot } )
+		if not tr.StartSolid then break end
+	end
 	bot:SetPos( pos )
 	bot:SetEyeAngles( ( at - pos ):Angle() )
 end
@@ -176,11 +185,10 @@ local function deliver( bot, crate )
 	goNear( bot, crate, 40 )
 	crate:Use( bot, bot ) -- the real pickup: PickupObject, then OnPlayerPhysicsPickup
 	if Crates.HeldBy( bot ) ~= crate then Crates.Hold( bot, crate ) end
-	goNear( bot, S.stockpile, 70 )
+	goNear( bot, S.stockpile, 70 ) -- lets go of the crate; delivery below names the bot directly
+	Crates.Release( bot )
 	if chance( 0.3 ) and not skipped( "drop_on_stockpile" ) then
-		-- Through the entity's own touch path: let go above the stockpile and let it fall on it.
-		bot:DropObject()
-		Crates.Release( bot )
+		-- Through the entity's own touch path: drop it above the stockpile and let it fall on it.
 		local top = S.stockpile:GetPos() + Vector( 0, 0, S.stockpile:OBBMaxs().z + 20 )
 		crate:SetPos( top )
 		local phys = crate:GetPhysicsObject()
@@ -449,6 +457,7 @@ local function churn()
 	if #bots == 0 then return end
 	local b = pick( bots )
 	local name = b:SteamName()
+	b:DropObject()
 	b:Kick( "soak churn" )
 	count( "churn_leave" )
 	S.rejoin = { name = name, at = CurTime() + 10 }
