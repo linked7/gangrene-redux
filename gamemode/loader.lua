@@ -1,4 +1,4 @@
--- Includes core/ then systems/ in the order given by manifest.lua, routing each file by prefix.
+-- Includes core/, fates/ then systems/ in the order given by manifest.lua, routing each file by prefix.
 local root = GM.FolderName .. "/gamemode/"
 
 if SERVER then AddCSLuaFile( "manifest.lua" ) end
@@ -6,7 +6,8 @@ local manifest = include( "manifest.lua" )
 
 local function loadFile( dir, name )
 	local path = root .. dir .. "/" .. name
-	local prefix = string.sub( name, 1, 3 )
+	-- Fate definitions are plain data used by both realms.
+	local prefix = dir == "fates" and "sh_" or string.sub( name, 1, 3 )
 
 	if prefix == "sv_" then
 		if SERVER then include( path ) end
@@ -20,7 +21,7 @@ local function loadFile( dir, name )
 	end
 end
 
-for _, dir in ipairs( { "core", "systems" } ) do
+for _, dir in ipairs( { "core", "fates", "systems" } ) do
 	local listed = {}
 	for _, name in ipairs( manifest[ dir ] ) do
 		listed[ name ] = true

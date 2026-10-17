@@ -1,5 +1,6 @@
 -- Load order for the whole gamemode. Every file under core/ and systems/ must be listed here.
--- core/ loads first, then systems/, each in the order written. The prefix picks the realm:
+-- core/ loads first, then fates/ (shared data, no prefix), then systems/, each in the order
+-- written. In core/ and systems/ the prefix picks the realm:
 --   sv_  server only
 --   sh_  both
 --   cl_  client only (sent to clients by the server)
@@ -12,9 +13,22 @@ return {
 		"sv_db.lua",
 		"sh_state.lua",
 		"sh_fields.lua",
+		"sh_notify.lua",
+		"sh_fates.lua",
+	},
+	-- Order matters: a fate with Base must come after its base. Ghost must be first (FATE_GHOST = 1).
+	fates = {
+		"ghost.lua",
+		"prole.lua",
+		"slave.lua",
+		"korpsman.lua",
+		"sanitar.lua",
+		"kaiser.lua",
 	},
 	systems = {
 		"sv_hello.lua",
 		"cl_hello.lua",
+		"sv_lifecycle.lua",
+		"sh_ghost.lua",
 	},
 }
