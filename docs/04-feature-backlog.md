@@ -27,6 +27,8 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | Kaiser recruits sanitars (context menu); sanitar station dropped | `accepted` | Steps 4, 11.4. |
 | Deadly wasteland water (1:1 port: damage + Pox by water level) | `accepted` | Step 8. |
 | XOMBOKOM as big red screen text | `accepted` | Step 11.4. |
+| Sanitar Summon (1:1 port, 16 rp_slumtown spots) | `accepted` | Step 10. |
+| Immigration Kontrol Konsole in the Gate Antechamber (papers → passport) | `accepted` | Step 13. |
 | Korpsman loop remake | `accepted` | Step 11.2 ported from the original: revive (3 presses) promotes to lovebox (blood/Pox/parasite modes, HP cost); surgery is a timed action with per-procedure time, tool %, fail roll and costs. |
 | Shop goods from the stockpile | `accepted` | Step 9: loaf = ration at sell.ration; beer/spirits/knife seeded stock (shop_stock 10), sold out until next round. |
 | Slave fate: new players are slaves until they survive a round or are commended | Step 11 item 5, Step 13 (Rounds) | 2026-10-17 |
@@ -105,3 +107,5 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Sanitar recruiting | Kaiser's "Recruit as Sanitar" context action; no sanitar station. | User agreed. |
 | 2026-10-17 | Wasteland water | 1:1 port of the original wade damage and Pox in the wasteland box. | User: the water should be horrible in the wasteland. |
 | 2026-10-17 | XOMBOKOM | Kaiser broadcast as large red top-centre text plus sound, not chat; 120 chars, 30 s cooldown. | User's choice. |
+| 2026-10-17 | Sanitar Summon | 1:1 port of the original summoner with its 16 rp_slumtown spots. | User asked. |
+| 2026-10-17 | Immigration konsole | New `konsole_immigration` at the Gate Antechamber is the papers → passport point; none existed in the original. | User asked. |

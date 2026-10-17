@@ -305,6 +305,13 @@
   - **Stockpile break-in:** breaking the stockpile's lock (step 11.1) makes the player judgment-wanted for 300 s. The first hit on the lock sends an alarm on the `"state"` radio channel with the stockpile's location.
 - **Done when:** each rule fires in a scripted bot scenario, and wanted status counts down only while out of sight. Each theft rule also fires in a bot scenario.
 
+- **Sanitar Summon** (`summoner`, 1:1 port of `entities/entities/summoner.lua`). Model `combine_smallmonitor001`. Net vars On, Blink, NextToggle, Area. Use and damage go through a validated receiver.
+  - Civilian use: turns on (auto-stop 60 s); police get "ACHTUNG -- <name> triggered a Sanitar Summon! Sanitar Squad must appear to <Area> immediately!" Civilian use while on: "You'll have to hit it... but that's a crime!"
+  - Police/Kaiser use: on → off, "The <Area> situation was resolved. Gangrene Eternal!", 180 s cooldown; off → on, "<name> requests backup!". Use during cooldown: frighten + "Shh. It's sleeping."
+  - While on: `placenta/summoning.wav` every 6 s (pitch 80-100); auto-stop plays `kidneydagger/scramble1.wav`. Non-crush damage turns it off; a non-police attacker gets evidence 60 "obstruction of sanitation", a police attacker sets the cooldown.
+  - Police see "CALLING SS - <AREA>" through walls, flashing red. 3D2D screen: noise when off, red pulse when on, with "THEY'RE COMING" / "Relaxing for X..." / "Use to request help".
+  - rp_slumtown layout `summoners` (16, from the original map list): Lunch Factory, Water Treatment Plant, Tools Factory, Hothouse, Arms Factory, Device Factory, Soup Pit, Wetmarket, Crawling Horror, Klinic, Morgue, Gatehouse, Gate Antechamber, Garage, Foreman's Office, Underground Refineries. Copy pos/ang from `maps/list/rp_slumtown.lua:853`.
+
 ### Step 11: The fates
 
 Build them in this order, so each one has something to act on.
@@ -482,7 +489,7 @@ Build them in this order, so each one has something to act on.
   - **Round flow:**
     - At 10 min every `fate_station` is removed. Ghosts after that can only join as migrants.
     - Every 1 min a migrant wave spawns in the wasteland: each waiting ghost spawns as a Migrant (a Prole variant, race Outsider) carrying a `papers` item.
-    - At the city gate (rp_slumtown: the "Gates of Gangrene" by the gatehouse, about 1400 -64 64; the layout holds a `city_gate` entry), using the gate with `papers` swaps them for a `passport` and opens a list of city fates under their cap. The pick is permanent for the round. Korpsman cap after 10 min = korpsmen lost this round. Kaiser is never listed.
+    - At the city gate, a `konsole_immigration` ("Immigration Kontrol Konsole", new: the original had none) stands in the Gate Antechamber (rp_slumtown about 1409 52 91 ang 2 -90 1, offset ~40 units from the summoner there; layout entry `immigration`). Using it with `papers` swaps them for a `passport` and opens a list of city fates under their cap. The pick is permanent for the round. Korpsman cap after 10 min = korpsmen lost this round. Kaiser is never listed.
     - New players still start as Slave (step 11.5); slaves skip the migrant path.
     - Original refs: `ref_proletariat_wasteland.lua`, `ref_korpsman_wasteland.lua`, `items/list/permit_passport.lua`.
   - Only stem cells, rank and playtime carry over to the next round.
