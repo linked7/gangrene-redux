@@ -81,11 +81,21 @@ end
 
 -- Ready handshake: the client says when it has finished loading, and the server runs
 -- hook GR_PlayerReady(ply) exactly once. Anything that must reach a fresh client waits for it.
+-- Bots run no client Lua, so they count as ready one tick after their first spawn.
 if SERVER then
-	Net.Receive( "gr_ready", { rate = 1 }, function( ply )
+	local function markReady( ply )
 		if ply.GR_Ready then return end
 		ply.GR_Ready = true
 		hook.Run( "GR_PlayerReady", ply )
+	end
+
+	Net.Receive( "gr_ready", { rate = 1 }, markReady )
+
+	hook.Add( "PlayerInitialSpawn", "gr_ready_bots", function( ply )
+		if not ply:IsBot() then return end
+		timer.Simple( 0, function()
+			if IsValid( ply ) then markReady( ply ) end
+		end )
 	end )
 else
 	hook.Add( "InitPostEntity", "gr_ready", function()
