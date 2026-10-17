@@ -403,7 +403,7 @@ Build them in this order, so each one has something to act on.
 
 ### Step 12: Chat and radio
 
-- **Local chat:** say, yell, whisper, `/me` and OOC, with ranges from one table.
+- **Local chat:** say, yell, whisper, `/me` and OOC, with ranges from one table. **OOC is off by default** (user decision); staff can turn it on.
 - **Radio:** `/r` reaches everyone whose fate's `Radio` channel list shares a channel with yours (e.g. `"state"` for Kaiser and Sanitar, `"medic"` for Korpsman). Fate names are never hard-coded (R9).
 - **Dead players:** ghosts talk only to ghosts.
 - Race speech mangling (`Accent`, `RacialQuirks`) is dropped (user decision). `AutoGrammar`, chat ranges, babble sounds, thoughtcrime and kill sentences are parity items (05 §8).
@@ -448,6 +448,10 @@ Built alongside steps 11–13. It must hold before step 14's playtest with peopl
   - The bleed-out screen, damage and scare effects, constant bloom and aberrations.
   - The F3 player menu, the C context menu, the chat box, and the scoreboard rank icons.
   - Fonts (Smash), the Derma skin and UI sounds from the original content: the content pack is Workshop item 3067207405 (https://steamcommunity.com/sharedfiles/filedetails/?id=3067207405), sent to clients with `resource.AddWorkshop("3067207405")`.
+  - **Parity rulings (user, 2026-10-17):** where the original's code and 05 differ, these hold:
+    - **Melee:** match what the original actually did. The heavy swing does no extra damage and blocking doesn't reduce damage (the original never applied either multiplier).
+    - **Head burst:** the original's distance of about 6 units.
+    - **No leg-shot jump lock.** Leg shots never stop jumping.
   - Use the optimisation exceptions in 05 §6: cached Stutter, entity registries instead of `ents.GetAll`, no leaked globals, values read from the state cache, and a `gr_lowfx` option.
 - **Done when:** every element works in a real client, not only with bots, including over `net_fakelag`. Side-by-side screenshots against the original match, and the HUD costs under 1 ms a frame with 30 players.
 
