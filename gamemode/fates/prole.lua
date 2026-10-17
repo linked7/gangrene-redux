@@ -13,6 +13,7 @@ Fates.Define( "prole", {
 	Cost = 1,
 	DeathCooldown = 15,
 	Citizen = true,
+	CarryBonus = 5, -- workers haul; slaves inherit it
 	Names = function() return ADJ[ math.random( #ADJ ) ] .. " " .. NOUN[ math.random( #NOUN ) ] end,
 	Appearance = function()
 		return { model = string.format( "models/player/group01/male_0%d.mdl", math.random( 9 ) ), race = "gangral" }

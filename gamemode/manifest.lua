@@ -38,5 +38,8 @@ return {
 		"sh_ghost.lua",
 		"sh_needs.lua",
 		"cl_atmosphere.lua",
+		"sh_items.lua",
+		"sh_inventory.lua",
+		"cl_inventory.lua",
 	},
 }
