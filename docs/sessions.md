@@ -34,5 +34,8 @@ Read `docs/03-recreation-plan.md` (ground rules), `docs/05-ui-effects-parity.md`
 - `tools/play.sh` runs a LAN play server (port 27135) for real-client checks.
   `GR_PLAY_ARGS="+gr_uitour 1"` turns on the hands-free UI tour.
 - Soak runs are 10 minutes at most.
-- The laptop (Remote Control session "Laptop Picnic Control") is weak. Use it only as one GMod
-  client, and only when needed.
+- `tools/play.sh` defaults to `rp_slumtown`, the core map. It is installed on the Deck as the legacy
+  addon `garrysmod/addons/rp_slumtown` (client) and `~/gmod-ds/garrysmod/addons/rp_slumtown` (servers),
+  unpacked from `~/Downloads/rp_slumtown.rar`. The headless tests stay on gm_construct.
+- All testing runs on the Deck, real GMod clients included. The laptop is retired (user, 2026-10-17:
+  unstable).
