@@ -112,6 +112,14 @@
   - Replaces `purpose_in_life`. Its key value is the fate id, and it can only be used by ghosts.
   - On use it calls `CanTake`, then charges stem cells, then calls `Apply`.
   - Potentials are **dropped**.
+- **Map layouts:** each round places the world entities (fate stations, `state_stockpile`, `ration_press`, `water_pump`, `sanitation_station`) from a per-map layout.
+  - The layout source, in priority order: a staff-saved `data/gangrene/layouts/<map>.json`, then a shipped `gamemode/layouts/<map>.lua`, then a fallback ring around the first spawn. Staff edit it with `gr_layout_add/remove/save/list`.
+  - **The core map is `rp_slumtown`.** Its shipped layout is converted from the original's `gamemode/liverfailure-modules/maps/list/rp_slumtown.lua`, which holds the old positions. Entries commented out there stay out.
+    - `purpose_in_life` entries for the kept fates become `fate_station`s: `kommandant` → kaiser, `sanitator` → sanitar, `korpsman` → korpsman, `proletariat` → prole.
+    - The `machine_lunch` positions become `ration_press`es.
+    - The `faucet` positions are the candidates for `water_pump`. Only as many as step 8 allows are enabled.
+    - The old file has no position for the stockpile, the slave station or the sanitation station. Staff place those with `gr_layout_add`, then save.
+    - Every other class in the old file (loot, gangs, war and machines) is ignored.
 - **Done when:**
   - A ghost can take each of five placeholder fates.
   - A Foolish player is refused everything except Slave, and a Friend is refused Slave.
@@ -284,7 +292,11 @@ Build them in this order, so each one has something to act on.
      - A crate can also be opened on the spot, which gives its contents to the person who opened it.
      - Delivering or opening a crate someone else made goes through `Crime.Report(ply, "theft", …)` (step 10).
    - **Stockpile pry:** anyone without `StockpileAccess` can pry the stockpile open. This is a 60 s timed action, cancelled by moving away or taking damage. It sends the step 10 alarm when it starts, and when it finishes it drops 3 rations and runs the break-in rule.
-   - **Construction:** the C-menu `Build` places a factory site (25) or a storage crate (35). The cost goes to the treasury through `Econ.Transfer`. Validate placement range on the server.
+   - **Construction:** the C-menu `Build` places a **storage crate** (35 bones, paid to the treasury through `Econ.Transfer`). Validate placement range on the server.
+     - It holds 8 items, and the builder can lock it.
+     - Anyone else can pry it open: a 30 s timed action that is reported through `Crime.Report(ply, "theft", …)`.
+     - Its contents drop when it is removed, and it is cleared when the round resets.
+     - **Players can't build production.** There are no player-built factory sites or presses. Food production is limited to the presses the map layout places (step 4).
    - Unions and WorkTitles are deferred.
 2. **Korpsman**: the revive and healing loop.
    - Regenerates 3× faster.
@@ -375,6 +387,20 @@ Build them in this order, so each one has something to act on.
   - A new player starts as a Slave and is freed either by commendation or by surviving to `Round.End`.
   - Once freed, the player can take any fate, Kaiser included, with stem cells alone.
 
+### Step 15: Client UI
+
+Built alongside steps 11–13. It must hold before step 14's playtest with people.
+
+- **HUD:**
+  - Fate, name, health and armor, bones, stem cells and rank, plus teeth for police.
+  - Needs bars that appear near their warning thresholds.
+  - Injured, bullet and wanted markers.
+- **F2 fate picker:** it opens by itself for ghosts. It shows `Fates.CanTake`'s own refusal reasons (R7) and requests a fate through one validated receiver, `gr_take_fate`.
+- **TAB scoreboard:** grouped by fate. Only admins see Steam names.
+- **F1 help.**
+- **The Kaiser's economy panel** (step 9).
+- **Done when:** every element works in a real client, not only with bots, including over `net_fakelag`.
+
 ### Step 14: Hardening and playtest
 
 - **Audit every `Net.Receive`:** rate limit, sender checks and target checks (S1–S2).
@@ -401,6 +427,7 @@ These are ordered by how much they add to the feel compared with their cost:
 
 - `fedhoria`, gprofiler, `replicate` and the old module loader.
 - Hogmode, `SpawnerThink` and copy-pasted resource spawners.
+- Player-built factory sites and production. Production comes only from the presses the map layout places.
 - Hard-coded SteamIDs.
 - Text-file persistence.
 - mysqloo.
