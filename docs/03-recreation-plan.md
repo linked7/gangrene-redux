@@ -35,7 +35,7 @@
    - Values change in memory and the row is marked dirty.
    - Dirty rows flush in one `BEGIN … COMMIT` every 60 s, on disconnect and on shutdown. (P6)
 6. **Long actions are state, not timers.**
-   - Surgery, reviving and building are `ply.Action = {kind, target, startedAt, duration}` records, checked by the scheduler and cancelled when someone moves away, dies or changes fate. (D3)
+   - Surgery, reviving and building are `ply.Action = {kind, target, startedAt, duration}` records, checked by the scheduler and cancelled when someone moves away, dies or changes fate. (D3) Revive and building are presses, not bars; **surgery is the one timed action** (step 11.2).
 7. Each step ends with something you can run on a listen server with bots. Don't start step N+1 until step N's "done when" holds.
 8. **UI and effects match the original.**
    - The HUD, menus, fonts, sounds and screen effects look and behave like Gangrene's. `05-ui-effects-parity.md` has the inventory.
@@ -362,13 +362,33 @@ Build them in this order, so each one has something to act on.
    - Unions and WorkTitles are deferred.
 2. **Korpsman**: the revive and healing loop.
    - Regenerates 3× faster.
-   - **The loop:** find a downed body, judge it by looking (a range-limited inspect line shows dying or wounded and the bones carried; starved bodies can't be saved), drag it out of danger, revive it. The clock is the patient's bleed-out, not a bar. There is no cot.
-   - Revive is the 3-press sequence from step 7. On success the server moves `revive_fee` percent of the patient's carried bones (default 50, set by the Kaiser in step 9) with `Econ.Transfer(patient, korpsman, n, "revive_fee")`. A broke patient pays 0.
-   - **Treatment:** the tool in hand picks the procedure, so there is no menu. Each is a few separate presses or hits with a server-rolled failure (original `SurgeryFailChance` 10); `autoFail` is never read from the client (B19). On success the patient pays a small fixed fee per procedure through `Econ.Transfer`.
-     - `lovebox`: heals and clears `Injured`. Only after the Kaiser upgrade, and it costs the korpsman some of their own HP.
-     - Tonic: cures Pox.
-     - Knife: removes a bullet (2 stabs).
-   - **Done when:** a korpsman bot drags a dying 100-bone prole and presses Use 3 times, and the prole is alive, not Injured, with exactly one 50-bone `revive_fee` transfer. Setting `revive_fee` to 20 changes the next fee. A starved body refuses every press. A faked success message changes nothing. The lovebox is refused before the upgrade and heals after it with the fee paid. A forced failure leaves the patient unchanged and unpaid. There are no `Actions.Timed` calls on the korpsman path, and the audit shows zero drift.
+   - **Revive.** The 3-press sequence from step 7 gets a downed body back up. On success the server moves `revive_fee` percent of the patient's carried bones (default 50, set by the Kaiser in step 9) with `Econ.Transfer(patient, korpsman, n, "revive_fee")`.
+   - **Kit (as the original):** respirator, guide book, and a knife or shank (1 in 4) or a blade permit. Limit 2 (3/4/5 at 25/35/45 players), DeathTimer 60, Cost 1, `SurgeryFailChance` 10.
+   - **Lovebox (fast, costs the korpsman's body).** The korpsman does **not** start with it: the first successful revive promotes them (`UpgradedMedic`) and gives it. Medkit model, weight 4, 0.8 move speed. Target: a living player within 85 units, not self; ghosts can't be healed.
+     - **Primary (blood → plasma):** every 0.2 s, target +2 regen, korpsman −1 HP. At 0 HP the korpsman loses 1 regen instead, and dies with none left. Bringing a patient out of Emergency to full pays 50 bones from the treasury ("Healthcare").
+     - **Secondary (Pox):** every 0.4 s, target Pox −3, korpsman −2 HP (−2 regen at 0 HP) and catches 1 Pox with chance target Pox/100.
+     - **Reload (parasites):** only on a patient below a quarter of max HP. Removes one random parasite and drops it as an item.
+   - **Surgery (slow, often better).** **Surgery is the one exception to "no timed actions" (D3).** It is an `Actions.Timed` record on both players, ported from the original `sv_surgery.lua`:
+     - Started from the context menu on a patient within reach, holding a tool. The server checks validity; both players are frozen. Each procedure has a `Time` split into steps; each step shows a progress bar to both, plays the animation, deals the patient 1 damage and bleeds.
+     - **Tool success %** comes from the procedure's `Tools` table (blades: shank 15–50, broken bottle 5, machete 50–60, knife 80, skinning knife 90, lancet 95, long knife 100). Fail chance = `SurgeryFailChance` + (100 − tool %), rolled on the server at the end (B19). Some procedures consume their tool.
+     - **Success:** green chat, the procedure's effect, patient heals HP equal to the step count.
+     - **Failure:** red chat *"botched a X surgery"* (1 in 6 names a wrong procedure), the procedure's failure effect, patient −10 HP, korpsman +10 despair. On a sanitar or Kaiser patient the korpsman gets 15 `malpractice` evidence (cleared by a later success on one). The korpsman may lose the tool (`random(0,10) < failChance`).
+     - **Interrupt:** either player can break it with a key or by moving/dying (*"haphazardly interrupted"*); nothing is applied. When it ends both are unfrozen and the patient is briefly stunned, so a bad doctor can be escaped.
+     - **Procedures kept** (healing only; harvests, weird science and the cut quirk treatments stay out per 00):
+
+       | Procedure | Time | Tool | Effect (fail) |
+       |---|---|---|---|
+       | Seal Wounds | 5 s | paper, skin, leather, maggots, alcohol or suture (consumed) | Pox −5..−10 (Pox +5..+10) |
+       | Bloodletting | 10 s | blade | Pox −40 (−5) |
+       | Blood thinning | 15 s | blade | dryness +50 |
+       | Sanguinary Remedy | 12 s | bloodbag, heartfruit or heart (consumed) | blood restored |
+       | Parasitectomy | 10 s | blade | removes a parasite; none found → korpsman +10 Pox (Pox +5) |
+       | Exploratory laparotomy | short | blade | reports the patient's injuries |
+       | Cripplement solution | 15 s | blade | clears `Injured` |
+       | Plastic surgery | 15 s | blade | clears charring |
+       | Cardiac encouragement | 24 s | blade | clears heart-attack injury |
+       | Rage therapy | 14 s | blade | korpsman despair −30 |
+   - **Done when:** a dying 100-bone prole is revived with 3 presses and exactly one 50-bone `revive_fee` transfer, and the korpsman now holds a lovebox. Holding lovebox primary on a patient raises regen and drains the korpsman 1 HP per tick; secondary lowers Pox; reload on a low-HP patient drops a parasite. Bloodletting with a knife freezes both for 10 s, then rolls on the server; a forced failure costs the patient 10 HP and the korpsman 10 despair; interrupting changes nothing. Cripplement solution clears `Injured`. A faked success message changes nothing, and the audit shows zero drift.
 3. **Sanitar**: enforcement.
    - Police flag, radio, codename, baton and scope.
    - **Weapons:** every gun used by sanitars or the Kaiser is a 1:1 port of the original `weapon_cc_*` file, with the same stats, sounds, models and ammo. This covers the sanitator, scout, support and crusader loadouts, the weapons sold at the `sanitation_station`, and the Kaiser's novoluger. **Done when:** each ported gun's damage, fire rate, spread, clip, ammo and sounds match its original file, checked by a side-by-side table.

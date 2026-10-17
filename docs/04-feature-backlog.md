@@ -23,7 +23,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Plan location | Date |
 |---|---|---|
-| Korpsman loop remake | `accepted` | Step 7 revive + Step 11.2: 3-press revive, drag, no cot, tool picks treatment. |
+| Korpsman loop remake | `accepted` | Step 11.2 ported from the original: revive (3 presses) promotes to lovebox (blood/Pox/parasite modes, HP cost); surgery is a timed action with per-procedure time, tool %, fail roll and costs. |
 | Shop goods from the stockpile | `accepted` | Step 9: loaf = ration at sell.ration; beer/spirits/knife seeded stock (shop_stock 10), sold out until next round. |
 | Slave fate: new players are slaves until they survive a round or are commended | Step 11 item 5, Step 13 (Rounds) | 2026-10-17 |
 | Round-based play: 60-min rounds, only stem cells/rank/playtime persist | `accepted → Step 13` (also Scope, Step 1, Step 2) | 2026-10-17 |
@@ -90,5 +90,6 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Fates kept | Kaiser, Sanitar, Prole, Korpsman, plus Slave; Ghost as the dead/lobby state | User's choice |
 | 2026-10-17 | Shop | The dealer's buy menu, open to every fate, as a C-menu list for now: Soylent Loaf 50, Fear Beer 35, Spirits 85, Knife 40, paid to the treasury. Seed Bank, Sanitar Surplus and the Wishbone dropped. | User's choice. Seed bank redundant, surplus not relevant, Wishbone never used. |
 | 2026-10-17 | Entity models | Ported entities use the original's model and material. `fate_station` is the purpose in life sawblade; no charple hologram. | User's choice. The hologram hasn't worked since the bonemerged playermodels. |
-| 2026-10-17 | Korpsman loop | 3 separate Use presses to revive (no bar), drag the body, no cot; tool in hand picks the treatment. | User: "yes". |
+| 2026-10-17 | Korpsman loop | Lovebox = fast, self-costly heal; surgery = slow, step-by-step, often better. Revive is 3 presses. | User's description of the original loop. |
+| 2026-10-17 | Korpsman parity | 11.2 rewritten from original lovebox/korpsman/sv_surgery numbers; surgery is the one timed-action exception to D3. | User: "look at the original for parity / Surgery is the exception". |
 | 2026-10-17 | Shop stock | Shop goods come out of the stockpile; Soylent Loaf is the ration; other goods get a fixed per-round stock. | User: tie shop goods into the stockpile. |
