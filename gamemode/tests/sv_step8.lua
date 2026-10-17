@@ -18,7 +18,7 @@ return function( T )
 
 	-- Definitions ---------------------------------------------------------------------------
 	T.Check( #Items.All() >= 10, "about ten starting items: " .. #Items.All() )
-	for _, id in ipairs( { "ration", "clean_water", "dirty_water", "scrap", "bandage", "surgical_tools", "baton", "pistol", "weapon_permit", "trade_permit" } ) do
+	for _, id in ipairs( { "ration", "clean_water", "dirty_water", "scrap", "bandage", "knife", "baton", "pistol", "weapon_permit", "trade_permit" } ) do
 		T.Check( Items.Get( id ) ~= nil and Items.ByIndex( Items.Get( id ).index ) == Items.Get( id ), "item " .. id .. " is defined and indexed" )
 	end
 	for _, def in ipairs( Items.All() ) do

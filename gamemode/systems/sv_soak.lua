@@ -420,8 +420,8 @@ local function medicAct( bot )
 	if #hurt == 0 then return end
 	local t = pick( hurt )
 	goNear( bot, t, 50 )
-	if Medicine.Upgraded( bot ) and chance( 0.3 ) and Interact.Run( bot, "lovebox", t ) then count( "lovebox" ) return end
-	local proc = t:GetBullet() and "bullet" or pick( { "heal", "heal", "pox" } )
+	if Medicine.UpgradedMedic( bot ) and chance( 0.3 ) then count( "lovebox" ) end
+	local proc = t:GetBullet() and "bullet" or pick( { "laparotomy", "laparotomy", "bloodletting" } )
 	if Interact.Run( bot, "surgery_" .. proc, t ) then count( "surgery_" .. proc ) end
 end
 
@@ -536,7 +536,7 @@ local function commendAct( bot )
 	end
 end
 
-local KEEP = { permit_tool = true, surgical_tools = true, baton = true, scope = true, novoluger = true, strategy_book = true }
+local KEEP = { permit_tool = true, knife = true, shank = true, lovebox = true, baton = true, scope = true, novoluger = true, strategy_book = true }
 
 local function itemsAct( bot )
 	local items = trackedList( "gr_item" )
