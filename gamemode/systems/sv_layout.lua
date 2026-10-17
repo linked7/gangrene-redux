@@ -39,6 +39,7 @@ Layout.CLASSES = {
 	state_stockpile = {},
 	water_pump = {},
 	sanitation_station = {},
+	corpse_washer = {},
 	-- The lunch machine (systems/sh_lunch.lua): it works with the nearest boiler.
 	line_boiler = {},
 	lunch_machine = {

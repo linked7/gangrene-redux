@@ -109,12 +109,19 @@ local function playerTexts( v, ply, ct )
 end
 
 local LOOK = { unconscious = "Wriggling Body", wounded = "Wriggling Body", dying = "Wriggling Body", dead = "Fresh Cadaver" }
-local function corpseTexts( b, ply, ct )
+local function corpseTexts( b, ply, ct, ent )
 	local now, bar = CT(), nil
 	local span = b.look == "wounded" and Config.WakeTime or b.look == "dying" and Config.BleedoutTime
 		or b.look == "dead" and Corpse.DECAY or nil
 	if span and b.untilTime > 0 then bar = math.Clamp( 1 - ( b.untilTime - now ) / span, 0, 1 ) end
-	table.insert( ct, { text = LOOK[ b.look ] or "Fresh Cadaver", bar = bar or 0, color = Color( 0, 128, 0 ) } )
+	local word = LOOK[ b.look ] or "Fresh Cadaver"
+	local rot = b.look == "dead" and IsValid( ent ) and Rotting.Info[ ent:EntIndex() ]
+	if rot then
+		word = Rotting.STAGES[ rot.stage ].word
+		bar = math.Clamp( ( now - rot.start ) / ( rot.finish - rot.start ), 0, 1 )
+		if rot.stage >= #Rotting.STAGES then bar = 1 end
+	end
+	table.insert( ct, { text = word, bar = bar or 0, color = Color( 0, 128, 0 ) } )
 
 	local owner = Entity( b.owner )
 	if b.look ~= "dead" and IsValid( owner ) and owner:IsPlayer() and owner:IsWanted() then
@@ -183,6 +190,10 @@ P.sanitation_station = function( ent, ply, ct )
 	table.insert( ct, { text = "Sanitation Station" } )
 	if ply:FateHas( "Police" ) then small( ct, "Spend your Teeth on the tools of the trade." ) end
 end
+P.corpse_washer = function( ent, ply, ct )
+	table.insert( ct, { text = "Corpse Washer" } )
+	if ply:FateHas( "Police" ) then small( ct, "Lay a body next to it and wash it for bones." ) end
+end
 P.fate_station = function( ent, ply, ct )
 	if not ply:IsGhost() then return false end
 	local f = Fates.Get( ent:GetFateId() )
@@ -196,7 +207,7 @@ local DOORS = { func_door = true, func_door_rotating = true, prop_door_rotating 
 local function build( ply, ent, ct )
 	if ent:IsPlayer() then return playerTexts( ent, ply, ct ) end
 	local b = HUD.Corpse( ent )
-	if b then return corpseTexts( b, ply, ct ) end
+	if b then return corpseTexts( b, ply, ct, ent ) end
 	local class = ent:GetClass()
 	local fn = ent.CrossTexts or P[ class ]
 	local near = ply:GetPos():DistToSqr( ent:GetPos() ) < 128 * 128

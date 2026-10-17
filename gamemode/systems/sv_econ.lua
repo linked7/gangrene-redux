@@ -234,6 +234,9 @@ hook.Add( "GR_PlayerRestored", "gr_econ", function( ply, rag, how )
 	if rec then Econ.Transfer( rag, ply, rec.bones or 0, how == "getup" and "got up" or "revived" ) end
 end )
 
+-- A replacement ragdoll (Corpse.Rebind) joins the audit's set.
+function Econ.TrackCorpse( rag ) corpses[ rag ] = true end
+
 local function sweepCorpse( rag )
 	local rec = corpseRecord( rag )
 	if rec and ( rec.bones or 0 ) > 0 then Econ.Transfer( rag, Econ.TREASURY, rec.bones, "corpse removed" ) end
