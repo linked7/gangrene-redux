@@ -417,6 +417,16 @@ HUD.Layer( 130, "crosshair", function( ply )
 		local rgb = HSVToColor( ( now * 13 ) % 360, 1, 1 )
 		y = y + 20 * prog
 		x = x + 12 * math.sin( now )
+		-- Machines with 3D2D panels: park the text under the entity's silhouette so it never covers the panels.
+		local te = tr.Entity
+		if IsValid( te ) and te.GR_Panel3D2D then
+			local mn, mx, low = te:OBBMins(), te:OBBMaxs(), -1
+			for i = 0, 7 do
+				local c = Vector( bit.band( i, 1 ) > 0 and mx.x or mn.x, bit.band( i, 2 ) > 0 and mx.y or mn.y, bit.band( i, 4 ) > 0 and mx.z or mn.z )
+				low = math.max( low, te:LocalToWorld( c ):ToScreen().y )
+			end
+			y = math.max( y, low + 6 )
+		end
 		if hoverNoise then
 			hoverNoise, unhoverNoise = false, true
 			if ws.ref > 0 then

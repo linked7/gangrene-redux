@@ -5,6 +5,7 @@
 AddCSLuaFile()
 
 ENT.Type = "anim"
+ENT.GR_Panel3D2D = true
 ENT.Base = "base_anim"
 ENT.PrintName = "Boiler"
 ENT.Spawnable = false
@@ -74,7 +75,7 @@ if CLIENT then
 		ang:RotateAroundAxis( ang:Forward(), 90 )
 		local top = self:LocalToWorld( Vector( self:OBBMaxs().x + 1, 0, self:OBBMaxs().z - 6 ) )
 		local p = self:GetPressure()
-		cam.Start3D2D( top, ang, 0.1 )
+		cam.Start3D2D( top, ang, 0.16 )
 			local w, h = 260, 110
 			local x, y = -w / 2, -h
 			surface.SetDrawColor( 0, 0, 0, 230 )

@@ -9,6 +9,7 @@ ENT.Base = "base_anim"
 ENT.PrintName = "Lunch Machine"
 ENT.Spawnable = false
 ENT.RenderGroup = RENDERGROUP_BOTH
+ENT.GR_Panel3D2D = true
 
 function ENT:SetupDataTables()
 	self:NetworkVar( "Int", 0, "Biomass" )
