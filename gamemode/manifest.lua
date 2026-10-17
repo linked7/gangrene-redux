@@ -89,6 +89,7 @@ return {
 		"sh_rotting.lua",
 		"sh_guns.lua",
 		"sh_munitionizer.lua",
+		"sh_autostitcher.lua",
 		"sh_weaponuse.lua",
 		"sh_gunpermit.lua",
 		"sh_shop.lua",
