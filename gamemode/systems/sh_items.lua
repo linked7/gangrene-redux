@@ -87,6 +87,14 @@ Items.Define( "clean_water", {
 	Effects = { Dryness = -50 },
 } )
 
+Items.Define( "rotten_food", {
+	Name = "Rotten Food",
+	Description = "Something edible, once. Found in the trash.",
+	Weight = 1,
+	Model = "models/props_junk/garbage_takeoutcarton001a.mdl",
+	Effects = { Emptiness = -10, Pox = 5 },
+} )
+
 -- Shop goods (step 9), with the original's models.
 Items.Define( "fear_beer", {
 	Name = "Fear Beer",

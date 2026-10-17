@@ -47,6 +47,7 @@ Layout.CLASSES = {
 	},
 	water_barrel = {},
 	capsule_spawn = {},
+	trash_pile = { model = function( v ) return isstring( v ) end, lootname = function( v ) return isstring( v ) end },
 	fate_station = {
 		fate = function( v )
 			local f = Fates.Get( v )
