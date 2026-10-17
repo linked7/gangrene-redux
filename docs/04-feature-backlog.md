@@ -16,6 +16,12 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
+| Falling boulders (`boulder`, sv_think spawner every 15-30 s) | `idea` | Recommend: yes, cheap physical hazard, one entity, layout spots. |
+| Campfire / cooker (cook raw food, warmth) | `idea` | Recommend: yes if food has a raw state; gives labor a second step without menus. |
+| Ghost haunting (Deferred 4, light slice) | `idea` | Recommend: yes, a small version only (ghosts flicker lights, knock props); keeps dead players busy in a short round. |
+| Starter quirks (Deferred 1, 3-4 quirks) | `idea` | Recommend: later; adds replay value but needs balance passes. |
+| Bell / alarm (`bell`, `alarm`) | `idea` | Recommend: yes, a physical way to call people, pairs with Sanitar Summon. |
+| Round timer starts on first Kaiser spawn | `accepted` | Step 13. |
 | Workplace accidents (from the original's machines: operator error, misuse, rust, haunting, waste spills) | `idea` | Raised 2026-10-17 by the analysis session. Proposed slice: rust plus accidents on the ration press, sanitar upkeep that pays bones. Haunting waits for ghost Suffering (Deferred 4), and the factory cards wait for the foreman (Deferred 7). Their suggestion that slaves be immune conflicts with Slave parity. Original refs: entities/entities/machine_*.lua, machine_gears.lua:681. |
 | Rank gates on fates (who may take Kaiser etc.) | `idea` | Raised 2026-10-17. User will choose later; for now no gate above Friend. |
 | Round flow: 1 h restart; fate stations removed at 10 min; migrant wave every 60 s; papers → passport at the city gates gives a one-time city fate; korpsman slots only to refill losses | `idea` | Raised 2026-10-17. Step 13 has 60-min rounds already. Needs a gate spot on rp_slumtown and a `papers`/`passport` item. Original refs: fates/list/ref_*_wasteland.lua. |
@@ -26,6 +32,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Plan location | Date |
 |---|---|---|
+| Rocket turret (optimized port) | `accepted` | Step 10. |
 | Round flow (stations gone at 10 min, migrant waves, papers → passport at the gate) | `accepted` | Step 13. |
 | Kaiser recruits sanitars (context menu); sanitar station dropped | `accepted` | Steps 4, 11.4. |
 | Deadly wasteland water (1:1 port: damage + Pox by water level) | `accepted` | Step 8. |
@@ -116,3 +123,5 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Wading slowdown | Movement slowed by water level in all water; new, the original had none. | User asked. |
 | 2026-10-17 | In-world fate pick | Konsole stamps migrants as Proles, no fate list; Kaiser "Recruit as Korpsman" like sanitar recruiting. | User asked. |
 | 2026-10-17 | Immigration konsole | New `konsole_immigration` at the Gate Antechamber is the papers → passport point; none existed in the original. | User asked. |
+| 2026-10-17 | Rocket turret | Re-added as an optimized port: throttled search, cached client trace, single sound. | User asked; cheap hazard that respects permits. |
+| 2026-10-17 | Round timer start | Timer and 10 min marks count from the first Kaiser spawn, not map load. | User asked. |

@@ -130,8 +130,7 @@ end )
 hook.Add( "PlayerDisconnected", "gr_roundflow", function( ply ) RoundFlow.pending[ ply ] = nil end )
 
 function RoundFlow.Elapsed()
-	local start = RoundFlow.startedAt or ( Round.EndsAt() - Config.RoundLength )
-	return CurTime() - start
+	return Round.Elapsed() -- 0 until the first Kaiser spawns
 end
 
 -- The konsole: papers -> passport, and the migrant stays (or becomes) a Prole citizen.
@@ -187,7 +186,6 @@ function RoundFlow.Wave()
 end
 
 function RoundFlow.Reset()
-	RoundFlow.startedAt = CurTime()
 	RoundFlow.closed = false
 	RoundFlow.nextWave = nil
 	RoundFlow.pending = {}
@@ -204,7 +202,7 @@ end )
 
 Sched.Every( "roundflow", 1, function()
 	if Round.IsOver() then return end
-	if RoundFlow.Elapsed() < Config.StationsCloseAt then return end
+	if not Round.ClockStarted() or RoundFlow.Elapsed() < Config.StationsCloseAt then return end
 	RoundFlow.CloseStations()
 	local now = CurTime()
 	RoundFlow.nextWave = RoundFlow.nextWave or now

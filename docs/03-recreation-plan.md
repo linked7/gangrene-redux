@@ -313,6 +313,14 @@
   - Police see "CALLING SS - <AREA>" through walls, flashing red. 3D2D screen: noise when off, red pulse when on, with "THEY'RE COMING" / "Relaxing for X..." / "Use to request help".
   - rp_slumtown layout `summoners` (16, from the original map list): Lunch Factory, Water Treatment Plant, Tools Factory, Hothouse, Arms Factory, Device Factory, Soup Pit, Wetmarket, Crawling Horror, Klinic, Morgue, Gatehouse, Gate Antechamber, Garage, Foreman's Office, Underground Refineries. Copy pos/ang from `maps/list/rp_slumtown.lua:853`.
 
+- **Rocket turret** (`turret_rocket`, optimized port of `entities/entities/turret_rocket.lua`). Model `Combine_Helicopter/helicopter_bomb01`, MOVETYPE_FLY, integrity 4-6.
+  - Spawn: if none exists, one appears every 600-900 s at a random rp_slumtown layout `rocket_turret_spots` point (copy from `maps/list/rp_slumtown.lua:390`), random angles, `teleport3.wav`, asleep.
+  - Target: a living player within 2500 who isn't a ghost/cultist/jammed, has no `permit_turret`, isn't noclipping, WaterLevel < 3, with line of sight. Idle at night, in meat/ritual weather and during ceasefire.
+  - Search cheaply: 1 Hz awake, 15 s asleep; distance and PVS filter first, trace only the closest candidates. Drop target after 5 failed sight checks.
+  - Fire `rpg_missile` every 0.5 s, 90 damage, speed 500 +10 per shot. Server aims at 5 Hz; client lerps the angle.
+  - Each hit: -1 integrity, 10-35 s lockout. Destroyed: drops metal, `rocket` items and `artifact_ai`.
+  - Client: red laser beam from a networked target entity, endpoint traced at most 10 Hz and cached, drawn only within 3000. One acquire sound, not the old EmitSound loop.
+
 ### Step 11: The fates
 
 Build them in this order, so each one has something to act on.
@@ -487,6 +495,7 @@ Build them in this order, so each one has something to act on.
   - Admin ranks are separate from the game's ranks.
 - **Rounds:** the round is the unit of play. Keep it simpler than the original, which only ended a round through Doom.
   - `Round.Start` happens on map load. It seeds the treasury with `bones_supply`, sets the prices to their defaults and empties the stockpile (step 9). Everyone starts the round with 0 bones.
+  - The round timer, and every timed round-flow event below (the 10 min marks too), starts when the first Kaiser spawns, not on map load. Before that the clock shows "Awaiting Kaiser".
   - `Round.End(reason)` fires when the round timer (`round_length`, default 60 min) runs out or an admin ends it. It frees surviving slaves, flushes the DB, shows an end screen, then changes level.
   - **Round flow:**
     - At 10 min every `fate_station` is removed. Ghosts after that can only join as migrants.
