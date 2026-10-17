@@ -144,5 +144,5 @@ return function( T )
 	Layout.Clear()
 	T.Wait( 0.1 )
 	Layout.Spawn()
-	T.Equal( #Layout.Entries(), 19, "gm_construct's layout is back" )
+	T.Equal( #Layout.Entries(), 23, "gm_construct's layout is back" )
 end

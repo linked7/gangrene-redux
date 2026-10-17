@@ -266,8 +266,6 @@ end
 function Econ.AddStock( good, n )
 	if isGood( good ) then addStock( good, n ) end
 end
--- Goods made or imported straight into the stockpile (the tools machine chain, stock imports).
-function Econ.AddStock( good, n ) addStock( good, n ) end
 
 -- Hands goods to a player. The item system (step 8) listens for GR_StockpileDispense; `how` is
 -- "buy", "take" or "free".

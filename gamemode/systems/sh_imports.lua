@@ -4,8 +4,7 @@
 -- any other crate (Crates.Deliver), which is the only way its stock rises. Coats and lighters.
 --   Imports.GOODS[ good ] = true     Imports.IsImport( good )     Imports.Order( ply, good )
 Imports = Imports or {}
-Imports.GOODS = { coat = true, lighter = true }
-Imports.GOODS = { coat = true, scrap = true, biofuel = true }
+Imports.GOODS = { coat = true, lighter = true, scrap = true, biofuel = true }
 -- These go straight into stock, no crate (the tools machine chain's raw inputs).
 Imports.TO_STOCK = { scrap = true, biofuel = true }
 

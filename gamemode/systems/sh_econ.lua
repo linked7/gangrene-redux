@@ -8,8 +8,7 @@
 Econ = Econ or {}
 
 -- Goods the stockpile holds, with the default prices the state pays and charges for them.
-Econ.GOODS = { "ration", "clean_water", "fear_beer", "spirits", "knife", "coat", "lighter" }
-Econ.GOODS = { "ration", "clean_water", "fear_beer", "spirits", "knife", "coat",
+Econ.GOODS = { "ration", "clean_water", "fear_beer", "spirits", "knife", "coat", "lighter",
 	-- The tools machine chain (systems/sh_toolsmachine.lua). Placeholder prices.
 	"scrap", "biofuel", "ore", "material_metal_pot", "material_metal_ballistic", "formic_steel",
 	"pipe", "hammer", "crowbar", "bat", "fryingpan", "pickaxe", "axe", "shovel", "meatsaw", "crackhammer" }
@@ -41,7 +40,6 @@ Econ.GOOD_DEFAULTS = {
 -- The C-menu shop (step 9) sells these at sell.<good>, out of the same stock counts. Every good
 -- here but the ration starts each round with `shop_stock` in the stockpile.
 Econ.BREWED = { fear_beer = true, spirits = true } -- brewed in a brew_barrel, never seeded
-Econ.SHOP = { "ration", "fear_beer", "spirits", "knife", "coat" }
 Econ.SHOP = { "ration", "fear_beer", "spirits", "knife", "coat", "lighter" }
 Econ.SHOP_SET = {}
 for _, good in ipairs( Econ.SHOP ) do Econ.SHOP_SET[ good ] = true end
