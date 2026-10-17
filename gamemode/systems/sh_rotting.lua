@@ -37,6 +37,8 @@ if CLIENT then
 		Rotting.Info[ idx ] = { stage = net.ReadUInt( 3 ), start = net.ReadFloat(), finish = net.ReadFloat() }
 	end )
 
+	hook.Add( "EntityRemoved", "gr_rotting_forget", function( ent ) Rotting.Info[ ent:EntIndex() ] = nil end )
+
 	-- The miasma: a purple fog that thickens with the stage, seen from afar
 	local nextPuff = 0
 	hook.Add( "Think", "gr_rotting_miasma", function()
@@ -45,7 +47,9 @@ if CLIENT then
 		local em
 		for idx, info in pairs( Rotting.Info ) do
 			local rag = Entity( idx )
+			-- Indices are reused: drop the record once the body is gone or the slot is something else
 			local n = Rotting.MIASMA_POX[ info.stage ]
+			if not IsValid( rag ) or not rag:IsRagdoll() then Rotting.Info[ idx ] = nil; n = nil end
 			if n and IsValid( rag ) and not rag:IsDormant() and rag:GetPos():DistToSqr( EyePos() ) < 1200 * 1200 then
 				em = em or ParticleEmitter( EyePos(), false )
 				for _ = 1, info.stage do
