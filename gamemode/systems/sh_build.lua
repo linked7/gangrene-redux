@@ -68,8 +68,9 @@ if CLIENT then
 		local sub = menu:AddSubMenu( "Build" )
 		for _, kind in ipairs( Build.ORDER ) do
 			local k = Build.KINDS[ kind ]
-			if k.need and not ply:FateHas( k.need ) then continue end
-			sub:AddOption( string.format( "%s (%d bones)", k.name, k.cost ), function() send( kind, tr.HitPos ) end )
+			if not k.need or ply:FateHas( k.need ) then
+				sub:AddOption( string.format( "%s (%d bones)", k.name, k.cost ), function() send( kind, tr.HitPos ) end )
+			end
 		end
 		menu:Open( ScrW() / 2, ScrH() / 2 )
 	end )
