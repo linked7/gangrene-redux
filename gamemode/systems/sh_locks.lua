@@ -82,7 +82,7 @@ if CLIENT then
 		local C = HUD and HUD.COLORS or { text = color_white, blood = Color( 150, 30, 30 ), dim = Color( 125, 122, 114 ) }
 		local w, h = S( 160 ), S( 10 )
 		local x, y = ScrW() / 2 - w / 2, ScrH() / 2 + S( 30 )
-		draw.SimpleText( broken and def.label .. ": broken" or def.label, "gr_hud_small", ScrW() / 2, y,
+		draw.SimpleText( broken and def.label .. ": broken" or def.label, HUD and HUD.Font and HUD.Font( "LabelSmall" ) or "DermaDefault", ScrW() / 2, y,
 			broken and C.blood or C.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
 		local frac = broken and 0 or ent:GetIntegrity() / math.max( def.max, 1 )
 		surface.SetDrawColor( 0, 0, 0, 220 )
