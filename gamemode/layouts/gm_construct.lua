@@ -18,7 +18,6 @@ return {
 	{ class = "machine_generator", pos = Vector( 100, -560, -100 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "machine_tools", pos = Vector( 100, -680, -100 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "vat_metal", pos = Vector( -20, -680, -100 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
-	{ class = "boulder", pos = Vector( -200, -620, -100 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "water_barrel", pos = Vector( -30, -400, -100 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "water_barrel", pos = Vector( -30, -340, -100 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
 	{ class = "capsule_spawn", pos = Vector( -350, -150, -100 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },

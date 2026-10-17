@@ -1,5 +1,5 @@
 -- A boulder (step 11, systems/sh_toolsmachine.lua). Break it (a pickaxe hits twice as hard) for
--- ore in stock and labor pay; it comes back a minute later.
+-- ore in stock and labor pay. The spawner in sh_toolsmachine brings new ones.
 AddCSLuaFile()
 
 ENT.Type = "anim"
@@ -43,7 +43,6 @@ function ENT:Initialize()
 	self:PhysicsInit( SOLID_VPHYSICS )
 	local phys = self:GetPhysicsObject()
 	if IsValid( phys ) then phys:Wake() end
-	self.GR_Home = { self:GetPos(), self:GetAngles() }
 	self:SetIntegrity( ToolsMachine.BOULDER_INTEGRITY )
 	ToolsMachine.Track( self )
 end

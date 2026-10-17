@@ -25,7 +25,7 @@ ToolsMachine.BITES = {
 	"npc/headcrab_fast/headbite.wav", "npc/barnacle/barnacle_crunch2.wav", "npc/barnacle/barnacle_crunch3.wav",
 }
 ToolsMachine.LABOR_TOOL, ToolsMachine.LABOR_BOULDER = 5, 15
-ToolsMachine.BOULDER_INTEGRITY, ToolsMachine.BOULDER_RESPAWN = 200, 60
+ToolsMachine.BOULDER_INTEGRITY = 200
 ToolsMachine.HEAT_RATE, ToolsMachine.HEAT_MAX = 100, 4000
 -- Crucible modes: the heat each needs and what it eats from stock for one of its output.
 ToolsMachine.VAT = {
@@ -345,28 +345,39 @@ function ToolsMachine.BoulderDamaged( b, dmg )
 	b:SetIntegrity( math.max( 0, b:GetIntegrity() - amount ) )
 	if b:GetIntegrity() > 0 then return end
 	b:SetBroken( true )
-	b:SetNoDraw( true )
-	b:SetNotSolid( true )
-	local phys = b:GetPhysicsObject()
-	if IsValid( phys ) then phys:EnableMotion( false ) end
-	b.GR_RespawnAt = CurTime() + ToolsMachine.BOULDER_RESPAWN
 	Econ.AddStock( "ore", 1 + math.random( 2, 3 ) )
 	if living( att ) then Econ.Transfer( Econ.TREASURY, att, ToolsMachine.LABOR_BOULDER, "labor" ) end
 	b:EmitSound( "physics/concrete/boulder_impact_hard" .. math.random( 4 ) .. ".wav" )
+	b:Remove()
 end
 
-function ToolsMachine.RestoreBoulder( b )
-	-- back to where it first spawned, loose again
-	b.GR_Home = b.GR_Home or { b:GetPos(), b:GetAngles() }
-	b:SetPos( b.GR_Home[ 1 ] ); b:SetAngles( b.GR_Home[ 2 ] )
-	local phys = b:GetPhysicsObject()
-	if IsValid( phys ) then phys:EnableMotion( true ); phys:Wake() end
-	b:SetBroken( false )
-	b:SetNoDraw( false )
-	b:SetNotSolid( false )
-	b:SetIntegrity( ToolsMachine.BOULDER_INTEGRITY )
-	b.GR_RespawnAt = nil
-end
+-- Spawner, as Gangrene's sv_think: every 15-30 s, while fewer than 20 stand, a boulder appears
+-- at a random spot of the map, tumbling, and is cleaned up after 15 minutes.
+ToolsMachine.BOULDER_SPOTS = {
+	rp_slumtown = {
+		Vector( -281, 2772, -182 ), Vector( -730, 2559, -179 ), Vector( -445, 2163, -192 ), Vector( -692, 1789, -177 ),
+		Vector( -110, 1798, -179 ), Vector( 317, 1854, -183 ), Vector( -691, 2202, -343 ), Vector( -606, 1816, -362 ),
+		Vector( -359, 1967, -340 ), Vector( 83, 1804, -332 ), Vector( 301, 2686, -338 ), Vector( -645, 2822, -340 ),
+	},
+	gm_construct = { Vector( -200, -620, -100 ) },
+}
+ToolsMachine.BOULDER_MAX = 20
+
+local nextBoulder = 0
+hook.Add( "Think", "gr_boulder_spawner", function()
+	if CurTime() < nextBoulder then return end
+	nextBoulder = CurTime() + math.random( 15, 30 )
+	local spots = ToolsMachine.BOULDER_SPOTS[ game.GetMap() ]
+	if not spots or #ents.FindByClass( "boulder" ) >= ToolsMachine.BOULDER_MAX then return end
+	local b = ents.Create( "boulder" )
+	if not IsValid( b ) then return end
+	b:SetPos( spots[ math.random( #spots ) ] )
+	b:SetAngles( Angle( math.random( 0, 360 ), math.random( 0, 360 ), math.random( 0, 360 ) ) )
+	b:Spawn()
+	b:Activate()
+	b:EmitSound( "ambient/machines/teleport3.wav", 100, 60 + math.random( 1, 20 ) )
+	SafeRemoveEntityDelayed( b, 900 )
+end )
 
 -- Exports -------------------------------------------------------------------------------------
 
@@ -399,15 +410,11 @@ end )
 Sched.Every( "toolsmachine", 1, function()
 	for _, g in ipairs( ToolsMachine.All( "machine_generator" ) ) do ToolsMachine.TickGenerator( g, 1 ) end
 	for _, v in ipairs( ToolsMachine.All( "vat_metal" ) ) do ToolsMachine.TickVat( v, 1 ) end
-	for _, b in ipairs( ToolsMachine.All( "boulder" ) ) do
-		if b.GR_RespawnAt and CurTime() >= b.GR_RespawnAt then ToolsMachine.RestoreBoulder( b ) end
-	end
 end )
 
 function ToolsMachine.Reset()
 	for _, g in ipairs( ToolsMachine.All( "machine_generator" ) ) do g:SetOn( false ) g:SetFuel( 0 ) g:SetRust( 0 ) end
 	for _, v in ipairs( ToolsMachine.All( "vat_metal" ) ) do v:SetHeat( 0 ) v:SetMode( 1 ) end
 	for _, m in ipairs( ToolsMachine.All( "machine_tools" ) ) do ToolsMachine.Reroll( m ) m:SetRust( math.random( 0, 20 ) ) end
-	for _, b in ipairs( ToolsMachine.All( "boulder" ) ) do ToolsMachine.RestoreBoulder( b ) end
 end
 hook.Add( "GR_RoundStart", "gr_toolsmachine", ToolsMachine.Reset )
