@@ -286,7 +286,7 @@ Build them in this order, so each one has something to act on.
    - Beating or arresting a theft-wanted player earns +1 Teeth.
    - Slots: `Slots = function(pop) return math.Clamp(2 + math.floor(pop / 10), 2, 6) end`.
 4. **Kaiser**: the head of state.
-   - 1 slot, needs Kaiser rank, costs 5 stem cells, 75 armor, the novoluger pistol and the strategy book.
+   - 1 slot, no rank requirement for now (any non-Foolish player; rank gates are undecided, see step 13), costs 5 stem cells, 75 armor, the novoluger pistol and the strategy book.
    - **Economy panel:** Set, Grant, Fine and the Ledger from step 9. There are no taxes, no clamps and no Kaiser wage.
    - Has `StockpileAccess`.
    - **Sentence and forgive:**
@@ -345,6 +345,7 @@ Build them in this order, so each one has something to act on.
   - Spending them gives no bones. The original gave 25 per stem cell, but that would mint bones into the fixed supply (step 9).
 - **Ranks:**
   - Foolish, Friend, Kapitan and Kaiser are enough for the core.
+  - **Rank gates on fates are undecided.** For now no fate needs a rank above Friend; the only rank rule is that Foolish players can only be Slave. Which fates later need which rank is an open decision for the user.
   - New accounts start at **Foolish**, which can only play Slave (step 11.5). Friend comes from `Rank.Free`.
   - Keep auto-promotion from Friend to Kapitan at the stem-cell threshold.
   - Admin ranks are separate from the game's ranks.
@@ -355,7 +356,7 @@ Build them in this order, so each one has something to act on.
   - The Kaiser's fall may trigger `Round.End` later. There is no Doom or war end state.
 - **Done when:**
   - A new player starts as a Slave and is freed either by commendation or by surviving to `Round.End`.
-  - The new player can then, over time, unlock and take the Kaiser fate.
+  - Once freed, the player can take any fate, Kaiser included, with stem cells alone.
 
 ### Step 14: Hardening and playtest
 

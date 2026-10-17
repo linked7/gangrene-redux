@@ -5,7 +5,7 @@ Fates.Define( "kaiser", {
 	Description = "The most stressful job in Gangrene.",
 	Color = Color( 200, 0, 0 ),
 	Cost = 5,
-	MinRank = RANK_KAISER,
+	-- No rank gate for now (plan, step 11.4): stem cells and the one slot decide. Gates are undecided.
 	Slots = 1,
 	DeathCooldown = 600,
 	Health = 100,

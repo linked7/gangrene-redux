@@ -16,7 +16,8 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
-_(none)_ | | |
+| Knocked out isn't death: get back up and need treatment; only severe lethal damage kills without a korpsman | `shaping` | Raised 2026-10-17 (from Rewrite's bleed-out question). Touches Step 7 and Step 11.2. |
+| Rank gates on fates (who may take Kaiser etc.) | `idea` | Raised 2026-10-17. User will choose later; for now no gate above Friend. |
 
 ## Accepted
 
@@ -48,5 +49,6 @@ _(none)_ | | |
 | 2026-10-17 | Theft rules | `Crime.Report` rules table. Unseen theft gives evidence. Theft seen by police gives torment-wanted for 180 s. A stockpile pry (60 s, alarms state radio) gives judgment-wanted. Sanitar Inspect turns theft evidence into wanted, and punishing a thief earns +1 Teeth. Slaves can't steal. Forgiving a theft costs the thief 300 bones, paid to the treasury. | Prevention (guarding, alarm) and punishment (inspect, wanted) both belong to sanitars. Slaves can't be punished, so they can't steal. |
 | 2026-10-17 | Slave rules | Slave has full parity with Prole: they can fight, steal, build and be made wanted, and killing one is murder. Only the barcode name, model and PUBLIC marker differ, plus Foolish-only access and the two ways out. The zero-damage hook, `weapon_cc_slave`, wanted immunity, the building ban, 30 s corpse decay and the earlier "slaves can't steal" rule are all dropped. Survive-the-round time adds up across deaths, but the slave must be alive at the end. | User's choice: slaves lose their protection. The visible mark replaces the rule as the guard against new players killing at random. |
 | 2026-10-17 | Kaiser economic control (replaces the "Kaiser levers" row) | One PUBLIC `Economy` table with a schema: buy and sell price per good, a wage per fate, a ration limit, a reserve per good, a bread line and the revive fee. One `nKaiserEcon(key, value)` receiver, plus Grant and Fine. A ledger built from `Econ.Transfer`. Only sanity checks (never negative, never above supply). No Kaiser wage and no pocket withdrawal. The table resets each round and when the Kaiser dies. | User's choice: the Kaiser's challenge is running a working economy, so they get many tools and no checks that restrict control or invite getting rich. |
+| 2026-10-17 | Kaiser rank gate | Removed for now. Kaiser needs no rank, only stem cells and the free slot. Rank gates on fates are an open decision. | User: "don't limit access just yet"; will choose gates later. |
 | 2026-10-17 | War | Dropped. The nations stay as lore and possible races. Rot/Doom stay deferred. | The user wants several simple pressures instead of a war. |
 | 2026-10-17 | Fates kept | Kaiser, Sanitar, Prole, Korpsman, plus Slave; Ghost as the dead/lobby state | User's choice |

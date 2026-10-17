@@ -29,9 +29,12 @@ return function( T )
 	T.Wait( 0.2 )
 
 	-- Taking the role ------------------------------------------------------------------------------
-	local friend = bot( "friend", RANK_FRIEND )
+	-- No rank gate above Friend for now (plan, step 11.4): stem cells and the free slot decide.
+	local friend = bot( "friend", RANK_FRIEND, 10 )
 	local ok, why = Fates.CanTake( friend, "kaiser" )
-	T.Check( not ok, "a Friend can't take the Kaiser: " .. tostring( why ) )
+	T.Check( ok, "a Friend with 5 stem cells may take the Kaiser: " .. tostring( why ) )
+	local fool = bot( "fool", RANK_FOOLISH, 10 )
+	T.Check( not Fates.CanTake( fool, "kaiser" ), "a Foolish player can't" )
 	local poor = bot( "poor", RANK_KAISER, 4 )
 	T.Check( not Fates.CanTake( poor, "kaiser" ), "the Kaiser costs 5 stem cells" )
 
