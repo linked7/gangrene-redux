@@ -154,6 +154,30 @@ local function upgradesTab( parent )
 	return panel
 end
 
+-- Imports: goods no factory makes, ordered from outside and delivered as a crate at the gate.
+local function importsTab( parent )
+	local panel = vgui.Create( "DScrollPanel", parent )
+	local fund = vgui.Create( "DLabel", panel )
+	fund:Dock( TOP )
+	fund:SetTextColor( HUD.COLORS.text )
+	fund:SetText( string.format( "Treasury %d", Econ.Treasury() ) )
+	for good in SortedPairs( Imports.GOODS ) do
+		local def = Items.Get and Items.Get( good )
+		local b = vgui.Create( "DButton", panel )
+		b:Dock( TOP )
+		b:DockMargin( 0, 4, 0, 0 )
+		b:SetTall( 28 )
+		b:SetText( string.format( "Import a crate of %s (%d bones, stock %d)", def and def.Name or good,
+			Econ.Setting( "buy." .. good ), Econ.Stock( good ) ) )
+		b.DoClick = function()
+			net.Start( "nKaiserImport" )
+			net.WriteString( good )
+			net.SendToServer()
+		end
+	end
+	return panel
+end
+
 -- Ledger ----------------------------------------------------------------------------------
 
 local function flowText( flow )
@@ -213,6 +237,7 @@ local function open()
 	sheet:AddSheet( "Economy", economyTab( sheet ) )
 	sheet:AddSheet( "Citizens", citizensTab( sheet ) )
 	sheet:AddSheet( "Upgrades", upgradesTab( sheet ) )
+	sheet:AddSheet( "Imports", importsTab( sheet ) )
 	frame.Ledger = ledgerTab( sheet )
 	sheet:AddSheet( "Ledger", frame.Ledger )
 	requestLedger()

@@ -260,3 +260,6 @@ Config.ChatOOCOff = 666
 -- Talking gestures when the weapon is holstered: 1 in 3 lines, then a 5-15 s cooldown.
 -- A fate may set its own ChatGestures list.
 Config.ChatGestures = { "a_gesture18", "a_gesture16" }
+
+Config.MaladyNoneChance = 0.25 -- chance a round has no malady
+Config.MaladyDayLength = 600   -- seconds per malady stage

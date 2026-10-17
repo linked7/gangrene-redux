@@ -89,5 +89,8 @@ return {
 		"sh_weaponuse.lua",
 		"sh_gunpermit.lua",
 		"sh_roundflow.lua",
+		"sh_maladies.lua",
+		"sh_malady_winter.lua",
+		"sh_imports.lua",
 	},
 }

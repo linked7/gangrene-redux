@@ -160,7 +160,7 @@ function Econ.ResetRound()
 	Econ.ResetSettings()
 	local seed = Econ.Setting( "shop_stock" )
 	for _, good in ipairs( Econ.SHOP ) do
-		if good ~= Econ.BREAD then WorldState.Set( "stock." .. good, seed ) end
+		if good ~= Econ.BREAD and not ( Imports and Imports.IsImport( good ) ) then WorldState.Set( "stock." .. good, seed ) end
 	end
 	Log.Info( "econ", "new round: the treasury holds all %d bones", supply )
 	hook.Run( "GR_EconReset" )

@@ -8,17 +8,18 @@
 Econ = Econ or {}
 
 -- Goods the stockpile holds, with the default prices the state pays and charges for them.
-Econ.GOODS = { "ration", "clean_water", "fear_beer", "spirits", "knife" }
+Econ.GOODS = { "ration", "clean_water", "fear_beer", "spirits", "knife", "coat" }
 Econ.GOOD_DEFAULTS = {
 	ration = { buy = 20, sell = 15 },
 	clean_water = { buy = 20, sell = 15 },
 	fear_beer = { buy = 25, sell = 35 },
 	spirits = { buy = 60, sell = 85 },
 	knife = { buy = 30, sell = 40 },
+	coat = { buy = 30, sell = 40 },
 }
 -- The C-menu shop (step 9) sells these at sell.<good>, out of the same stock counts. Every good
 -- here but the ration starts each round with `shop_stock` in the stockpile.
-Econ.SHOP = { "ration", "fear_beer", "spirits", "knife" }
+Econ.SHOP = { "ration", "fear_beer", "spirits", "knife", "coat" }
 Econ.SHOP_SET = {}
 for _, good in ipairs( Econ.SHOP ) do Econ.SHOP_SET[ good ] = true end
 -- The bread line hands out this good.
