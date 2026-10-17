@@ -37,6 +37,13 @@ for e in "$DS/garrysmod"/*; do
 	case $n in data|cfg|gamemodes|console.log|sv.db|cache|modelsounds.cache) ;; *) ln -sfn "$e" "$GM/$n" ;; esac
 done
 rm -rf "$GM/cfg" && cp -r "$DS/garrysmod/cfg" "$GM/cfg"
+# Gamemode convars (+gr_*) don't exist yet when the command line runs, so they go in server.cfg,
+# which runs once the gamemode has loaded.
+set -- ${GR_PLAY_ARGS:-}
+while [ $# -gt 0 ]; do
+	case $1 in +gr_*) echo "${1#+} ${2:-}" >>"$GM/cfg/server.cfg"; shift ;; esac
+	shift
+done
 for e in "$DS/garrysmod/gamemodes"/*; do
 	n=$(basename "$e")
 	[ "$n" = gangreneredux ] || ln -sfn "$e" "$GM/gamemodes/$n"
