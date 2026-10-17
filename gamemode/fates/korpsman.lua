@@ -17,12 +17,7 @@ Fates.Define( "korpsman", {
 	RegenMulti = 3,
 	Surgeon = true,
 	Lovebox = true,   -- only once the Kaiser buys the korpsman upgrade
-	-- A fresh korpsman gets a set of surgical tools; a revived one keeps what the body held.
-	OnEnter = function( ply, reason )
-		if SERVER and reason ~= "revive" and Inventory.Count( ply, "surgical_tools" ) < 1 then
-			Inventory.Add( ply, "surgical_tools", 1, true )
-		end
-	end,
+	Kit = { "surgical_tools" }, -- sh_kit.lua; a revived korpsman keeps what the body held
 	Names = function() return NAMES[ math.random( #NAMES ) ] .. " #" .. math.random( 100 ) end,
 	Appearance = function()
 		return { model = string.format( "models/player/group03m/male_0%d.mdl", math.random( 9 ) ), race = "gangral" }

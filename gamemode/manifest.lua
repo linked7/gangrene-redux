@@ -58,5 +58,8 @@ return {
 		"sh_rank.lua",
 		"sh_round.lua",
 		"cl_round.lua",
+		"sh_kit.lua",
+		"sh_crates.lua",
+		"sh_build.lua",
 	},
 }

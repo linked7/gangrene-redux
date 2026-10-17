@@ -3,6 +3,7 @@ local function living( name, fate )
 	local b = player.CreateNextBot( name )
 	b:SetRank( RANK_FRIEND ) b:SetStemCells( 5 )
 	Fates.Take( b, fate or "prole" )
+	Inventory.Clear( b ) -- start empty: the fate's kit (step 11.1) is tested in step11a
 	return b
 end
 

@@ -1,4 +1,5 @@
--- Placeholder: step 11 adds the work loop, construction and aim penalty.
+-- The worker: makes the city's food at ration presses and hauls it to the stockpile (systems/sh_crates.lua),
+-- builds with the permit tool (systems/sh_build.lua). Kit and aim are data read by systems/sh_kit.lua.
 -- Models are stock GMod placeholders until the gamemode has its own content.
 local ADJ = { "Proud", "Reliable", "Trustworthy", "Beloved", "Respected", "Diligent", "Complacent", "Happy",
 	"Fulfilled", "Accomplished", "Industrious", "Calloused", "Greasy", "Jittery", "Nervous", "Common", "Burned",
@@ -14,6 +15,10 @@ Fates.Define( "prole", {
 	DeathCooldown = 15,
 	Citizen = true,
 	CarryBonus = 5, -- workers haul; slaves inherit it
+	-- Each entry is an item id, or a list to pick one from at random.
+	Kit = { "permit_tool", { "scrap", "scrap_pipe", "scrap_gear" } },
+	AccuracyMulti = 1.25, -- bullet spread x1.25
+	RecoilMulti = 1.3,    -- view kick x1.3
 	Names = function() return ADJ[ math.random( #ADJ ) ] .. " " .. NOUN[ math.random( #NOUN ) ] end,
 	Appearance = function()
 		return { model = string.format( "models/player/group01/male_0%d.mdl", math.random( 9 ) ), race = "gangral" }

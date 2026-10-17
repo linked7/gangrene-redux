@@ -94,8 +94,10 @@ end )
 
 hook.Add( "GR_FateEnter", "gr_actions", function( ply ) Actions.Cancel( ply ) end )
 hook.Add( "PlayerDeath", "gr_actions", function( ply ) Actions.Cancel( ply ) end )
-hook.Add( "EntityTakeDamage", "gr_actions", function( ply )
-	if ply:IsPlayer() and ply.GR_Action and ply.GR_Action.opts.cancelOnDamage then
+-- A stage of the damage pipeline, not an EntityTakeDamage hook: the pipeline's own hook returns
+-- true for every hit it applies, which would stop a plain hook from ever seeing it.
+Damage.Add( "Scale", "actions", function( ply, dmg )
+	if dmg:GetDamage() > 0 and ply.GR_Action and ply.GR_Action.opts.cancelOnDamage then
 		Actions.Cancel( ply, "You were hurt." )
 	end
 end )

@@ -4,7 +4,6 @@
 --   Upgrades         { fateId = price }: Kaiser.Upgrade( ply, fateId ) moves the price from the
 --                    treasury into Econ.UPGRADE_FUND and sets WorldState "upgrade_<fateId>" = true
 --   RunsEconomy      the economy panel (cl_kaiser.lua): Set, Grant, Fine (sv_econ.lua) and the ledger
---   Kit              item ids handed over when the role is taken (not on a revive)
 --
 -- Receivers: nKaiserSentence( target, level ), nKaiserForgive( target ), nKaiserUpgrade( fateId ),
 -- nKaiserLedger() -> gr_kaiser_ledger. Each one only reads the message; the functions above
@@ -153,15 +152,6 @@ function Kaiser.ResetUpgrades()
 	end
 end
 hook.Add( "GR_EconReset", "gr_kaiser", Kaiser.ResetUpgrades )
-
--- The kit, once per life: a revive brings the body's own inventory back instead. Count-checked,
--- so a second Kit handler can't double it.
-hook.Add( "GR_FateEnter", "gr_kaiser", function( ply, f, reason )
-	if reason == "revive" or not istable( f.Kit ) then return end
-	for _, id in ipairs( f.Kit ) do
-		if isstring( id ) and Items.Get( id ) and Inventory.Count( ply, id ) < 1 then Inventory.Add( ply, id, 1, true ) end
-	end
-end )
 
 -- The panel's ledger view: the newest rows and the treasury's flows.
 function Kaiser.SendLedger( ply )

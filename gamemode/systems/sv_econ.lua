@@ -271,6 +271,15 @@ function Econ.Deliver( ply, good )
 	return 0
 end
 
+-- Takes up to `n` of a good out of the stock without paying (a stockpile pry, step 11.1).
+-- Returns how many were taken.
+function Econ.TakeStock( good, n )
+	if not isGood( good ) then return 0 end
+	local taken = math.min( math.max( math.floor( n ), 0 ), Econ.Stock( good ) )
+	addStock( good, -taken )
+	return taken
+end
+
 local function recentPurchases( key )
 	local since = CurTime() - Econ.LIMIT_WINDOW
 	local kept = {}
