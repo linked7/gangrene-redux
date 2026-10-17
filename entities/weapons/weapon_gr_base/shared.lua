@@ -52,6 +52,9 @@ function SWEP:SetupDataTables()
 	self:NetworkVar( "Bool", 0, "MeleeAttack" )
 	self:NetworkVar( "Bool", 1, "HeavyAttack" )
 	self:NetworkVar( "Bool", 2, "Reloading" )
+	self:NetworkVar( "Bool", 3, "NeedPump" ) -- a pump shotgun fired and has yet to pump
+	self:NetworkVar( "Bool", 4, "Chamber" )  -- this reload started from an empty clip
+	self:NetworkVar( "Float", 2, "PumpTime" )
 end
 
 -- Out (unholstered) or not. A weapon that can't be holstered is always out.
@@ -78,7 +81,12 @@ function SWEP:Deploy()
 	self:SetMeleeAttack( false )
 	self:SetHeavyAttack( false )
 	self:SetReloading( false )
+	self:SetNeedPump( false )
 	self:SetNextPrimaryFire( CurTime() + 0.5 )
+	if self.Bodygroup then
+		local vm = IsValid( self:GetOwner() ) and self:GetOwner():GetViewModel()
+		if IsValid( vm ) then vm:SetBodygroup( 1, self.Bodygroup ) end
+	end
 	return true
 end
 
@@ -105,16 +113,80 @@ function SWEP:SecondaryAttack()
 	-- Out: blocking (melee) and aiming (firearms) are held, not pressed; see IsBlocking/TranslateFOV.
 end
 
+-- The hold type for now: holstered, crouched (HoldTypeCrouch), aiming (HoldTypeAim) or plain out.
+function SWEP:CurrentHoldType( out )
+	if not out then return self.HoldTypeHolster or "normal" end
+	local owner = self:GetOwner()
+	if self.HoldTypeCrouch and owner:Crouching() then return self.HoldTypeCrouch end
+	if self.HoldTypeAim and owner:KeyDown( IN_ATTACK2 ) then return self.HoldTypeAim end
+	return self.HoldType
+end
+
 function SWEP:Think()
 	local out = self:IsOut()
 	if out ~= self.GR_HoldOut then
 		self.GR_HoldOut = out
-		self:SetHoldType( out and self.HoldType or self.HoldTypeHolster or "normal" )
 		if not out then
 			self:SetMeleeAttack( false )
 			self:SetHeavyAttack( false )
 		end
 	end
-	if self.Firearm then self:ThinkReload() end
+	local hold = self:CurrentHoldType( out )
+	if hold ~= self.GR_Hold then
+		self.GR_Hold = hold
+		self:SetHoldType( hold )
+	end
+	if self.Firearm then
+		self:ThinkPump()
+		self:ThinkReload()
+	end
 	if self.Melee then self:ThinkMelee() end
+end
+
+if CLIENT then
+	function SWEP:DrawWorldModel()
+		if self.Bodygroup then self:SetBodygroup( 1, self.Bodygroup ) end
+		self:DrawModel()
+	end
+
+	-- The original's CalcIron: firearms sit 4 units left and lower toward HolsterPos/HolsterAng when
+	-- holstered; the shot kicks the model back (RecoilZ) and it lags behind turns and sways with speed.
+	local swaymul = 0
+	function SWEP:GetViewModelPosition( pos, ang )
+		if not self.Firearm then return pos, ang end
+		local out = self:IsOut()
+		local tpos = out and ( self.ViewOrigin or vector_origin ) or ( self.HolsterPos or vector_origin )
+		local tang = out and angle_zero or ( self.HolsterAng or angle_zero )
+		local rate = out and ( self.ViewOrigin and 0.2 or 0.4 ) or 0.1
+		self.IronNetPos = LerpVector( rate, self.IronNetPos or Vector(), tpos )
+		self.IronNetAng = LerpAngle( rate, self.IronNetAng or Angle(), tang )
+		local forward = ang:Forward()
+		ang = Angle( ang )
+		ang:RotateAroundAxis( ang:Right(), self.IronNetAng.p )
+		ang:RotateAroundAxis( ang:Up(), self.IronNetAng.y )
+		ang:RotateAroundAxis( ang:Forward(), self.IronNetAng.r )
+		pos = pos + ( self.IronNetPos.x - 4 ) * ang:Right() + self.IronNetPos.y * ang:Up()
+		local z = self.IronNetPos.z
+		if self.RecoilZ then
+			z = z + self.RecoilZ
+			self.RecoilZ = Lerp( 0.1, self.RecoilZ, 1 )
+			if self.RecoilZ >= 1 then self.RecoilZ = nil end
+		end
+		pos = pos + z * ang:Forward()
+		-- Lag behind turns.
+		self.LastFacing = self.LastFacing or forward
+		local diff = self.LastFacing - forward
+		local speed = 7
+		if diff:Length() > 1.5 then speed = speed * diff:Length() / 1.5 end
+		diff:Normalize()
+		self.LastFacing = ( self.LastFacing + diff * speed * FrameTime() ):GetNormalized()
+		pos = pos - diff * 5
+		-- Sway with speed.
+		local owner = self:GetOwner()
+		local len = owner:GetVelocity():Length2D() * 2 + 50
+		local target = owner:GetMoveType() ~= MOVETYPE_NOCLIP and math.Clamp( len / 200, 0, 1.5 ) or 0
+		swaymul = Lerp( 0.1, swaymul, target )
+		pos = pos + ang:Up() * math.sin( CurTime() * 1.2 ) * swaymul + ang:Right() * math.sin( CurTime() * 1.5 ) * swaymul * 1.2
+		return pos - forward * 5, ang
+	end
 end

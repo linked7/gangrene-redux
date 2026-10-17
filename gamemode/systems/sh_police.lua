@@ -20,13 +20,7 @@ Police.BOUNTY_TEETH = 1
 Police.THEFT_CRIME = "theft from the People"
 Police.BOUNTY_CRIMES = { [ Police.THEFT_CRIME ] = true }
 
--- What the sanitation station sells, in menu order.
-Police.OFFERS = {
-	{ item = "baton", teeth = 1 },
-	{ item = "pistol", teeth = 2 },
-	{ item = "shotgun", teeth = 4 },
-	{ item = "smg", teeth = 5 },
-}
+-- What the sanitation station sells (Police.OFFERS) and its interactions are in sh_guns.lua.
 
 -- Items -------------------------------------------------------------------------------------
 
@@ -39,22 +33,6 @@ Items.Define( "scope", {
 		ply.GR_Scoped = not ply.GR_Scoped
 		ply:SetFOV( ply.GR_Scoped and 25 or 0, 0.2 )
 	end,
-} )
-
-Items.Define( "shotgun", {
-	Name = "Shotgun",
-	Description = "For clearing a room of filth.",
-	Weight = 4,
-	Model = "models/weapons/w_shotgun.mdl",
-	Weapon = "weapon_gr_shotgun",
-} )
-
-Items.Define( "smg", {
-	Name = "Submachine Gun",
-	Description = "The state's answer to a crowd.",
-	Weight = 3,
-	Model = "models/weapons/w_smg1.mdl",
-	Weapon = "weapon_gr_smg",
 } )
 
 local function isPolice( ply ) return IsValid( ply ) and ply:IsPlayer() and ply:Alive() and ply:FateHas( "Police" ) end
@@ -85,16 +63,6 @@ Interact.Add( "arrest", {
 	show = function( ply, ent ) return isPolice( ply ) and arrestable( ent ) end,
 	run = function( ply, ent ) Police.Arrest( ply, Corpse.Get( ent ).owner ) end,
 } )
-
-for _, offer in ipairs( Police.OFFERS ) do
-	local def = Items.Get( offer.item )
-	Interact.Add( "station_" .. offer.item, {
-		label = string.format( "Buy %s (%d teeth)", def.Name, offer.teeth ),
-		range = Police.STATION_RANGE,
-		show = function( ply, ent ) return isPolice( ply ) and ent:GetClass() == "sanitation_station" end,
-		run = function( ply ) Police.Buy( ply, offer.item ) end,
-	} )
-end
 
 if CLIENT then
 	-- Over the heads of players in sight: wanted level, reason and time left, then any evidence.
@@ -236,6 +204,7 @@ function Police.Buy( ply, item )
 	end
 	local ok, why = Inventory.Add( ply, item, 1 )
 	if not ok then return refuse( why ) end
+	Guns.GiveAmmo( ply, Items.Get( item ).Weapon, Police.OFFER_CLIPS )
 	ply:SetTeeth( ply:GetTeeth() - offer.teeth )
 	Notify( ply, string.format( "You take a %s. Teeth left: %d.", string.lower( Items.Get( item ).Name ), ply:GetTeeth() ) )
 	return true

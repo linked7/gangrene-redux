@@ -28,6 +28,7 @@ Fates.Define( "kaiser", {
 	-- Fate upgrades the Kaiser may buy, fate id -> bones from the treasury into the upgrade fund (R3).
 	Upgrades = { prole = 125, korpsman = 150 },
 	Kit = { "novoluger", "strategy_book" }, -- items handed over when the role is taken
+	KitAmmo = 2,                              -- two clips of reserve for the novoluger (the original kommandant)
 	Faction = "state",
 	Authority = 3, -- leader
 	Names = function() return math.random( 100 ) == 1 and "Watch Kaiser Thule" or "Witch Kaiser Thule" end,
