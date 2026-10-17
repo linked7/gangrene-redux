@@ -206,7 +206,7 @@
 - **Consciousness** stays separate: at 0 the player passes out into a short stun and wakes with no injury.
 - **Breakables (as in the original, `DoorRammingEnabled`):**
   - **Doors** take club/blast damage and burst open when their health runs out. A broken door stays broken: it never auto-repairs during the round.
-  - **Props** have health and break into gibs when it runs out. They never ignite on break. Wooden props drop `wood` chunks (campfire, step 13).
+  - **Props** have health and break into gibs when it runs out. They never ignite on break. Wooden props and wood-material `func_breakable` brushes drop `wood` chunks (campfire, step 13).
 - **Done when:**
   - A bot downed by a light hit gets back up after 45 s at 25 HP, `Injured`, with max HP 50. A korpsman treatment clears it.
   - A bot downed by a hit 30 past 0 HP, or shot again while wounded, is dying, and becomes a ghost after 120 s unless revived. The downer is judged at that point.
@@ -515,7 +515,7 @@ Build them in this order, so each one has something to act on.
       - Warmth sources stack: near a map fire (`env_fire` or fire layout spots), indoors (no sky trace up), taking burn damage, being well fed (hunger above 70%), and wearing a coat.
       - Coat: a `coat` clothing item sold at the counter. No factory makes coats, so the counter only has them after the Kaiser imports them (see Imports in Step 9). Wearing it sets the fate model's coat bodygroup and cuts cold drain. Proles start without one (their default bodygroup has the coat off).
   - **Campfire** (new design; the original `campfire.lua` was never finished). Always available, not only in WINTER.
-    - Wood: wooden map props (crates, pallets, furniture) drop 1-3 `wood` chunks when smashed. These are physical props you carry, and the map's wood runs out.
+    - Wood: wooden map props (crates, pallets, furniture) and wood-material `func_breakable` brushes drop 1-3 `wood` chunks when smashed. These are physical props you carry, and the map's wood runs out.
     - Build: 3+ wood chunks resting within ~48 units of each other merge into an unlit `campfire` entity. No menu.
     - Light: anything burning touches it (a burning prop or player, or a map fire), or a player uses a `lighter` on it. The lighter is an import (Step 9).
     - Burn: about 3 min of fuel. Each wood chunk thrown in adds about 1 min, up to 8 min. When the fuel runs out it leaves an unlit pit that new wood can relight.
