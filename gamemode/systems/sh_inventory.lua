@@ -15,7 +15,7 @@
 -- Carry limit = Inventory.CARRY_BASE + fate CarryBonus + every carried item's CarryAdd.
 Inventory = Inventory or {}
 Inventory.CARRY_BASE = 20
-Inventory.PUMP_COOLDOWN = 3 -- seconds between uses of any water pump, per player
+Inventory.PUMP_COOLDOWN = 2 -- seconds between drinks from any faucet (the original NextPump), per player
 
 local ITEM_BITS = 10   -- up to 1023 item kinds
 local COUNT_BITS = 16
