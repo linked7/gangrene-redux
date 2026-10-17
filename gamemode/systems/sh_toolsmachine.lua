@@ -15,7 +15,15 @@ ToolsMachine.BURN = 1          -- fuel per second while running
 ToolsMachine.POT_CAP = 50      -- the generator won't run the chain past this much pot metal
 ToolsMachine.SYMBOLS = { "fire", "cog", "link" }
 ToolsMachine.BUTTONS = 8
-ToolsMachine.SHOCK = 25
+ToolsMachine.SHOCK = 25         -- a wrong button (misuse)
+ToolsMachine.SHOCK_UNAUTHORIZED = 65 -- a fate without Proletariat at the buttons (misuse)
+ToolsMachine.RUST_MAX = 100
+ToolsMachine.RUST_BITE = { 4, 6 }  -- damage when a rotten machine bites (1 in 3 presses at full rust)
+ToolsMachine.BITES = {
+	"npc/headcrab_poison/ph_poisonbite2.wav", "npc/headcrab_poison/ph_poisonbite1.wav",
+	"npc/headcrab_poison/ph_warning1.wav", "npc/headcrab_poison/ph_warning2.wav", "npc/headcrab_poison/ph_warning3.wav",
+	"npc/headcrab_fast/headbite.wav", "npc/barnacle/barnacle_crunch2.wav", "npc/barnacle/barnacle_crunch3.wav",
+}
 ToolsMachine.LABOR_TOOL, ToolsMachine.LABOR_BOULDER = 5, 15
 ToolsMachine.BOULDER_INTEGRITY, ToolsMachine.BOULDER_RESPAWN = 200, 60
 ToolsMachine.HEAT_RATE, ToolsMachine.HEAT_MAX = 100, 4000
@@ -127,7 +135,7 @@ function ToolsMachine.Explode( ent )
 	local explo = ents.Create( "env_explosion" )
 	explo:SetOwner( ent )
 	explo:SetPos( pos )
-	explo:SetKeyValue( "iMagnitude", "50" )
+	explo:SetKeyValue( "iMagnitude", "75" )
 	explo:SetKeyValue( "iRadiusOverride", "150" )
 	explo:Spawn()
 	explo:Activate()
@@ -135,12 +143,12 @@ function ToolsMachine.Explode( ent )
 	local fire = ents.Create( "env_fire" )
 	fire:SetPos( ent:GetPos() + ent:GetForward() * 30 )
 	fire:SetKeyValue( "spawnflags", "1" )
-	fire:SetKeyValue( "attack", "10" )
-	fire:SetKeyValue( "firesize", "100" )
+	fire:SetKeyValue( "attack", tostring( math.random( 10, 15 ) ) )
+	fire:SetKeyValue( "firesize", tostring( math.random( 100, 150 ) ) )
 	fire:Spawn()
 	fire:Activate()
 	fire:Fire( "StartFire" )
-	fire:Fire( "Kill", "", 15 )
+	fire:Fire( "Kill", "", math.random( 60, 70 ) )
 	hook.Run( "GR_ToolsExplode", ent )
 end
 
@@ -249,26 +257,70 @@ function ToolsMachine.Affordable()
 	return can[ math.random( #can ) ]
 end
 
+-- Misuse: the klaxon, then a second later a beam from the machine.
+function ToolsMachine.Zap( ply, m, amount )
+	m:EmitSound( "ambient/alarms/klaxon1.wav" )
+	timer.Simple( 1, function()
+		if not IsValid( m ) or not living( ply ) then return end
+		local e = EffectData()
+		e:SetStart( m:WorldSpaceCenter() )
+		e:SetOrigin( ply:EyePos() )
+		e:SetEntity( m )
+		util.Effect( "vortigaunt_beam", e )
+		m:EmitSound( "beams/beamstart5.wav" )
+		shock( ply, m, amount )
+	end )
+end
+
+-- Rust: a rotten machine bites 1 in 3 presses, and 1 in 4 bites it catches fire.
+function ToolsMachine.Bite( ply, m )
+	m:EmitSound( ToolsMachine.BITES[ math.random( #ToolsMachine.BITES ) ], 75, math.random( 70, 90 ) )
+	local d = DamageInfo()
+	d:SetDamage( math.random( ToolsMachine.RUST_BITE[ 1 ], ToolsMachine.RUST_BITE[ 2 ] ) )
+	d:SetDamageType( DMG_SLASH )
+	d:SetAttacker( m )
+	d:SetInflictor( m )
+	ply:TakeDamageInfo( d )
+	if math.random( 1, 4 ) == 1 then m:Ignite( math.random( 3, 6 ), 150 ) end
+	hook.Run( "GR_ToolsBite", m, ply )
+end
+
+function ToolsMachine.AddRust( m, n )
+	m:SetRust( math.Clamp( m:GetRust() + n, 0, ToolsMachine.RUST_MAX ) )
+end
+
 function ToolsMachine.Press( ply, m, k )
 	if not living( ply ) or not isClass( m, "machine_tools" ) then return nil end
+	if m:GetRust() >= ToolsMachine.RUST_MAX and math.random( 1, 3 ) == 1 then ToolsMachine.Bite( ply, m ) end
+	if not living( ply ) then return nil end
 	if not ToolsMachine.Powered( m ) then
 		Notify( ply, "It needs a running generator nearby." )
 		return nil
 	end
+	if not ply:FateHas( "Proletariat" ) then
+		Chat.Big( ply, Color( 255, 0, 0 ), "UNAUTHORIZED PERSONNEL!" )
+		ToolsMachine.Zap( ply, m, ToolsMachine.SHOCK_UNAUTHORIZED )
+		hook.Run( "GR_ToolsMisuse", m, ply, "unauthorized" )
+		return false
+	end
 	if ToolsMachine.Symbol( m, k ) ~= m:GetTarget() then
-		m:EmitSound( "ambient/alarms/klaxon1.wav" )
-		shock( ply, m, ToolsMachine.SHOCK )
+		ToolsMachine.Zap( ply, m, ToolsMachine.SHOCK )
 		ToolsMachine.Reroll( m )
+		hook.Run( "GR_ToolsMisuse", m, ply, "wrong" )
 		return false
 	end
 	ToolsMachine.Reroll( m )
 	local tool = ToolsMachine.Affordable()
 	if not tool then
+		-- Operator error: running it with no metal to pay for a tool.
 		ToolsMachine.Explode( m )
 		return false
 	end
+	local cost = 0
+	for _, n in pairs( ToolsMachine.TOOLS[ tool ] ) do cost = cost + n end
 	spend( ToolsMachine.TOOLS[ tool ] )
 	Econ.AddStock( tool, 1 )
+	ToolsMachine.AddRust( m, cost + math.random( 10, 20 ) ) -- the original: metal + build time
 	Econ.Transfer( Econ.TREASURY, ply, ToolsMachine.LABOR_TOOL, "labor" )
 	m:EmitSound( "ambient/machines/catapult_throw.wav" )
 	hook.Run( "GR_ToolMade", tool, m, ply )
@@ -348,7 +400,7 @@ end )
 function ToolsMachine.Reset()
 	for _, g in ipairs( ToolsMachine.All( "machine_generator" ) ) do g:SetOn( false ) g:SetFuel( 0 ) g:SetRust( 0 ) end
 	for _, v in ipairs( ToolsMachine.All( "vat_metal" ) ) do v:SetHeat( 0 ) v:SetMode( 1 ) end
-	for _, m in ipairs( ToolsMachine.All( "machine_tools" ) ) do ToolsMachine.Reroll( m ) end
+	for _, m in ipairs( ToolsMachine.All( "machine_tools" ) ) do ToolsMachine.Reroll( m ) m:SetRust( math.random( 0, 20 ) ) end
 	for _, b in ipairs( ToolsMachine.All( "boulder" ) ) do ToolsMachine.RestoreBoulder( b ) end
 end
 hook.Add( "GR_RoundStart", "gr_toolsmachine", ToolsMachine.Reset )
