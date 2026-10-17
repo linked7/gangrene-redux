@@ -26,9 +26,9 @@ return function( T )
 	local map = game.GetMap()
 	T.Equal( Layout.map, map, "the layout for this map is loaded" )
 	local entries = Layout.Entries()
-	T.Equal( #entries, 20, "gm_construct's layout has every entry" )
+	T.Equal( #entries, 19, "gm_construct's layout has every entry" )
 	local n = count( entries )
-	T.Equal( n.fate_station, #Fates.All() - 1, "one purpose per fate but ghost" )
+	T.Equal( n.fate_station, #Fates.All() - 2, "one purpose per fate but ghost and sanitar (sanitars are recruited)" )
 	T.Equal( n.state_stockpile, 1, "a stockpile" )
 	T.Equal( n.lunch_machine, 1, "a lunch machine" )
 	T.Equal( n.line_boiler, 1, "its boiler" )
@@ -51,7 +51,7 @@ return function( T )
 		if e.class == "lunch_machine" then machine = ent end
 	end
 	for _, f in ipairs( Fates.All() ) do
-		if f.index ~= FATE_GHOST then T.Check( IsValid( fates[ f.id ] ), "a purpose for " .. f.id ) end
+		if f.index ~= FATE_GHOST and f.id ~= "sanitar" then T.Check( IsValid( fates[ f.id ] ), "a purpose for " .. f.id ) end
 	end
 	T.Check( IsValid( machine ) and Lunch.BoilerOf( machine ) ~= nil, "the lunch machine has its boiler in reach" )
 
@@ -225,7 +225,7 @@ return function( T )
 	Layout.Clear()
 	T.Wait( 0.1 )
 	Layout.Spawn()
-	T.Equal( #Layout.Entries(), 20, "gm_construct's layout is back" )
+	T.Equal( #Layout.Entries(), 19, "gm_construct's layout is back" )
 	for _, b in ipairs( { g, staff, user } ) do b:Kick( "test" ) end
 	T.Wait( 0.3 )
 end

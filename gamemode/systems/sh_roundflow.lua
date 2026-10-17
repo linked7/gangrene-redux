@@ -24,7 +24,7 @@ Items.Define( "passport", {
 	Name = "Gangrene Passport",
 	Description = "Proof of citizenship within Gangrene.",
 	Weight = 1,
-	Model = "models/pentagram/pentagram_small.mdl",
+	Model = "models/props_lab/clipboard.mdl",
 } )
 
 function RoundFlow.Lost() return WorldState.Get( "roundflow.korpsLost", 0 ) end
