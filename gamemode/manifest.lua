@@ -104,5 +104,6 @@ return {
 		"sh_malady_winter.lua",
 		"sh_imports.lua",
 		"sh_breakables.lua",
+		"sh_campfire.lua",
 	},
 }
