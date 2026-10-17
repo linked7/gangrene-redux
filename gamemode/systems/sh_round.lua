@@ -13,6 +13,13 @@ Round = Round or {}
 function Round.Number() return WorldState.Get( "round.number", 0 ) end
 function Round.EndsAt() return WorldState.Get( "round.endsAt", 0 ) end
 function Round.IsOver() return WorldState.Get( "round.over", false ) end
+-- The clock starts when the first Kaiser spawns (endsAt 0 until then: "Awaiting Kaiser").
+function Round.ClockStarted() return Round.EndsAt() > 0 end
+-- Seconds since the clock started; 0 while awaiting the Kaiser.
+function Round.Elapsed()
+	if not Round.ClockStarted() then return 0 end
+	return CurTime() - ( Round.EndsAt() - Config.RoundLength )
+end
 
 if CLIENT then return end
 
@@ -23,7 +30,7 @@ function Round.Start()
 	DB.SetWorld( "round", n )
 	Round.changeAt = nil
 	WorldState.Set( "round.number", n )
-	WorldState.Set( "round.endsAt", CurTime() + Config.RoundLength )
+	WorldState.Set( "round.endsAt", 0 ) -- set when the first Kaiser spawns
 	WorldState.Set( "round.over", false )
 	Layout.Spawn() -- the world entities first (sv_layout.lua); only missing ones on a repeat
 	Econ.ResetRound()
@@ -82,6 +89,18 @@ Sched.Every( "round", 1, function()
 end )
 
 hook.Add( "InitPostEntity", "gr_round", Round.Start )
+
+-- The first Kaiser of the round starts the round clock (and the round-flow marks).
+function Round.StartClock()
+	if Round.ClockStarted() or Round.IsOver() then return false end
+	WorldState.Set( "round.endsAt", CurTime() + Config.RoundLength )
+	Log.Info( "round", "the Kaiser has spawned: the clock starts" )
+	return true
+end
+
+hook.Add( "GR_FateEnter", "gr_round", function( ply, f )
+	if f and f.id == "kaiser" then Round.StartClock() end
+end )
 
 -- round_end [reason]: server console or staff (Admin.IsStaff, sv_admin.lua).
 concommand.Add( "round_end", function( ply, _, args )
