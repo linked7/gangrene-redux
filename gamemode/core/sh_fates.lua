@@ -125,10 +125,10 @@ function Fates.CanTake( ply, id )
 	if not ply:IsGhost() then return false, "You already have a purpose in life." end
 
 	local rank = ply:GetRank()
-	if rank == RANK_FOOLISH and not f.ForNewPlayers then
+	if Config.SlaveGating and rank == RANK_FOOLISH and not f.ForNewPlayers then
 		return false, "You are not yet trusted with this purpose. Prove yourself first."
 	end
-	if rank > RANK_FOOLISH and f.ForNewPlayers then
+	if Config.SlaveGating and rank > RANK_FOOLISH and f.ForNewPlayers then
 		return false, "You have been freed. This purpose is beneath you now."
 	end
 	if f.MinRank and rank < f.MinRank then return false, "Your rank is too low for this purpose." end

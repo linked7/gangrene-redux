@@ -5,6 +5,7 @@
 -- GR_Judged hook that starts the scares), the downed screen's LastThought and the content pack;
 -- fate footsteps and the music list (§11); the ghost's look, hearing, grade and radio (§13).
 return function( T )
+	Config.SlaveGating = true -- these checks cover the gate itself; it is off by default for now
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t15b_%'" )
 
 	local function bot( name, rank, stem )
