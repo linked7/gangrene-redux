@@ -32,6 +32,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | Campfire (wood from smashed props, pile, light, feed) | `accepted` | Step 13. |
 | Rammable doors, destructible props | `accepted` | Step 7. |
 | Generator, tools machine, smithing, scrap/biofuel imports | `accepted` | Steps 9, 11. |
+| Boulders, ore, crucible chain, metal exports | `accepted` | Step 11. |
 | Rocket turret (optimized port) | `accepted` | Step 10. |
 | Round flow (stations gone at 10 min, migrant waves, papers → passport at the gate) | `accepted` | Step 13. |
 | Kaiser recruits sanitars (context menu); sanitar station dropped | `accepted` | Steps 4, 11.4. |
@@ -120,6 +121,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Wasteland water | 1:1 port of the original wade damage and Pox in the wasteland box. | User: the water should be horrible in the wasteland. |
 | 2026-10-17 | XOMBOKOM | Kaiser broadcast as large red top-centre text plus sound, not chat; 120 chars, 30 s cooldown. | User's choice. |
 | 2026-10-17 | Sanitar Summon | 1:1 port of the original summoner with its 16 rp_slumtown spots. | User asked. |
+| 2026-10-17 | Crucible | Boulders drop ore; ore processed only in the crucible: ore → scrap → pot → ballistic → formic steel (replaces anvil smithing). Ballistic and formic steel exportable. All finished products and raw resources go to the stockpile port. | User asked. |
 | 2026-10-17 | Wading slowdown | Movement slowed by water level in all water; new, the original had none. | User asked. |
 | 2026-10-17 | In-world fate pick | Konsole stamps migrants as Proles, no fate list; Kaiser "Recruit as Korpsman" like sanitar recruiting. | User asked. |
 | 2026-10-17 | Immigration konsole | New `konsole_immigration` at the Gate Antechamber is the papers → passport point; none existed in the original. | User asked. |
