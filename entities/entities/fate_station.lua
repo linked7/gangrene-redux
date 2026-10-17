@@ -29,6 +29,11 @@ function ENT:Initialize()
 	self:SetMoveType( MOVETYPE_NONE )
 	self:SetUseType( SIMPLE_USE )
 	self:SetCollisionGroup( COLLISION_GROUP_WORLD )
+	Fates.Stations[ self ] = true
+end
+
+function ENT:OnRemove()
+	Fates.Stations[ self ] = nil
 end
 
 function ENT:Use( activator )
