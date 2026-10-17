@@ -117,6 +117,10 @@ local function citizensTab( parent )
 		local _, lvl = level:GetSelected()
 		if lvl then sendTarget( "nKaiserSentence", p, function() net.WriteUInt( lvl, 2 ) end ) end
 	end )
+	-- Issues a gun permit, or revokes the one they hold (sh_gunpermit.lua).
+	button( "Gun permit", 285, 30, function( p )
+		sendTarget( "nKaiserPermit", p, function() net.WriteBool( p:GetGunPermit() == "" ) end )
+	end )
 	return panel
 end
 

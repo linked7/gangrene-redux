@@ -140,6 +140,7 @@ function Police.Inspect( ply, target )
 		table.insert( lines, string.format( "Wanted for %s.", target:GetWantedReason() ) )
 	end
 	Notify( ply, table.concat( lines, " " ) )
+	hook.Run( "GR_Inspected", ply, target ) -- gun permits add a line (sh_gunpermit.lua)
 	Notify( target, ply:Nick() .. " inspects you." )
 	Log.Debug( "police", "%s inspected %s: crate %s, evidence '%s'", ply:Nick(), target:Nick(),
 		tostring( result.stolenCrate ), result.evidence )
