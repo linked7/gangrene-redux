@@ -55,5 +55,8 @@ return {
 		"sh_police.lua",
 		"sh_kaiser.lua",
 		"cl_kaiser.lua",
+		"sh_rank.lua",
+		"sh_round.lua",
+		"cl_round.lua",
 	},
 }
