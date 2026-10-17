@@ -1,10 +1,10 @@
 #!/bin/bash
 # A LAN play server for real-client checks: a snapshot of this checkout on a shadow install
 # (like tools/soak.sh, so it never touches srv.sh's lock or files), no bots, no soak.
-# Usage: tools/play.sh [start|stop|log] [map=gm_construct]. Clients connect to <deck-ip>:$PORT.
+# Usage: tools/play.sh [start|stop|log] [map=rp_slumtown]. Clients connect to <deck-ip>:$PORT.
 # Extra server args via GR_PLAY_ARGS, e.g. GR_PLAY_ARGS="+gr_uitour 1" for the hands-free UI tour.
 set -u
-CMD=${1:-start}; MAP=${2:-gm_construct}
+CMD=${1:-start}; MAP=${2:-rp_slumtown}
 DS=${GR_DS:-$HOME/gmod-ds}
 PLAY=${GR_PLAY_DS:-$HOME/gmod-ds-play}
 PORT=${GR_PLAY_PORT:-27135}
