@@ -8,7 +8,8 @@
 --                               gets up on their own after Config.WakeTime, Injured
 --                    "dying"    the hit went further, or a wounded body was hit again; the player
 --                               becomes a ghost after Config.BleedoutTime unless revived
---   "dead"         the player is a ghost now; the body despawns after DECAY seconds
+--   "dead"         the player is a ghost now; the body despawns after DECAY seconds, or sooner
+--                  under load: past MAX_DEAD dead bodies the oldest unclaimed ones go first
 --   "restored"     the player got up or was revived; the body is being removed
 --
 -- Leaving "downed": Corpse.GetUp (wounded, the timer), Corpse.Revive (the one revive path, R2,
@@ -61,6 +62,7 @@ Corpse.DECAY = 300       -- seconds a dead body lies before it despawns (the cli
 
 if CLIENT then return end
 
+Corpse.MAX_DEAD = 24     -- dead bodies kept at once; past this the oldest unclaimed ones despawn early
 Corpse.REVIVE_TIME = 5   -- seconds a korpsman works on the body
 Corpse.REVIVE_HEALTH = 10
 
@@ -243,7 +245,8 @@ function Corpse.Die( rag, reason )
 	local rec = registry[ rag ]
 	if not rec or rec.state == "dead" then return end
 	rec.state = "dead"
-	rec.decayAt = CurTime() + Corpse.DECAY
+	rec.diedAt = CurTime()
+	rec.decayAt = rec.diedAt + Corpse.DECAY
 	Corpse.Sync( rag )
 	hook.Run( "GR_CorpseDied", rag, rec, reason )
 	local ply = rec.owner
@@ -400,9 +403,31 @@ hook.Add( "EntityRemoved", "gr_corpse", function( ent )
 	end
 end )
 
--- One corpse tick: a wounded body whose time is up gets up, a dying one bleeds out.
+-- A dead body someone is dragging is claimed: the cap leaves it alone.
+local function claimed( rag )
+	local by = rag.GR_DraggedBy
+	return IsValid( by ) and Drag and Drag.Of( by ) == rag
+end
+
+-- Past MAX_DEAD dead bodies, the oldest unclaimed ones despawn now instead of at decayAt. Only
+-- "dead" bodies count: downed players keep their timers, so step 7's rules don't change.
+local function capDead( dead )
+	local over = #dead - Corpse.MAX_DEAD
+	if over <= 0 then return end
+	table.sort( dead, function( a, b ) return registry[ a ].diedAt < registry[ b ].diedAt end )
+	for _, rag in ipairs( dead ) do
+		if over <= 0 then break end
+		if not claimed( rag ) then
+			rag:Remove()
+			over = over - 1
+		end
+	end
+end
+
+-- One corpse tick: a wounded body whose time is up gets up, a dying one bleeds out, a dead one rots.
 function Corpse.Tick()
 	local now = CurTime()
+	local dead = {}
 	for rag, rec in pairs( registry ) do
 		if not IsValid( rag ) then
 			registry[ rag ] = nil
@@ -414,8 +439,11 @@ function Corpse.Tick()
 			end
 		elseif rec.state == "dead" and now >= rec.decayAt then
 			rag:Remove()
+		elseif rec.state == "dead" then
+			table.insert( dead, rag )
 		end
 	end
+	capDead( dead )
 end
 Sched.Every( "corpses", 0.5, Corpse.Tick )
 

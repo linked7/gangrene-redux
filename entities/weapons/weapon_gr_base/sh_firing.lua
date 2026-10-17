@@ -109,8 +109,8 @@ end
 -- G with a gun out: shove whoever is in front, 70 units (the original's MeleeShove).
 function SWEP:MeleeShove()
 	local owner = self:GetOwner()
-	local damage, knockback, delay = self.MeleeDamage or 25, self.MeleeKnockback or 50, self.MeleeDelay or 4
-	local stun = self.MeleeStun or 2
+	local damage, knockback, delay = self.ShoveDamage or 25, self.ShoveKnockback or 50, self.ShoveDelay or 4
+	local stun = self.ShoveStun or 2
 	local lag = SERVER and not owner:IsBot()
 	if lag then owner:LagCompensation( true ) end
 	self:PlaySound( "npc/zombie/claw_miss" .. math.random( 1, 2 ) .. ".wav" )

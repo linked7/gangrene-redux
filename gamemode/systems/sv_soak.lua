@@ -9,9 +9,11 @@
 -- ply:Say for chat, TakeDamageInfo for violence. Positions are teleports next to the target.
 -- Randomness is seeded; physics and the scheduler's spread still make runs differ a little.
 --
--- Output in data/gr_soak/: metrics.csv (one row a minute), sched.csv (per job per minute) and
+-- Output in data/gr_soak/: metrics.csv (one row a minute), sched.csv (per job per minute),
+-- classes.csv (entities per class per minute) and
 -- summary.txt, whose last line is "DONE pass" or "DONE fail <reasons>". It fails on any Log.Error,
--- any bone drift, or transient entities (dropped items, crates, bodies) growing without bound.
+-- any bone drift, transient entities (dropped items, crates, bodies) growing without bound, or
+-- the other entities growing at all (a leak).
 -- Round.ChangeLevel is a no-op while the soak runs; the soak ends one round halfway and one at the end.
 Soak = Soak or {}
 
@@ -178,6 +180,48 @@ local function tendNeeds( bot )
 	return false
 end
 
+-- The weapons base (weapon_gr_base): draw whatever the bot carries, aim, and use it the way its
+-- Think does once the key is let go (MeleeSwing) or the attack press does (PrimaryFirearm). Firearms
+-- reload when empty; now and then the bot spits or shoves (G). Holsters again afterwards.
+local function ourWeapons( bot )
+	local out = {}
+	for _, w in ipairs( bot:GetWeapons() ) do
+		if w.GR_Base then table.insert( out, w ) end
+	end
+	table.sort( out, function( a, b ) return a:GetClass() < b:GetClass() end )
+	return out
+end
+
+local function useWeapon( bot, target )
+	local list = ourWeapons( bot )
+	if #list == 0 then return false end
+	local wep = pick( list )
+	bot:SelectWeapon( wep:GetClass() )
+	if bot:GetActiveWeapon() ~= wep then return false end
+	Weapons.SetHolstered( bot, false )
+	if not wep:IsOut() then return false end
+	local at = target:IsPlayer() and target:GetPos() + Vector( 0, 0, 40 ) or target:WorldSpaceCenter()
+	bot:SetEyeAngles( ( at - bot:GetShootPos() ):Angle() )
+	if chance( 0.1 ) then
+		local r = Weapons.Spit( bot )
+		if r then count( "weapon_" .. r ) end
+	elseif wep.Firearm then
+		if wep:Clip1() <= 0 then
+			bot:GiveAmmo( wep.Primary.ClipSize, wep.Primary.Ammo, true )
+			wep:Reload()
+			count( "weapon_reload" )
+		else
+			wep:PrimaryFirearm()
+			count( "weapon_fire" )
+		end
+	elseif wep.Melee then
+		wep:MeleeSwing( chance( 0.3 ) )
+		count( "weapon_swing" )
+	end
+	if chance( 0.7 ) then Weapons.SetHolstered( bot, true ) end
+	return true
+end
+
 -- Work ----------------------------------------------------------------------------------------
 
 local function deliver( bot, crate )
@@ -264,20 +308,43 @@ local function workerAct( bot )
 		end
 		return deliver( bot, crate )
 	end
-	if chance( 0.01 ) and not bot:FateHas( "StockpileAccess" ) and not skipped( "lock" ) then
-		-- A few blows on the stockpile's lock, through the real damage path (sh_locks.lua).
-		goNear( bot, S.stockpile, 80 )
-		for _ = 1, math.random( 3, 12 ) do
-			local dmg = DamageInfo()
-			dmg:SetDamage( 10 )
-			dmg:SetDamageType( DMG_CLUB )
-			dmg:SetAttacker( bot )
-			dmg:SetInflictor( bot )
-			local had = S.stockpile:GetIntegrity()
-			S.stockpile:TakeDamageInfo( dmg )
-			if S.stockpile:GetIntegrity() < had then count( "lock_hit" ) end
-			if had > 0 and S.stockpile:GetIntegrity() == 0 then count( "lock_broken" ) end
+	if chance( 0.01 ) and not skipped( "lock" ) then
+		-- A few blows on a lock: the stockpile's, or someone else's locked storage crate. Melee
+		-- swings through the weapons base when the bot holds a melee weapon, else plain club damage;
+		-- both reach sh_locks.lua's EntityTakeDamage hook.
+		local targets = {}
+		if not bot:FateHas( "StockpileAccess" ) then table.insert( targets, S.stockpile ) end
+		for _, c in ipairs( trackedList( "storage_crate" ) ) do
+			if Locks.CanBeat( bot, c ) then table.insert( targets, c ) end
 		end
+		local lock = #targets > 0 and pick( targets )
+		if not lock then return end
+		goNear( bot, lock, 45 )
+		local melee
+		for _, w in ipairs( ourWeapons( bot ) ) do
+			if w.Melee then melee = w break end
+		end
+		if melee then
+			bot:SelectWeapon( melee:GetClass() )
+			Weapons.SetHolstered( bot, false )
+		end
+		for _ = 1, math.random( 3, 12 ) do
+			local had = lock:GetIntegrity()
+			bot:SetEyeAngles( ( lock:WorldSpaceCenter() - bot:GetShootPos() ):Angle() )
+			if melee and bot:GetActiveWeapon() == melee and melee:IsOut() then
+				melee:MeleeSwing( false )
+			else
+				local dmg = DamageInfo()
+				dmg:SetDamage( 10 )
+				dmg:SetDamageType( DMG_CLUB )
+				dmg:SetAttacker( bot )
+				dmg:SetInflictor( bot )
+				lock:TakeDamageInfo( dmg )
+			end
+			if lock:GetIntegrity() < had then count( "lock_hit" ) end
+			if had > 0 and lock:GetIntegrity() == 0 then count( "lock_broken" ) end
+		end
+		Weapons.SetHolstered( bot, true )
 		return
 	end
 	if chance( 0.004 ) and Build.CanBuild( bot ) and not skipped( "build" ) then
@@ -407,11 +474,27 @@ end
 
 local LINES = { "Glory to the Kaiser.", "Where is the bread?", "My back hurts.", "Has anyone seen my sack?",
 	"The press is jammed again.", "Ration day!", "I saw nothing.", "Long live the People." }
-local MODES = { "", "", "", "/y ", "/w ", "/me ", "// ", "/r " }
+local MODES = { "", "", "", "/y ", "/w ", "/me ", "// ", "/r ", ".// ", "/looc " }
 
+-- Every mode of sh_chat.lua: speech, emotes, OOC, radio, rolls, private messages, and now and then
+-- a thoughtcrime (Config.ChatBadSentences) for the wanted path.
 local function chatAct( bot )
-	bot:Say( pick( MODES ) .. pick( LINES ), chance( 0.05 ) )
-	count( "chat" )
+	local r = math.random()
+	if r < 0.03 then
+		bot:Say( pick( Config.ChatBadSentences ) )
+		count( "chat_thoughtcrime" )
+	elseif r < 0.06 then
+		bot:Say( "/roll" )
+		count( "chat_roll" )
+	elseif r < 0.09 then
+		local others = livingOthers( bot )
+		if #others == 0 then return end
+		bot:Say( "/pm " .. pick( others ):SteamName() .. " " .. pick( LINES ) )
+		count( "chat_pm" )
+	else
+		bot:Say( pick( MODES ) .. pick( LINES ), chance( 0.05 ) )
+		count( "chat" )
+	end
 end
 
 local function violence( bot )
@@ -432,6 +515,7 @@ local function violence( bot )
 	if #others == 0 then return end
 	local t = pick( others )
 	goNear( bot, t, 60 )
+	if not skipped( "weapons" ) and chance( 0.5 ) and useWeapon( bot, t ) then return end
 	local dmg = DamageInfo()
 	dmg:SetAttacker( bot )
 	dmg:SetInflictor( bot )
@@ -474,7 +558,15 @@ local function itemsAct( bot )
 end
 
 local function act( bot )
-	if not IsValid( bot ) or not bot:Alive() then return end
+	if not IsValid( bot ) then return end
+	if not bot:Alive() then
+		-- Downed bots talk too: whispers, and rarely a kill sentence (the head bursts).
+		if Chat.IsDowned( bot ) and not skipped( "chat" ) and chance( 0.1 ) then
+			bot:Say( chance( 0.1 ) and pick( Config.ChatKillSentences ) or pick( LINES ) )
+			count( "chat_downed" )
+		end
+		return
+	end
 	if bot:IsGhost() then
 		if chance( 0.1 ) then chatAct( bot ) end
 		return takeFate( bot )
@@ -512,13 +604,36 @@ local function addBot( name )
 	return b
 end
 
+-- Viewmodels and hands, and the ones whose owner is gone or isn't a player (soak diagnostics).
+local function vmReport( tag )
+	local vm, hands, orphans, per = 0, 0, {}, {}
+	for _, e in ents.Iterator() do
+		local c = e:GetClass()
+		if c == "predicted_viewmodel" or c == "gmod_hands" then
+			if c == "predicted_viewmodel" then vm = vm + 1 else hands = hands + 1 end
+			local o = e:GetOwner()
+			if not IsValid( o ) or not o:IsPlayer() then
+				table.insert( orphans, tostring( e ) .. "<" .. tostring( o ) )
+			else
+				per[ o ] = ( per[ o ] or 0 ) + 1
+			end
+		end
+	end
+	local over = {}
+	for o, k in pairs( per ) do if k > 4 then table.insert( over, o:SteamName() .. "=" .. k ) end end
+	Log.Info( "soak", "vm %s: vm=%d hands=%d players=%d orphans=[%s] over=[%s]", tag, vm, hands, player.GetCount(),
+		table.concat( orphans, " " ), table.concat( over, " " ) )
+end
+
 local function churn()
 	local bots = soakBots()
 	if #bots == 0 then return end
 	local b = pick( bots )
 	local name = b:SteamName()
 	b:DropObject()
+	vmReport( "before kick of " .. name .. " (" .. ( b:IsGhost() and "ghost" or b:Alive() and "alive" or "down" ) .. ")" )
 	b:Kick( "soak churn" )
+	timer.Simple( 5, function() if S then vmReport( "after kick" ) end end )
 	count( "churn_leave" )
 	S.rejoin = { name = name, at = CurTime() + 10 }
 end
@@ -528,6 +643,7 @@ local function rejoin()
 	S.rejoin = nil
 	local b = addBot( r.name )
 	if not b then return end
+	timer.Simple( 5, function() if S then vmReport( "after rejoin" ) end end )
 	count( "churn_join" )
 	-- Some come back as newcomers again, so there are always slaves to free.
 	if chance( 0.3 ) and b:GetRank() ~= RANK_KAISER then
@@ -547,6 +663,32 @@ local function transient()
 	for ent in pairs( tracked.storage_crate ) do if IsValid( ent ) then n.buildings = n.buildings + 1 end end
 	for rag in pairs( Corpse.All() ) do if IsValid( rag ) then n.bodies = n.bodies + 1 end end
 	return n
+end
+
+-- A census of every entity by class, once a minute. Soak-only diagnostics, so it walks the whole
+-- world (ents.Iterator, no FindByClass); the systems themselves keep to their registries.
+local CENSUS_TOP = 12
+
+local function census()
+	local by = {}
+	for _, ent in ents.Iterator() do
+		local c = ent:GetClass()
+		by[ c ] = ( by[ c ] or 0 ) + 1
+	end
+	return by
+end
+
+-- The classes in `by` by count, most first, then the ones that changed most since `prev`.
+local function topClasses( by, prev, n )
+	local names = table.GetKeys( by )
+	table.sort( names, function( a, b ) if by[ a ] ~= by[ b ] then return by[ a ] > by[ b ] end return a < b end )
+	local parts = {}
+	for i = 1, math.min( n, #names ) do
+		local c = names[ i ]
+		local d = by[ c ] - ( prev and prev[ c ] or by[ c ] )
+		table.insert( parts, d ~= 0 and string.format( "%s=%d(%+d)", c, by[ c ], d ) or ( c .. "=" .. by[ c ] ) )
+	end
+	return table.concat( parts, " " )
 end
 
 local CSV_HEAD = "t,players,alive,ents,gr_item,ent_crate,bodies,buildings,lua_kb,net_Bps,net_msgs_s,flush_last_ms,flush_max_ms,flushes,max_frame_ms,drift,errors,warns,treasury,fund,stock_ration,stock_water"
@@ -605,6 +747,15 @@ local function sample( final )
 	end
 	file.Append( DIR .. "/sched.csv", table.concat( lines, "\n" ) .. "\n" )
 
+	-- Entities per class: every class each minute in classes.csv, the top ones in the log.
+	local by = census()
+	local cl = {}
+	for c, k in SortedPairs( by ) do table.insert( cl, string.format( "%d,%s,%d", t, c, k ) ) end
+	file.Append( DIR .. "/classes.csv", table.concat( cl, "\n" ) .. "\n" )
+	S.firstCensus = S.firstCensus or by
+	Log.Info( "soak", "t=%ds classes: %s", t, topClasses( by, S.lastCensus, CENSUS_TOP ) )
+	S.lastCensus = by
+
 	Log.Info( "soak", "t=%ds players=%d alive=%d ents=%d items=%d crates=%d bodies=%d mem=%.0fKB net=%.0fB/s flush=%.2fms frame=%.1fms drift=%d errors=%d",
 		t, row.players, alive, row.ents, tr.gr_item, tr.ent_crate, tr.bodies, row.lua_kb, bps, row.flush_last_ms, frame, drift, row.errors )
 end
@@ -647,6 +798,14 @@ local function finish()
 	if #rows >= 6 and lastN > firstPeak * 2 + 20 then
 		table.insert( fails, string.format( "transient entities grew: %d at the end, peak %d in the first half", lastN, firstPeak ) )
 	end
+	-- Everything else (players, their viewmodels and weapons, the world) should hold steady: the
+	-- rest of the count at the end against the worst of the first half, with room for weapons, head-burst bone entities and the viewmodels a rejoining bot leaves behind.
+	local function rest( r ) return r.ents - r.gr_item - r.ent_crate - r.bodies end
+	local restPeak = 0
+	for i = 1, half do restPeak = math.max( restPeak, rest( rows[ i ] ) ) end
+	if #rows >= 6 and rest( last ) > restPeak + 40 then
+		table.insert( fails, string.format( "other entities grew: %d at the end, peak %d in the first half", rest( last ), restPeak ) )
+	end
 
 	say( "soak: %d min, %d bots, seed %d, %d samples", S.minutes, S.botCount, S.seed, #rows )
 	local avgNet, peakNet = stat( rows, "net_Bps" )
@@ -661,6 +820,19 @@ local function finish()
 	say( "entities: start %d, 25%% %d, 50%% %d, 75%% %d, end %d (items %d, crates %d, bodies %d, buildings %d at the end)",
 		rows[ 1 ].ents, rows[ q ].ents, rows[ math.min( #rows, 2 * q ) ].ents, rows[ math.min( #rows, 3 * q ) ].ents, last.ents,
 		last.gr_item, last.ent_crate, last.bodies, last.buildings )
+	-- Which classes grew over the whole run (the census at the first sample against the last).
+	local grew = {}
+	for c, k in pairs( S.lastCensus or {} ) do
+		local d = k - ( S.firstCensus[ c ] or 0 )
+		if d ~= 0 then table.insert( grew, { c = c, d = d } ) end
+	end
+	for c, k in pairs( S.firstCensus or {} ) do
+		if not S.lastCensus[ c ] then table.insert( grew, { c = c, d = -k } ) end
+	end
+	table.sort( grew, function( a, b ) if a.d ~= b.d then return a.d > b.d end return a.c < b.c end )
+	local gp = {}
+	for i = 1, math.min( #grew, CENSUS_TOP ) do table.insert( gp, string.format( "%s %+d", grew[ i ].c, grew[ i ].d ) ) end
+	say( "entity classes, end vs start: %s", #gp > 0 and table.concat( gp, ", " ) or "no change" )
 	say( "drift at the end: %d; Log.Error lines: %d; Log.Warn lines: %d", drift, Log.counts.error, Log.counts.warn )
 
 	say( "sched (job: calls, avg ms/call, worst window avg ms, peak ms, total ms):" )
@@ -754,7 +926,7 @@ function Soak.Tick()
 end
 
 -- pace > 1 makes bots act that many times more often (for hunting crashes); skip is a set of
--- activity names to leave out: deliver, drop_on_stockpile, open, lock, build, press, violence,
+-- activity names to leave out: deliver, drop_on_stockpile, open, lock, build, press, violence, weapons,
 -- items, chat, churn, police, medic, kaiser.
 function Soak.Start( minutes, bots, seed, pace, skip )
 	if S then return Log.Warn( "soak", "already running" ) end
@@ -763,6 +935,7 @@ function Soak.Start( minutes, bots, seed, pace, skip )
 	file.CreateDir( DIR )
 	file.Write( DIR .. "/metrics.csv", CSV_HEAD .. "\n" )
 	file.Write( DIR .. "/sched.csv", "t,job,calls,avg_ms,window_max_ms,total_ms\n" )
+	file.Write( DIR .. "/classes.csv", "t,class,count\n" )
 	file.Delete( DIR .. "/summary.txt" )
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:" .. PREFIX .. "%'" )
 
