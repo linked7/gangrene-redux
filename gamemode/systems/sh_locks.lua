@@ -127,8 +127,9 @@ local function breakStockpile( ent, ply )
 	ent.GR_ReformAt = now + Locks.REFORM
 	ent.GR_KlaxonStop = now + Locks.KLAXON_TAIL
 	local n = Econ.TakeStock( Econ.BREAD, Locks.LOOT )
-	local base = ent:GetPos() + ent:GetForward() * 40 + Vector( 0, 0, 20 )
-	for i = 1, n do Items.Spawn( Econ.BREAD, 1, base + Vector( 0, ( i - 2 ) * 12, 0 ) ) end
+	local loot = {}
+	for i = 1, n do loot[ i ] = Econ.BREAD end
+	Items.SpawnMany( loot, ent:GetPos() + ent:GetForward() * 40 + Vector( 0, 0, 20 ) )
 	Notify( ply, n > 0 and "The lock gives way." or "The lock gives way. The stockpile is empty." )
 	Crime.Report( ply, "break_in", { pos = ent:GetPos() } )
 end

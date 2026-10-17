@@ -181,9 +181,7 @@ function Storage.Spill( box )
 	local items = box.GR_Items
 	box.GR_Items = {}
 	if quiet or box.GR_RoundReset or not items then return end
-	local base, i = box:GetPos() + Vector( 0, 0, 10 ), 0
-	for _, id in ipairs( sortedIds( items ) ) do
-		Items.Spawn( id, items[ id ], base + Vector( ( i % 3 - 1 ) * 14, math.floor( i / 3 ) * 14, 0 ) )
-		i = i + 1
-	end
+	local stacks = {}
+	for _, id in ipairs( sortedIds( items ) ) do table.insert( stacks, { id, items[ id ] } ) end
+	Items.SpawnMany( stacks, box:GetPos() + Vector( 0, 0, 10 ) )
 end

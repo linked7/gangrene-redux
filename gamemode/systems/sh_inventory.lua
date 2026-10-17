@@ -10,6 +10,7 @@
 --   Inventory.Use( ply, id )  Inventory.Drop( ply, id, n ) -> ent  Inventory.PickUp( ply, ent ) -> n
 --   Inventory.TakeAll( ply ) -> map    Inventory.GiveAll( ply, map )    for corpses (step 7)
 --   Items.Spawn( id, count, pos ) -> gr_item entity
+--   Items.SpawnMany( { id, id, { id, count }, ... }, pos, ang ) -> batch   one every 0.25 s
 --
 -- Carry limit = Inventory.CARRY_BASE + fate CarryBonus + every carried item's CarryAdd.
 Inventory = Inventory or {}
@@ -205,6 +206,50 @@ function Items.Spawn( id, count, pos, ang )
 	ent:Spawn()
 	return ent
 end
+
+-- Several items at one spot, one every Items.SPAWN_GAP seconds instead of all in one frame, where
+-- they would spawn inside each other and fight the physics. Use it in place of a loop of
+-- Items.Spawn. `list` holds item ids, or { id, count } for a stack; unknown ids are skipped.
+-- The first one appears at once. Batches run side by side. Returns the batch: `batch.spawned`
+-- fills in as they appear, and `batch.done` is set after the last.
+Items.SPAWN_GAP = 0.25
+local batches = {}
+
+local function spawnNext( batch )
+	while batch.i <= #batch.list do
+		local entry = batch.list[ batch.i ]
+		batch.i = batch.i + 1
+		local id, count = entry, 1
+		if istable( entry ) then id, count = entry[ 1 ], entry[ 2 ] or 1 end
+		if Items.Get( id ) then
+			local ent = Items.Spawn( id, count, batch.pos, batch.ang )
+			if IsValid( ent ) then table.insert( batch.spawned, ent ) end
+			break
+		end
+	end
+	batch.done = batch.i > #batch.list or nil
+	batch.nextAt = CurTime() + Items.SPAWN_GAP
+	return batch.done
+end
+
+function Items.SpawnMany( list, pos, ang )
+	local batch = { list = table.Copy( list or {} ), pos = pos, ang = ang, i = 1, spawned = {} }
+	if not spawnNext( batch ) then table.insert( batches, batch ) end
+	return batch
+end
+
+-- Nothing still queued spills into a cleaned map or a new round.
+local function dropBatches() batches = {} end
+hook.Add( "PreCleanupMap", "gr_items_spawn_many", dropBatches )
+hook.Add( "GR_RoundStart", "gr_items_spawn_many", dropBatches )
+
+Sched.Every( "items_spawn_many", 0.05, function()
+	if #batches == 0 then return end
+	local now = CurTime()
+	for i = #batches, 1, -1 do
+		if now >= batches[ i ].nextAt and spawnNext( batches[ i ] ) then table.remove( batches, i ) end
+	end
+end )
 
 function Inventory.Drop( ply, id, n )
 	if not living( ply ) then return end
