@@ -75,5 +75,6 @@ return {
 		"sh_givebones.lua",
 		"sh_weapons.lua",
 		"sh_movement.lua",
+		"sh_parity.lua",
 	},
 }

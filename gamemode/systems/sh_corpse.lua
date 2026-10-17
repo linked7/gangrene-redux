@@ -228,6 +228,7 @@ function Corpse.Die( rag, reason )
 	if not rec or rec.state == "dead" then return end
 	rec.state = "dead"
 	rec.decayAt = CurTime() + Corpse.DECAY
+	hook.Run( "GR_CorpseDied", rag, rec, reason )
 	local ply = rec.owner
 	if IsValid( ply ) and ply.GR_Corpse == rag then
 		ply.GR_Corpse = nil

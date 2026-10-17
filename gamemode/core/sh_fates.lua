@@ -31,6 +31,10 @@ local SCHEMA = {
 	CustomRadio = { "string" },    -- radio label, "[Radio]" by default
 	Faction = { "string" },        -- fates sharing a faction answer to each other (step 10)
 	Authority = { "number" },      -- rank inside the faction; higher outranks lower
+	PainSounds = { "table" },      -- grunts when hurt; empty = the default male grunts by hit area (sh_parity.lua)
+	DeathSounds = { "table" },     -- the scream on going down and at final death; nil = silent
+	NoFinalDeathSound = { "boolean" }, -- silent at final death (the Kaiser already screamed going down)
+	IntroTexts = { "table" },      -- { { Color, text }, ... } told on taking the fate; %name is the character's name
 	OnEnter = { "function" },      -- ( ply, reason )
 	OnLeave = { "function" },      -- ( ply, newFate )
 }

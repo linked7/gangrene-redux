@@ -98,6 +98,7 @@ Net.Pool( "gr_chat_line" )
 Net.Pool( "gr_chat_pm" )
 Net.Pool( "gr_chat_self" )
 Net.Pool( "gr_chat_gesture" )
+Net.Pool( "gr_chat_big" )
 
 -- Client ------------------------------------------------------------------------------------
 if CLIENT then
@@ -144,6 +145,12 @@ if CLIENT then
 		local fx = net.ReadUInt( 2 )
 		if fx == 1 then frighten() elseif fx == 2 then jumpscare() end
 		addLine( "notice", nil, col, text )
+	end )
+
+	-- A big event line (the original's nAddChatFont in ChatBig): crimes, calls for help.
+	Net.Receive( "gr_chat_big", nil, function()
+		local col = net.ReadColor( false )
+		addLine( "big", "ChatBig", col, net.ReadString() )
 	end )
 
 	Net.Receive( "gr_chat_pm", nil, function()
@@ -417,6 +424,29 @@ function Chat.Tell( ply, color, text, fx )
 	net.WriteString( text )
 	net.WriteUInt( fx or 0, 2 )
 	net.Send( ply )
+end
+
+-- One big line (ChatBig) to `to`: a player, a list, or nil for everyone. GR_ChatBig( to, color, text ) lets tests listen.
+function Chat.Big( to, color, text )
+	hook.Run( "GR_ChatBig", to, color, text )
+	net.Start( "gr_chat_big" )
+	net.WriteColor( color, false )
+	net.WriteString( text )
+	if to == nil then net.Broadcast() else net.Send( to ) end
+end
+
+-- What the people around `ply` see happen (the original's CC.AAT): one line to everyone living
+-- within 512 units, or 64 if they can't see `ply`. Returns who got it.
+Chat.AREA = { range = 512, muffled = 64 }
+function Chat.Area( ply, color, text )
+	local out = {}
+	for _, p in player.Iterator() do
+		if p == ply or ( not Chat.IsDead( p ) and Chat.InRange( ply, p, Chat.AREA ) ) then
+			Chat.Tell( p, color, text )
+			table.insert( out, p )
+		end
+	end
+	return out
 end
 
 local function tellStaff( color, text )

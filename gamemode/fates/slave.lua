@@ -20,6 +20,12 @@ Fates.Define( "slave", {
 	ChatSounds = { "npc/headcrab_poison/ph_talk1.wav", "npc/headcrab_poison/ph_talk2.wav", "npc/headcrab_poison/ph_talk3.wav" }, -- not the prole's
 	Cost = 0,
 	ForNewPlayers = true,
+	PainSounds = {}, -- not the prole's: the plain grunts
+	DeathSounds = { "npc/zombie_poison/pz_warn1.wav", "npc/zombie_poison/pz_warn2.wav" },
+	IntroTexts = {
+		{ Color( 200, 200, 0 ), "You are new slave of Gangrene. Survive the day, or earn a free citizen's word, to be freed.\nBe cautious to not give a bad first impression.\nThis world offers great freedom to its occupants, but you must first earn it as a slave." },
+		{ Color( 100, 100, 100 ), "Your barcode reads %name." },
+	},
 	Marker = "Newcomer", -- drawn over their head for everyone (cl_round.lua); the Fate field is public
 	Names = function( ply ) return NOUN[ math.random( #NOUN ) ] .. " #" .. barcode( ply ) end,
 	Appearance = function()
