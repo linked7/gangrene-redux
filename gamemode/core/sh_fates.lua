@@ -147,17 +147,22 @@ local function callHook( f, name, ... )
 	if not ok then Log.Error( "fates", "%s.%s: %s", f.id, name, err ) end
 end
 
--- Speed = config x the fate's SpeedMulti x every factor in Fates.SpeedMods (needs weakness, a
--- carried crate). Nothing else sets speed: a system that slows players adds a mod and calls
--- Fates.ApplySpeed( ply ) when its factor changes.
+-- Speed = config x the fate's SpeedMulti x every factor in Fates.SpeedMods (step 5). A mod is
+-- function( ply ) -> factor, walkOnly; walkOnly caps run speed at walk speed (a carried crate).
+-- Nothing else sets speed: a system adds a mod and calls Fates.ApplySpeed( ply ) when it changes.
 Fates.SpeedMods = Fates.SpeedMods or {}
 
 function Fates.ApplySpeed( ply, f )
 	f = f or ply:GetFateDef()
 	local speed = f and f.SpeedMulti or 1
-	for _, mod in pairs( Fates.SpeedMods ) do speed = speed * ( mod( ply ) or 1 ) end
+	local walkOnly = false
+	for _, mod in pairs( Fates.SpeedMods ) do
+		local factor, walk = mod( ply )
+		speed = speed * ( factor or 1 )
+		walkOnly = walkOnly or walk == true
+	end
 	ply:SetWalkSpeed( Config.WalkSpeed * speed )
-	ply:SetRunSpeed( Config.RunSpeed * speed )
+	ply:SetRunSpeed( ( walkOnly and Config.WalkSpeed or Config.RunSpeed ) * speed )
 end
 
 -- Physical setup shared by every fate; ghosts float, pass through everything and can't be hurt.

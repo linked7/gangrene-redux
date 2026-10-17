@@ -34,6 +34,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | Knocked out isn't death: wounded get back up `Injured`; only dying (severe) bleed out to ghost | `accepted → Step 7`, `Step 11.2` | 2026-10-17 |
 | Kaiser has no rank gate for now | `accepted → Step 11.4`, `Step 13` | 2026-10-17 |
 | Hunger/thirst never damage: progressive weakness, full thirst raises Pox, no revive at full hunger | `accepted → Step 6`, `Step 7`, `Step 5` (speed) | 2026-10-17 |
+| Crates as a real physical thing | `accepted → Step 11.1`, `Step 5` (speed) | 2026-10-17 |
 
 ## Decisions log
 
@@ -54,5 +55,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Kaiser rank gate | Removed for now. Kaiser needs no rank, only stem cells and the free slot. Rank gates on fates are an open decision. | User: "don't limit access just yet"; will choose gates later. |
 | 2026-10-17 | Downed states | HP 0 downs the player. `wounded` (hit less than 30 past 0 HP): gets up after 45 s at 25 HP with `Injured` (max HP 50) until a korpsman treats it. `dying` (30 or more past 0 HP, or hit again while down): bleeds out over 120 s to a ghost unless revived, and the downer is judged then. Finish off is an explicit ~3 s action. Revive clears `Injured`. | User: being knocked out shouldn't kill you; only severe wounds without treatment do. Keeps korpsmen essential without making every fall a death. |
 | 2026-10-17 | Hunger and thirst effects (replaces "at 100 drains HP") | No direct damage. Weakness from 50 to 100 (higher of the two): speed ×0.7, damage dealt ×0.6, consciousness regen ×0.25 at worst. Dryness 100: Pox slowly rises (+1 per 10 s). Downed at Emptiness 100: no revive. Despair at 100 is the only need that kills outright. Pox can lower max HP to a floor of 5, never below. | User's choice. Also ends the wounded/starving loop Rewrite found. |
+| 2026-10-17 | Rewrite's implementation choices | One speed function: config × `SpeedMulti` × registered modifiers. Suicide is disabled, and the despair heart attack stays an outright death. A second attacker who makes a wounded body dying is the one judged. Crate carrying is being reshaped (see Open). | User's choices. |
+| 2026-10-17 | Crate carrying (replaces the ×0.6 carry slowdown) | A ~30 kg physics prop carried with GMod +use pickup. Hands full (weapon holstered), walk only (one speed modifier), drops when the carrier is hit, downed or jumps, and can be pushed along the ground. | User: crates should be a real physical thing. Physics does the work and it creates moments for theft. |
 | 2026-10-17 | War | Dropped. The nations stay as lore and possible races. Rot/Doom stay deferred. | The user wants several simple pressures instead of a war. |
 | 2026-10-17 | Fates kept | Kaiser, Sanitar, Prole, Korpsman, plus Slave; Ghost as the dead/lobby state | User's choice |

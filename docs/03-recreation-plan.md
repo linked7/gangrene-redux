@@ -129,7 +129,7 @@
   - Use the lore names in code. Don't use the old `liverman`, `arrhythmian` or `kidneystani` IDs.
 - **Name validation:** one shared `ValidateName` with a correct character whitelist (B12). Only needed if players get to name themselves.
 - **Pace and atmosphere:** the remake should feel darker and slower than the original.
-  - Walk and run speeds come from one config table (slower than GMod defaults; start at walk 130, run 200). Speed = config × the fate's `SpeedMulti` × the needs weakness (step 6). Nothing else sets speed.
+  - Walk and run speeds come from one config table (slower than GMod defaults; start at walk 130, run 200). Speed comes from **one function**: config × the fate's `SpeedMulti` × registered modifiers (the needs weakness from step 6, and walk-only while carrying a crate from step 11.1). Nothing else sets speed.
   - One client file, `cl_atmosphere.lua`, applies a desaturated colour correction and fog. It is presentation only and has no gameplay state.
 - **Done when:** a fate change shows the right model on every client with no flicker. Test with 2 clients and lag simulated with `net_fakelag`. Movement uses the configured speeds, and the atmosphere is visible on every client.
 
@@ -169,7 +169,8 @@
   - The server sets a SERVER field `DownState` from the hit that downed them:
     - **`wounded`** (the normal case): the hit went less than `lethal_overkill` (default 30) past 0 HP.
     - **`dying`**: the hit went `lethal_overkill` or more past 0 HP. Any damage to a body that is already wounded also makes it dying.
-  - The player who downed them is remembered (SERVER field) for judging later.
+  - The player who downed them is remembered (SERVER field) for judging later. If a second attacker turns a wounded body into a dying one, the second attacker replaces them, since they made the wound lethal.
+  - **No suicide:** `CanPlayerSuicide` returns false for everyone. The despair heart attack (step 6) is still an outright death, not a downed state.
 - **Corpse registry:** add on create, remove on `EntityRemoved` (P2). Decomposition beyond "despawn after N minutes" is deferred.
 - **Leaving the downed state:**
   - **Get back up (wounded only):** after `wake_time` (default 45 s) the player gets up on their own as the same fate, with 25 HP and the **`Injured`** condition.
@@ -274,7 +275,11 @@ Build them in this order, so each one has something to act on.
      - Using a `ration_press` work station is a timed action (rule 6, about 30 s). When it finishes, a physical **ration crate** entity (`ent_crate`, kind `ration` or `clean_water`) appears next to the station.
      - Each crate carries a SERVER-only `MadeBy` stamp (the maker's SteamID).
      - Each station allows at most 3 crates waiting in the world, so the map can't fill with entities.
-     - Crates are carried by hand (physics pickup). Carrying one slows the carrier.
+     - **Crates are heavy physical objects.** A crate is a real prop of about 30 kg, just under GMod's player pickup limit, carried with GMod's own physics pickup (+use). It stays a physics object while carried: it bumps doorframes and swings on stairs.
+       - **Both hands are full:** the carrier's weapon is holstered while they carry.
+       - **Walk only:** a carrier can't run. This is one modifier in the step 5 speed function, which caps run speed at walk speed. There is no other slowdown multiplier.
+       - **It drops** where it is when the carrier takes damage, is downed or jumps. Anyone can then pick it up.
+       - It can also be pushed along the ground without lifting it: slow and noisy, but possible for a weak or starving player.
      - Touching a crate to the `state_stockpile` delivers it: the crate is removed, the count goes up, and the **deliverer** is paid that good's buy price (step 9). So crates left lying around are worth stealing.
      - A crate can also be opened on the spot, which gives its contents to the person who opened it.
      - Delivering or opening a crate someone else made goes through `Crime.Report(ply, "theft", …)` (step 10).

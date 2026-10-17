@@ -96,16 +96,29 @@ return function( T )
 	T.Check( crate:GetPos():Distance( press:GetPos() ) < 120, "beside the press" )
 	T.Equal( Crates.Waiting( press ), 1, "one crate waiting" )
 
-	-- Carrying slows ----------------------------------------------------------------------------------
+	-- Carrying: walk only, hands full, drops on a hit or a jump ------------------------------------------
 
 	local walk, run = p1:GetWalkSpeed(), p1:GetRunSpeed()
 	T.Equal( Crates.HeldBy( p1 ), nil, "not carrying yet" )
 	Crates.Hold( p1, crate )
 	T.Equal( Crates.HeldBy( p1 ), crate, "HeldBy names the carried crate" )
-	T.Check( p1:GetWalkSpeed() < walk and p1:GetRunSpeed() < run, "carrying a crate slows the carrier" )
+	T.Equal( p1:GetWalkSpeed(), walk, "carrying doesn't slow walking" )
+	T.Equal( p1:GetRunSpeed(), walk, "but the carrier can't run" )
+	T.Check( not IsValid( p1:GetActiveWeapon() ), "the weapon is holstered" )
+	T.Check( hook.Run( "PlayerSwitchWeapon", p1, NULL, NULL ) == true, "and can't be drawn while carrying" )
 	Crates.Release( p1 )
 	T.Equal( Crates.HeldBy( p1 ), nil, "let go" )
 	T.Check( p1:GetWalkSpeed() == walk and p1:GetRunSpeed() == run, "full speed again" )
+	T.Check( hook.Run( "PlayerSwitchWeapon", p1, NULL, NULL ) ~= true, "hands free again" )
+
+	Crates.Hold( p1, crate )
+	local d = DamageInfo() d:SetDamage( 1 ) d:SetDamageType( DMG_CLUB ) d:SetAttacker( p2 ) d:SetInflictor( p2 )
+	p1:TakeDamageInfo( d )
+	T.Equal( Crates.HeldBy( p1 ), nil, "a hit makes the carrier drop it" )
+	Crates.Hold( p1, crate )
+	hook.Run( "KeyPress", p1, IN_JUMP )
+	T.Equal( Crates.HeldBy( p1 ), nil, "so does jumping" )
+	p1:SetHealth( p1:GetMaxHealth() )
 
 	-- Deliver -----------------------------------------------------------------------------------------
 

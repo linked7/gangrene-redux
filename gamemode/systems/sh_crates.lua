@@ -2,7 +2,9 @@
 --
 --   ration_press   working it is a timed action; when it ends an ent_crate of the press's good
 --                  appears beside it. At most Crates.PER_STATION crates per press wait in the world.
---   ent_crate      carried by hand (physics pickup), which slows the carrier. Touching it to a
+--   ent_crate      a ~30 kg prop carried with GMod's own +use pickup. The carrier's weapon is
+--                  holstered and they can only walk; the crate drops where it is when they are hit,
+--                  go down or jump, and it can be pushed along the ground. Touching it to a
 --                  state_stockpile delivers it (Econ.Deliver pays the deliverer the buy price);
 --                  opening it puts its contents in the opener's inventory. Either one, done to a
 --                  crate someone else made, is reported as theft (Crime.Report).
@@ -20,7 +22,6 @@ Crates = Crates or {}
 Crates.PRESS_TIME = 30     -- seconds of work per crate
 Crates.PER_STATION = 3     -- crates a press may have waiting in the world
 Crates.CONTENTS = 2        -- items in an opened crate
-Crates.CARRY_SPEED = 0.6   -- walk and run speed while carrying a crate
 Crates.PRY_TIME = 60
 Crates.PRY_RANGE = 150
 Crates.PRY_LOOT = 3        -- rations a finished pry drops
@@ -54,7 +55,8 @@ Interact.Add( "stockpile_pry", {
 
 if CLIENT then return end
 
-Fates.SpeedMods.crate = function( ply ) return IsValid( ply.GR_HeldCrate ) and Crates.CARRY_SPEED or 1 end
+-- Walk only while carrying: no slowdown multiplier, just no running (step 5).
+Fates.SpeedMods.crate = function( ply ) return 1, IsValid( ply.GR_HeldCrate ) end
 
 -- Registry: press -> { crate = true }, so the cap never searches the world (P2).
 local waiting = setmetatable( {}, { __mode = "k" } )
@@ -92,12 +94,15 @@ function Crates.HeldBy( ply )
 	return nil
 end
 
--- `ply` now carries `crate`: slower until they let go.
+-- `ply` now carries `crate`: both hands full (weapon holstered) and walking until they let go.
 function Crates.Hold( ply, crate )
 	if Crates.HeldBy( ply ) == crate then return end
 	Crates.Release( ply )
 	crate.GR_Holder = ply
 	ply.GR_HeldCrate = crate
+	local wep = ply:GetActiveWeapon()
+	ply.GR_Holstered = IsValid( wep ) and wep:GetClass() or nil
+	ply:SetActiveWeapon( NULL )
 	Fates.ApplySpeed( ply )
 end
 
@@ -110,7 +115,19 @@ function Crates.Release( ply, keepSpeed )
 		crate.GR_LastHolder = ply
 		crate.GR_LetGoAt = CurTime()
 	end
-	if not keepSpeed then Fates.ApplySpeed( ply ) end
+	local holstered = ply.GR_Holstered
+	ply.GR_Holstered = nil
+	if keepSpeed then return end -- a new life set up its own body
+	Fates.ApplySpeed( ply )
+	if holstered and ply:Alive() and ply:HasWeapon( holstered ) then ply:SelectWeapon( holstered ) end
+end
+
+-- Let go of the physics object too, so it falls where it is; Release follows from the drop hook.
+function Crates.Drop( ply )
+	local crate = Crates.HeldBy( ply )
+	if not crate then return end
+	ply:DropObject()
+	Crates.Release( ply )
 end
 
 hook.Add( "OnPlayerPhysicsPickup", "gr_crates", function( ply, ent )
@@ -120,7 +137,12 @@ hook.Add( "OnPlayerPhysicsDrop", "gr_crates", function( ply, ent )
 	if ply.GR_HeldCrate == ent then Crates.Release( ply ) end
 end )
 hook.Add( "GR_FateEnter", "gr_crates", function( ply ) Crates.Release( ply, true ) end )
-hook.Add( "PlayerDeath", "gr_crates", function( ply ) Crates.Release( ply ) end )
+hook.Add( "PlayerDeath", "gr_crates", function( ply ) Crates.Drop( ply ) end )
+-- Hands are full: no drawing a weapon while carrying.
+hook.Add( "PlayerSwitchWeapon", "gr_crates", function( ply ) if Crates.HeldBy( ply ) then return true end end )
+hook.Add( "KeyPress", "gr_crates", function( ply, key ) if key == IN_JUMP then Crates.Drop( ply ) end end )
+-- Any hit makes the carrier drop it (a Damage stage, since the pipeline swallows the hit).
+Damage.Add( "Scale", "crate_drop", function( ply ) Crates.Drop( ply ) end )
 
 -- Who a touch at the stockpile counts for: the carrier, or whoever let go of it just now.
 function Crates.Deliverer( crate )
