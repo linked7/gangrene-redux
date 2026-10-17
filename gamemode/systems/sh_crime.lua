@@ -84,6 +84,10 @@ end
 -- A harsher level replaces the reason; time only ever extends.
 function Crime.MakeWanted( ply, level, duration, reason )
 	local now = CurTime()
+	-- One episode runs from becoming wanted until it clears, and remembers every crime in it
+	-- (a bounty is paid once per episode, step 11.3).
+	if not ply:IsWanted() or not ply.GR_WantedEpisode then ply.GR_WantedEpisode = { crimes = {} } end
+	ply.GR_WantedEpisode.crimes[ reason ] = true
 	if level >= ply:GetWanted() then ply:SetWantedReason( reason ) end
 	ply:SetWantedUntil( math.max( now + duration, ply:IsWanted() and ply:GetWantedUntil() or 0 ) )
 	ply:SetWanted( math.max( level, ply:GetWanted() ) )
@@ -98,6 +102,7 @@ function Crime.ClearWanted( ply )
 	ply:SetWantedUntil( 0 )
 	ply:SetWantedReason( "" )
 	ply.GR_WantedCheckedAt = nil
+	ply.GR_WantedEpisode = nil
 end
 
 -- Evidence ----------------------------------------------------------------------------------

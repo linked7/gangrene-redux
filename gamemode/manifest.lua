@@ -52,5 +52,6 @@ return {
 		"sh_crime.lua",
 		"sh_interact.lua",
 		"sh_medicine.lua",
+		"sh_police.lua",
 	},
 }
