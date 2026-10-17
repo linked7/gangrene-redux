@@ -18,8 +18,11 @@ Build.KINDS = {
 		name = "Water barrel", cost = 15, class = "water_barrel", stand = true,
 		cap = 8, count = function() return Lunch.BarrelCount() end,
 	},
+	-- The original's proletariatConstructs: proles only (FateHas "Proletariat"). It cost 8 metal,
+	-- 4 mech and 4 tech there; Redux has no materials, so it costs bones.
+	munitionizer = { name = "Munitionizer", cost = 60, class = "munitionizer", stand = true, need = "Proletariat" },
 }
-Build.ORDER = { "storage_crate", "water_barrel" }
+Build.ORDER = { "storage_crate", "water_barrel", "munitionizer" }
 Build.RANGE = 150 -- from the builder's eyes to the spot
 
 -- Built entities network their builder's key as the "BuiltBy" string. Clients only ever ask about
@@ -65,6 +68,7 @@ if CLIENT then
 		local sub = menu:AddSubMenu( "Build" )
 		for _, kind in ipairs( Build.ORDER ) do
 			local k = Build.KINDS[ kind ]
+			if k.need and not ply:FateHas( k.need ) then continue end
 			sub:AddOption( string.format( "%s (%d bones)", k.name, k.cost ), function() send( kind, tr.HitPos ) end )
 		end
 		menu:Open( ScrW() / 2, ScrH() / 2 )
@@ -100,6 +104,7 @@ function Build.Place( ply, kind, pos )
 	-- The spot must be in sight: nothing between the builder's eyes and it.
 	local tr = util.TraceLine( { start = ply:EyePos(), endpos = pos, filter = ply, mask = MASK_SOLID } )
 	if tr.HitPos:DistToSqr( pos ) > 16 * 16 then return refuse( "You can't reach there." ) end
+	if k.need and not ply:FateHas( k.need ) then return refuse( "You don't know how to build that." ) end
 	if k.cap and k.count() >= k.cap then
 		return refuse( string.format( "There are already %d %ss.", k.cap, string.lower( k.name ) ) )
 	end
@@ -111,6 +116,7 @@ function Build.Place( ply, kind, pos )
 	ent:SetPos( pos + Vector( 0, 0, 2 ) )
 	ent:SetAngles( Angle( 0, ply:EyeAngles().y + 180, 0 ) )
 	ent.GR_BuiltBy = DB.Key( ply )
+	ent.GR_Deployer = ply
 	ent:Spawn() -- the entity copies GR_BuiltBy into its networked BuiltBy
 	if k.stand then ent:SetPos( pos + Vector( 0, 0, 2 - ent:OBBMins().z ) ) end
 	built[ ent ] = kind

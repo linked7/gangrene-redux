@@ -37,14 +37,7 @@ Kaiser.FORGIVE_COST = {
 
 function Kaiser.Upgraded( fateId ) return WorldState.Get( "upgrade_" .. fateId, false ) == true end
 
--- The kit. Placeholders: the novoluger is the stock pistol, the book opens the economy panel.
-Items.Define( "novoluger", {
-	Name = "Novoluger",
-	Description = "The Kaiser's own pistol. Polished, loaded, rarely needed.",
-	Weight = 2,
-	Model = "models/weapons/w_pistol.mdl",
-	Weapon = "weapon_gr_pistol",
-} )
+-- The kit: the novoluger (sh_guns.lua) and the book, which opens the economy panel.
 
 Items.Define( "strategy_book", {
 	Name = "Strategy Book",

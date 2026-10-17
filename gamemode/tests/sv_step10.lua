@@ -14,6 +14,7 @@ return function( T )
 	T.Wait( 0.2 )
 	local k = bot( "kaiser", "kaiser", RANK_KAISER, 10 )
 	local s1 = bot( "san1", "sanitar", RANK_FRIEND, 10 )
+	s1:SetTeeth( 0 ) -- the sanitar's starting tooth (sh_guns.lua) aside
 	local s2 = bot( "san2", "sanitar", RANK_FRIEND, 10 )
 	local p1 = bot( "prole1", "prole", RANK_FRIEND, 10 )
 	local p2 = bot( "prole2", "prole", RANK_FRIEND, 10 )

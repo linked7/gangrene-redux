@@ -77,6 +77,10 @@ end
 hook.Add( "GR_FateEnter", "gr_kit", function( ply, f, reason )
 	if Fates.SameLife( reason ) or not f.Kit then return end
 	for _, id in ipairs( Kit.Roll( f.Kit ) ) do
-		if not Inventory.Add( ply, id, 1, true ) then Log.Warn( "kit", "%s: could not give %s", f.id, tostring( id ) ) end
+		if not Inventory.Add( ply, id, 1, true ) then
+			Log.Warn( "kit", "%s: could not give %s", f.id, tostring( id ) )
+		elseif f.KitAmmo and Items.Get( id ).Weapon then
+			Guns.GiveAmmo( ply, Items.Get( id ).Weapon, f.KitAmmo ) -- KitAmmo clips of reserve per gun
+		end
 	end
 end )

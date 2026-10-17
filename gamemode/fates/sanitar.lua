@@ -35,4 +35,5 @@ Fates.Define( "sanitar", {
 	Names = function() return NOUNS[ math.random( #NOUNS ) ] .. " #" .. math.random( 11, 99 ) end,
 	Appearance = { model = "models/player/police.mdl", race = "gangral" },
 	Kit = { "baton", "scope" }, -- sh_kit.lua; a revived sanitar gets the body's own kit back instead
+	StartTeeth = 1,             -- the original sanitator's one tooth; guns come from the station (sh_guns.lua)
 } )
