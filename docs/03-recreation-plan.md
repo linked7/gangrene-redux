@@ -495,6 +495,7 @@ Build them in this order, so each one has something to act on.
   - Admin ranks are separate from the game's ranks.
 - **Rounds:** the round is the unit of play. Keep it simpler than the original, which only ended a round through Doom.
   - `Round.Start` happens on map load. It seeds the treasury with `bones_supply`, sets the prices to their defaults and empties the stockpile (step 9). Everyone starts the round with 0 bones.
+  - The round timer, and every timed round-flow event below (the 10 min marks too), starts when the first Kaiser spawns, not on map load. Before that the clock shows "Awaiting Kaiser".
   - `Round.End(reason)` fires when the round timer (`round_length`, default 60 min) runs out or an admin ends it. It frees surviving slaves, flushes the DB, shows an end screen, then changes level.
   - **Round flow:**
     - At 10 min every `fate_station` is removed. Ghosts after that can only join as migrants.

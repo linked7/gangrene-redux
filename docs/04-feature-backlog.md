@@ -16,6 +16,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
+| Round timer starts on first Kaiser spawn | `accepted` | Step 13. |
 | Workplace accidents (from the original's machines: operator error, misuse, rust, haunting, waste spills) | `idea` | Raised 2026-10-17 by the analysis session. Proposed slice: rust plus accidents on the ration press, sanitar upkeep that pays bones. Haunting waits for ghost Suffering (Deferred 4), and the factory cards wait for the foreman (Deferred 7). Their suggestion that slaves be immune conflicts with Slave parity. Original refs: entities/entities/machine_*.lua, machine_gears.lua:681. |
 | Rank gates on fates (who may take Kaiser etc.) | `idea` | Raised 2026-10-17. User will choose later; for now no gate above Friend. |
 
@@ -115,3 +116,4 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | In-world fate pick | Konsole stamps migrants as Proles, no fate list; Kaiser "Recruit as Korpsman" like sanitar recruiting. | User asked. |
 | 2026-10-17 | Immigration konsole | New `konsole_immigration` at the Gate Antechamber is the papers → passport point; none existed in the original. | User asked. |
 | 2026-10-17 | Rocket turret | Re-added as an optimized port: throttled search, cached client trace, single sound. | User asked; cheap hazard that respects permits. |
+| 2026-10-17 | Round timer start | Timer and 10 min marks count from the first Kaiser spawn, not map load. | User asked. |
