@@ -2,6 +2,7 @@
 -- prole opens it for 3 bottles; a sealed barrel can be smashed; spirit cures pox without touching
 -- despair; bottles sell at the stockpile for the buy price; beer and spirits aren't seeded.
 return function( T )
+	local function items() local t = {} for _, e in ipairs( ents.GetAll() ) do if e:GetClass() == "gr_item" then t[ #t + 1 ] = e end end return t end
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:tbrew_%'" )
 	Econ.ResetRound()
 	T.Equal( Econ.Stock( "fear_beer" ), 0, "beer is not seeded" )
@@ -54,11 +55,11 @@ return function( T )
 	T.Check( not Brew.Open( p, barrel ), "a brewing barrel can't be opened" )
 	T.WaitUntil( function() return barrel:GetState() == Brew.DONE end, 3, "the barrel finishes" )
 	T.Check( not Brew.Open( s, barrel ), "only a prole opens it" )
-	local before = #ents.FindByClass( "gr_item" )
+	local before = #items()
 	Interact.Run( p, "brew_open", barrel )
-	T.WaitUntil( function() return #ents.FindByClass( "gr_item" ) - before >= 3 end, 5, "3 bottles fall out" )
+	T.WaitUntil( function() return #items() - before >= 3 end, 5, "3 bottles fall out" )
 	local n = 0
-	for _, e in ipairs( ents.FindByClass( "gr_item" ) ) do
+	for _, e in ipairs( items() ) do
 		if e:GetItemId() == "spirits" then n = n + 1 end
 	end
 	T.Equal( n, 3, "they are spirits" )
@@ -86,6 +87,6 @@ return function( T )
 	port:Remove()
 
 	barrel:Remove()
-	for _, e in ipairs( ents.FindByClass( "gr_item" ) ) do e:Remove() end
+	for _, e in ipairs( items() ) do e:Remove() end
 	p:Kick( "done" ) s:Kick( "done" )
 end
