@@ -210,7 +210,11 @@ local DOORS = { func_door = true, func_door_rotating = true, prop_door_rotating 
 
 -- Fills `ct` for what the player is looking at; false when there is nothing to read.
 local function build( ply, ent, ct )
-	if ent:IsPlayer() then return playerTexts( ent, ply, ct ) end
+	if ent:IsPlayer() then
+		if playerTexts( ent, ply, ct ) == false then return false end
+		hook.Run( "GR_CrossTexts", ent, ply, ct ) -- gun permits (sh_gunpermit.lua)
+		return true
+	end
 	local b = HUD.Corpse( ent )
 	if b then return corpseTexts( b, ply, ct, ent ) end
 	local class = ent:GetClass()
