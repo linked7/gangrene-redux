@@ -58,6 +58,17 @@ return function( T )
 	T.Equal( buyer:GetBones(), bones, "sold out: no bones taken" )
 	T.Equal( items( "knife" ), 0, "and no knife" )
 
+	local function listed( id )
+		for _, e in ipairs( Shop.Listed() ) do if e.id == id then return true end end
+		return false
+	end
+	T.Check( not listed( "knife" ), "a sold-out knife is left off the menu" )
+	WorldState.Set( "stock.ration", Econ.Setting( "reserve.ration" ) )
+	T.Check( not listed( "ration" ), "rations held at the reserve are left off the menu" )
+	WorldState.Set( "stock.ration", Econ.Setting( "reserve.ration" ) + 1 )
+	T.Check( listed( "ration" ), "and listed again once there is one to sell" )
+	T.Check( listed( "fear_beer" ), "stocked beer is listed" )
+
 	T.Wait( 1.1 )
 	WorldState.Set( "stock.knife", 5 )
 	for _ = 1, 8 do send( "knife" ) end
