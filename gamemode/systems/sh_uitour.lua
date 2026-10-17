@@ -9,29 +9,80 @@ if SERVER then
 	local enabled = CreateConVar( "gr_uitour", "0", FCVAR_ARCHIVE, "Walk joining clients through the UI and screenshot it" )
 	cvars.AddChangeCallback( "gr_uitour", function( _, _, v ) print( "[gr:uitour] gr_uitour is " .. v ) end, "gr_uitour" )
 
-	-- Stands `ply` 70 units in front of the nearest `class` and looks at `aim` on it (its centre).
-	local function faceNearest( ply, class, aim )
+	-- Stands `ply` `dist` units in front of the nearest `class` and looks at `aim` on it (its centre).
+	-- With `spawn`, a class the map lacks is made in front of the player first (frozen, so it stays put).
+	local function faceNearest( ply, class, aim, spawn, dist )
 		local best, bestD
 		for _, ent in ents.Iterator() do -- one-off, dev tool only
 			local d = ent:GetClass() == class and ent:GetPos():DistToSqr( ply:GetPos() )
 			if d and ( not bestD or d < bestD ) then best, bestD = ent, d end
+		end
+		local clearDir, spawned
+		if not IsValid( best ) and spawn then
+			-- Put it in open floor: the first of eight directions with room for the player hull and the entity.
+			local origin = ply:GetPos()
+			local mins, maxs = ply:GetHullDuck()
+			for i = 0, 7 do
+				local dir = Angle( 0, i * 45, 0 ):Forward()
+				local tr = util.TraceHull( { start = origin + Vector( 0, 0, 4 ), endpos = origin + dir * 200 + Vector( 0, 0, 4 ),
+					mins = mins, maxs = maxs, filter = ply } )
+				if not tr.Hit and not tr.StartSolid then clearDir = dir break end
+			end
+			clearDir = clearDir or ply:GetForward()
+			local e = ents.Create( class )
+			if IsValid( e ) then
+				e:SetPos( origin + clearDir * 80 + Vector( 0, 0, 4 ) ) -- close enough to be lit and in frame
+				e:SetAngles( Angle( 0, clearDir:Angle().y + 180, 0 ) ) -- its front faces the player
+				e:Spawn()
+				e:Activate()
+				local phys = e:GetPhysicsObject()
+				if IsValid( phys ) then phys:EnableMotion( false ) end
+				best = e
+				spawned = origin
+				ply:Flashlight( true ) -- spawned props sit in unlit floor; the torch and a short-lived lamp light the shot
+				local lamp = ents.Create( "light_dynamic" )
+				if IsValid( lamp ) then
+					lamp:SetKeyValue( "_light", "255 240 220 400" )
+					lamp:SetKeyValue( "distance", "300" )
+					lamp:SetKeyValue( "brightness", "4" )
+					lamp:SetPos( origin + clearDir * 40 + Vector( 0, 0, 70 ) )
+					lamp:Spawn()
+					lamp:Fire( "TurnOn" )
+					SafeRemoveEntityDelayed( lamp, 8 )
+				end
+				print( "[gr:uitour] spawned a " .. class )
+			end
 		end
 		if not IsValid( best ) then
 			print( "[gr:uitour] no " .. class .. " on this map" )
 			return
 		end
 		local target = aim and aim( best ) or best:WorldSpaceCenter()
-		local spot = best:GetPos() + best:GetForward() * 70
-		spot.z = best:GetPos().z
-		ply:SetPos( spot )
+		if spawned then
+			ply:SetPos( spawned )
+		else
+			local spot = best:GetPos() + best:GetForward() * ( dist or 70 )
+			spot.z = best:GetPos().z
+			ply:SetPos( spot )
+		end
 		ply:SetEyeAngles( ( target - ply:EyePos() ):Angle() )
 	end
 
-	local AIM = {
-		lunch_machine = function( m ) return m:LocalToWorld( Vector( 13, 4, 18 ) ) end, -- the button row
-		line_boiler = function( b ) return Lunch.HandlePos( b, "vent" ) end,
+	-- name -> { class, aim, spawn, dist }
+	local function centre( e ) return e:LocalToWorld( e:OBBCenter() ) end
+	local TARGET = {
+		fate_station = { "fate_station" },
+		lunch_machine = { "lunch_machine", function( m ) return m:LocalToWorld( Vector( 13, 4, 18 ) ) end }, -- the button row
+		lunch_machine_far = { "lunch_machine", centre, false, 140 },
+		line_boiler = { "line_boiler", function( b ) return Lunch.HandlePos( b, "vent" ) end },
+		boiler_build = { "line_boiler", function( b ) return Lunch.HandlePos( b, "build" ) end },
+		boiler_dial = { "line_boiler", centre, false, 110 },
+		state_stockpile = { "state_stockpile", centre, true },
+		water_barrel = { "water_barrel", centre, true },
+		bone_capsule = { "bone_capsule", centre, true },
+		meat_chunk = { "meat_chunk", centre, true },
+		storage_crate = { "storage_crate", centre, true },
 	}
-	local FACE = { fate_station = true, lunch_machine = true, line_boiler = true, state_stockpile = true }
 
 	hook.Add( "GR_PlayerReady", "gr_uitour", function( ply )
 		if not enabled:GetBool() or ply:IsBot() then return end
@@ -40,7 +91,8 @@ if SERVER then
 
 	concommand.Add( "gr_uitour_face", function( ply, _, args )
 		local class = args[ 1 ] or "fate_station"
-		if IsValid( ply ) and enabled:GetBool() and FACE[ class ] then faceNearest( ply, class, AIM[ class ] ) end
+		local t = TARGET[ class ]
+		if IsValid( ply ) and enabled:GetBool() and t then faceNearest( ply, t[ 1 ], t[ 2 ], t[ 3 ], t[ 4 ] ) end
 	end )
 
 	-- One of the remake's weapons, in hand and holstered.
@@ -89,6 +141,17 @@ local steps = {
 	end },
 	{ "08_boiler", function() RunConsoleCommand( "gr_uitour_face", "line_boiler" ) end },
 	{ "09_stockpile_lock", function() RunConsoleCommand( "gr_uitour_face", "state_stockpile" ) end },
+	{ "09b_boiler_black_wheel", function() RunConsoleCommand( "gr_uitour_face", "boiler_build" ) end },
+	{ "09c_boiler_dial", function() RunConsoleCommand( "gr_uitour_face", "boiler_dial" ) end },
+	{ "09d_boiler_red_wheel_turning", function()
+		RunConsoleCommand( "gr_uitour_face", "line_boiler" )
+		timer.Simple( 0.5, function() press( "use", 3 ) end )
+	end, 2 },
+	{ "09e_lunch_machine_far", function() RunConsoleCommand( "gr_uitour_face", "lunch_machine_far" ) end },
+	{ "09f_water_barrel", function() RunConsoleCommand( "gr_uitour_face", "water_barrel" ) end },
+	{ "09g_bone_capsule", function() RunConsoleCommand( "gr_uitour_face", "bone_capsule" ) end },
+	{ "09h_meat_chunk", function() RunConsoleCommand( "gr_uitour_face", "meat_chunk" ) end },
+	{ "09i_storage_crate", function() RunConsoleCommand( "gr_uitour_face", "storage_crate" ) end },
 	{ "10_hands_drawn", function() RunConsoleCommand( "rp_toggleholster" ) end },
 	{ "11_hands_swing", function() press( "attack", 0.1 ) end, 0.4 },
 	{ "12_hands_holstered", function() RunConsoleCommand( "rp_toggleholster" ) end },
