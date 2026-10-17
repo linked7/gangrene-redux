@@ -90,8 +90,10 @@ hook.Add( "OnContextMenuOpen", "gr_interact", function()
 			menu:AddOption( label, function() send( d ) end )
 		end
 	end
-	-- At the cursor, painted by the CombineControl skin (cl_skin.lua), as the original's menus.
-	menu:Open( gui.MousePos() )
+	-- At the screen centre with the cursor put there too, painted by the CombineControl skin (cl_skin.lua).
+	local cx, cy = ScrW() / 2, ScrH() / 2
+	input.SetCursorPos( cx, cy )
+	menu:Open( cx, cy )
 end )
 
 hook.Add( "OnContextMenuClose", "gr_interact", function()
