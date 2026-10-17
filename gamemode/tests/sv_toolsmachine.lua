@@ -79,7 +79,8 @@ return function( T )
 	local wrong = find( false )
 	if wrong then
 		T.Equal( ToolsMachine.Press( w, m, wrong ), false, "a wrong button builds nothing" )
-		T.Check( w:Health() < hp, "and shocks" )
+		T.Wait( 1.2 )
+		T.Check( w:Health() < hp, "and shocks a second later" )
 	end
 	w:SetHealth( w:GetMaxHealth() )
 	local bones = w:GetBones()

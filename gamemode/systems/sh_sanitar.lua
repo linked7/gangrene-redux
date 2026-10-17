@@ -59,7 +59,7 @@ end )
 
 -- Only a sanitar's bullets clean; each hit costs the bullet that made it.
 hook.Add( "EntityTakeDamage", "gr_sanitar", function( ent, dmg )
-	if not IsValid( ent ) or ent:GetClass() ~= "lunch_machine" then return end
+	if not IsValid( ent ) or ( ent:GetClass() ~= "lunch_machine" and ent:GetClass() ~= "machine_tools" ) then return end
 	if not dmg:IsBulletDamage() or not isSanitar( dmg:GetAttacker() ) then return end
 	addRust( ent, -Sanitar.RUST_PER_SHOT )
 	return true
