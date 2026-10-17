@@ -48,6 +48,14 @@ function Shop.Available( id )
 	local floor = id == "ration" and Econ.Setting( "reserve.ration" ) or 0
 	return math.max( Econ.Stock( id ) - floor, 0 )
 end
+-- The entries the menu shows: anything with nothing to sell is left off.
+function Shop.Listed()
+	local out = {}
+	for _, e in ipairs( Shop.LIST ) do
+		if Shop.Available( e.id ) > 0 then table.insert( out, e ) end
+	end
+	return out
+end
 
 if SERVER then
 	CreateConVar( "shop_stock", "10", FCVAR_ARCHIVE, "Shop goods (beer, spirits, knives) seeded at round start" )
@@ -172,6 +180,7 @@ Net.Receive( "nShopOpen", nil, function()
 	local function show( id )
 		selected = id
 		local def = Items.Get( id )
+		mdl:SetVisible( true )
 		mdl:SetModel( def.Model )
 		local mn, mx = mdl.Entity:GetRenderBounds()
 		local size = math.max( mx:Distance( mn ), 1 )
@@ -181,33 +190,52 @@ Net.Receive( "nShopOpen", nil, function()
 		desc:SetText( def.Description or "" )
 		weight:SetText( "Weight: " .. def.Weight ) weight:SizeToContents()
 	end
+	local listed
+	local function rebuild()
+		pane:Clear()
+		local ids = {}
+		local x, y = 4, 4
+		for _, e in ipairs( Shop.Listed() ) do
+			table.insert( ids, e.id )
+			local def = Items.Get( e.id )
+			local icon = vgui.Create( "SpawnIcon", pane )
+			icon:SetPos( x, y )
+			icon:SetSize( 48, 48 )
+			icon:SetModel( def.Model )
+			icon:SetTooltip( Shop.Name( e.id ) )
+			local col = OUTLINE[ e.kind ]
+			function icon:PaintOver( w, h )
+				surface.SetDrawColor( col ) surface.DrawOutlinedRect( 0, 0, w, h )
+			end
+			function icon:DoClick()
+				surface.PlaySound( "ambient/machines/keyboard" .. math.random( 1, 6 ) .. "_clicks.wav" )
+				show( e.id )
+			end
+			x = x + 52
+			if x + 48 > 396 then x, y = 4, y + 52 end
+		end
+		listed = table.concat( ids, "," )
+		if selected and Shop.Available( selected ) > 0 then return end
+		if ids[ 1 ] then return show( ids[ 1 ] ) end
+		-- Sold out of everything.
+		selected = nil
+		mdl:SetVisible( false )
+		title:SetText( "Nothing in stock." ) title:SizeToContents()
+		for _, l in ipairs( { desc, cost, stock, weight } ) do l:SetText( "" ) end
+	end
+
 	function menu:Think()
 		if not IsValid( ent ) then return self:Remove() end
+		-- Stock is world state, so re-list whenever what's available changes.
+		local now = {}
+		for _, e in ipairs( Shop.Listed() ) do table.insert( now, e.id ) end
+		if table.concat( now, "," ) ~= listed then rebuild() end
 		if not selected then return end
 		cost:SetText( "Costs: " .. Shop.Price( selected ) .. " Bones" ) cost:SizeToContents()
 		stock:SetText( "Available stock: " .. Shop.Available( selected ) ) stock:SizeToContents()
 	end
 
-	local x, y = 4, 4
-	for _, e in ipairs( Shop.LIST ) do
-		local def = Items.Get( e.id )
-		local icon = vgui.Create( "SpawnIcon", pane )
-		icon:SetPos( x, y )
-		icon:SetSize( 48, 48 )
-		icon:SetModel( def.Model )
-		icon:SetTooltip( Shop.Name( e.id ) )
-		local col = OUTLINE[ e.kind ]
-		function icon:PaintOver( w, h )
-			surface.SetDrawColor( col ) surface.DrawOutlinedRect( 0, 0, w, h )
-		end
-		function icon:DoClick()
-			surface.PlaySound( "ambient/machines/keyboard" .. math.random( 1, 6 ) .. "_clicks.wav" )
-			show( e.id )
-		end
-		x = x + 52
-		if x + 48 > 396 then x, y = 4, y + 52 end
-	end
-	show( Shop.LIST[ 1 ].id )
+	rebuild()
 
 	local order = vgui.Create( "DButton", menu )
 	order:SetSize( 100, 20 )
