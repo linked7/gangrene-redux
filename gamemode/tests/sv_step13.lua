@@ -2,6 +2,7 @@
 -- heart attacks, spent without minting bones; Friend -> Kapitan promotion; the round starts on
 -- map load and Round.End never changes level while a test runs.
 return function( T )
+	Config.FateCosts = true -- these checks cover the stem-cell cost, which is off in play for now
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t11e_%'" )
 
 	local function bot( name, rank, stem )

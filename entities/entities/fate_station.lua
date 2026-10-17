@@ -19,6 +19,37 @@ if CLIENT then
 		-- Only the dead see purposes; the living walk past them.
 		if LocalPlayer():IsGhost() then self:DrawModel() end
 	end
+
+	function ENT:Initialize() Fates.Stations[ self ] = true end
+	function ENT:OnRemove() Fates.Stations[ self ] = nil end
+
+	-- Ghost sight: purposes glow through walls, labelled and coloured by their fate.
+	local function fateOf( ent )
+		local f = Fates.Get( ent:GetFateId() )
+		return f, ( f and f.Color ) or color_white
+	end
+
+	hook.Add( "PreDrawHalos", "GR_FateStationGhostSight", function()
+		local lp = LocalPlayer()
+		if not IsValid( lp ) or not lp:IsGhost() then return end
+		for ent in pairs( Fates.Stations ) do if IsValid( ent ) then
+			local _, col = fateOf( ent )
+			halo.Add( { ent }, col, 2, 2, 1, true, true )
+		end end
+	end )
+
+	hook.Add( "HUDPaint", "GR_FateStationGhostSight", function()
+		local lp = LocalPlayer()
+		if not IsValid( lp ) or not lp:IsGhost() then return end
+		for ent in pairs( Fates.Stations ) do if IsValid( ent ) then
+			local f, col = fateOf( ent )
+			local scr = ( ent:GetPos() + Vector( 0, 0, 16 ) ):ToScreen()
+			if scr.visible then
+				draw.SimpleTextOutlined( f and f.Name or ent:GetFateId(), "DermaDefaultBold",
+					scr.x, scr.y, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 1, color_black )
+			end
+		end end
+	end )
 	return
 end
 

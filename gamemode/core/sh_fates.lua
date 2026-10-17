@@ -133,7 +133,7 @@ function Fates.CanTake( ply, id )
 	end
 	if f.MinRank and rank < f.MinRank then return false, "Your rank is too low for this purpose." end
 
-	if ply:GetStemCells() < ( f.Cost or 0 ) then
+	if Config.FateCosts and ply:GetStemCells() < ( f.Cost or 0 ) then
 		return false, string.format( "This purpose costs %d stem cells.", f.Cost )
 	end
 
@@ -172,12 +172,13 @@ function Fates.ApplySpeed( ply, f )
 	ply:SetRunSpeed( ( walkOnly and Config.WalkSpeed or Config.RunSpeed ) * speed )
 end
 
--- Physical setup shared by every fate; ghosts float, pass through everything and can't be hurt.
+-- Physical setup shared by every fate; ghosts walk like the original's (no noclip), but pass
+-- through everything and can't be hurt.
 local function applyBody( ply, f, look )
 	local ghost = f.index == FATE_GHOST
 	ply:SetNoDraw( false )
 	ply:Freeze( false )
-	ply:SetMoveType( ghost and MOVETYPE_NOCLIP or MOVETYPE_WALK )
+	ply:SetMoveType( MOVETYPE_WALK )
 	ply:SetNotSolid( ghost )
 	ply:SetNoTarget( ghost )
 	ply:SetRenderMode( RENDERMODE_TRANSCOLOR )
@@ -256,7 +257,7 @@ function Fates.Take( ply, id )
 		return false, why
 	end
 	local f = byId[ id ]
-	if ( f.Cost or 0 ) > 0 then ply:SetStemCells( ply:GetStemCells() - f.Cost ) end
+	if Config.FateCosts and ( f.Cost or 0 ) > 0 then ply:SetStemCells( ply:GetStemCells() - f.Cost ) end
 	Fates.Apply( ply, id, { reason = "pick" } )
 	return true
 end
@@ -276,12 +277,30 @@ function Fates.AtStation( ply, id )
 	return false
 end
 
+-- Teleports a ghost to a random purpose in life (fate_station) of this fate; returns it or nil.
+function Fates.Envision( ply, id )
+	if not ply:IsGhost() then return end
+	local list = {}
+	for ent in pairs( Fates.Stations ) do
+		if IsValid( ent ) and ent:GetFateId() == id then list[ #list + 1 ] = ent end
+	end
+	local st = list[ math.random( #list ) ]
+	if not st then return end
+	ply:SetPos( st:GetPos() + Vector( 0, 0, 8 ) )
+	ply:SetVelocity( -ply:GetVelocity() )
+	return st
+end
+
 -- The fate menu (cl_fates.lua) asks for a fate by id. It greys out what CanTake refuses, but
 -- nothing the client says is trusted: the receiver only lets ghosts through, the ghost must be
 -- standing at that fate's station, and Take re-checks.
 function Fates.Request( ply, id )
 	if not isstring( id ) then return false, "There is no such purpose." end
 	if Fates.CanTake( ply, id ) and not Fates.AtStation( ply, id ) then
+		-- ENVISION (the original's nTeleportPotentials): carry the ghost to a purpose of that fate;
+		-- they take it there by using it.
+		local st = Fates.Envision( ply, id )
+		if st then return false, "Envisioned: use the purpose in life to take it." end
 		Notify( ply, "Walk to that purpose in life to take it." )
 		return false, "Walk to that purpose in life to take it."
 	end

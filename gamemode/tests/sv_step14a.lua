@@ -3,6 +3,7 @@
 -- ban (refused at connect), unban, set rank, set fate and noclip, with Admin.IsStaff stubbed
 -- because bots are never admins.
 return function( T )
+	Config.FateCosts = true -- these checks cover the stem-cell cost, which is off in play for now
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t14a_%'" )
 	DB.Query( "DELETE FROM bans WHERE steamid LIKE 'bot:t14a_%' OR steamid = '76561190000014001'" )
 

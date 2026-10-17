@@ -5,6 +5,7 @@ local function setup( ply, rank, stem )
 end
 
 return function( T )
+	Config.FateCosts = true -- these checks cover the stem-cell cost, which is off in play for now
 	Config.SlaveGating = true -- these checks cover the gate itself; it is off by default for now
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t4_%'" )
 
@@ -19,7 +20,7 @@ return function( T )
 	local g = player.CreateNextBot( "t4_ghost" )
 	T.Wait( 0.2 )
 	T.Check( g:IsGhost(), "players spawn as ghosts" )
-	T.Equal( g:GetMoveType(), MOVETYPE_NOCLIP, "ghosts float" )
+	T.Equal( g:GetMoveType(), MOVETYPE_WALK, "ghosts walk, as in the original" )
 	T.Check( g:IsSolid() == false, "ghosts are not solid" )
 	local hp = g:Health()
 	g:TakeDamage( 50, game.GetWorld(), game.GetWorld() )
