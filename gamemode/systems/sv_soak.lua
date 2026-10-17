@@ -212,9 +212,20 @@ local function workerAct( bot )
 		end
 		return deliver( bot, crate )
 	end
-	if chance( 0.01 ) and not bot:FateHas( "StockpileAccess" ) and not skipped( "pry" ) then
+	if chance( 0.01 ) and not bot:FateHas( "StockpileAccess" ) and not skipped( "lock" ) then
+		-- A few blows on the stockpile's lock, through the real damage path (sh_locks.lua).
 		goNear( bot, S.stockpile, 80 )
-		if Interact.Run( bot, "stockpile_pry", S.stockpile ) then count( "pry" ) end
+		for _ = 1, math.random( 3, 12 ) do
+			local dmg = DamageInfo()
+			dmg:SetDamage( 10 )
+			dmg:SetDamageType( DMG_CLUB )
+			dmg:SetAttacker( bot )
+			dmg:SetInflictor( bot )
+			local had = S.stockpile:GetIntegrity()
+			S.stockpile:TakeDamageInfo( dmg )
+			if S.stockpile:GetIntegrity() < had then count( "lock_hit" ) end
+			if had > 0 and S.stockpile:GetIntegrity() == 0 then count( "lock_broken" ) end
+		end
 		return
 	end
 	if chance( 0.004 ) and Build.CanBuild( bot ) and not skipped( "build" ) then
@@ -695,7 +706,7 @@ function Soak.Tick()
 end
 
 -- pace > 1 makes bots act that many times more often (for hunting crashes); skip is a set of
--- activity names to leave out: deliver, drop_on_stockpile, open, pry, build, press, violence,
+-- activity names to leave out: deliver, drop_on_stockpile, open, lock, build, press, violence,
 -- items, chat, churn, police, medic, kaiser.
 function Soak.Start( minutes, bots, seed, pace, skip )
 	if S then return Log.Warn( "soak", "already running" ) end

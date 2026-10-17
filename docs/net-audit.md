@@ -51,4 +51,3 @@ Server-to-client messages (`gr_hello`, `gr_state`, `gr_notify`, `gr_chat`, `gr_i
 | `lovebox` | systems/sh_medicine.lua | `FateHas( "Lovebox" )` and upgraded; target is a living non-ghost other player | `Medicine.Lovebox` (has a cooldown) |
 | `press_work` | systems/sh_crates.lua | class `ration_press`; not a ghost | `Crates.Work` |
 | `crate_open` | systems/sh_crates.lua | class `ent_crate`; not a ghost | `Crates.Open` |
-| `stockpile_pry` | systems/sh_crates.lua | class `state_stockpile`; not a ghost; no `StockpileAccess` | `Crates.StartPry` (an Action) |

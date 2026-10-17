@@ -134,14 +134,14 @@ return function( T )
 
 	-- Report: stockpile -------------------------------------------------------------------------
 
-	o = Crime.Report( p3, "pry_start", { pos = Vector( 1, 2, 3 ) } )
+	o = Crime.Report( p3, "lock_alarm", { pos = Vector( 1, 2, 3 ) } )
 	local alarmed = {}
 	for _, p in ipairs( o and o.alarmed or {} ) do alarmed[ p ] = true end
-	T.Check( alarmed[ s1 ] and alarmed[ s2 ] and alarmed[ k ], "pry alarm reaches everyone on the state radio" )
+	T.Check( alarmed[ s1 ] and alarmed[ s2 ] and alarmed[ k ], "the lock alarm reaches everyone on the state radio" )
 	T.Check( not alarmed[ p3 ] and not alarmed[ p1 ], "proles don't hear the alarm" )
-	T.Check( not p3:IsWanted(), "starting a pry is not yet a crime" )
-	Crime.Report( p3, "pry_done" )
-	T.Check( p3:GetWanted() == WANTED_JUDGMENT and near( left( p3 ), 300 ), "a finished pry is judgment-wanted 300 s" )
+	T.Check( not p3:IsWanted(), "the first hit on the lock is not yet a crime" )
+	Crime.Report( p3, "break_in" )
+	T.Check( p3:GetWanted() == WANTED_JUDGMENT and near( left( p3 ), 300 ), "a broken stockpile lock is judgment-wanted 300 s" )
 	T.Equal( p3:GetWantedReason(), "breaking into the stockpile", "break-in reason" )
 	reset()
 

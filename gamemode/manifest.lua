@@ -69,5 +69,6 @@ return {
 		"cl_help.lua",
 		"sv_soak.lua",
 		"sh_storage.lua",
+		"sh_locks.lua",
 	},
 }

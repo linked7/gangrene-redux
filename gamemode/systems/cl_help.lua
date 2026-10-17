@@ -7,7 +7,7 @@ local SECTIONS = {
 	{ "Needs", "Hunger (Emptiness) and thirst (Dryness) rise all day. They don't kill you outright; they make you slow, weak and easy to knock out. Full thirst brings Pox, which lowers your health. Despair rises from crimes, death and starving, and at its peak your heart gives out. Eat and drink what the stockpile and the bread line hand out." },
 	{ "Work", "The city only eats what workers make. Work a ration press to make a crate, carry it (use key, walking only) to the state stockpile and you are paid in bones. Carrying or opening someone else's crate is theft." },
 	{ "Wounds", "A beating knocks you out; a bad wound puts you down. If you get up on your own you are Injured, with less health, until a korpsman stitches you. Korpsmen revive the dying (use key on the body) and dig out lodged bullets, which stop you healing." },
-	{ "Law", "Sanitars hunt the wanted. Theft, violence and prying the stockpile make you wanted; hide until it runs out, or be beaten, arrested or killed. The Kaiser sets prices, pays and fines, and sentences." },
+	{ "Law", "Sanitars hunt the wanted. Theft, violence and beating open the stockpile's lock make you wanted; hide until it runs out, or be beaten, arrested or killed. The Kaiser sets prices, pays and fines, and sentences." },
 	{ "Hold C", "Look at a person, a body or a machine and hold C to see what you can do: operate, inspect, arrest, commend, build, work." },
 	{ "Keys and chat", "F1 help    F2 purposes    TAB who is here\n/inv belongings    /kaiser the Kaiser's desk\n/r radio    /me action    /y yell    /w whisper    // or /ooc out of character" },
 }
