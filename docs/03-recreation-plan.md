@@ -426,6 +426,7 @@ Build them in this order, so each one has something to act on.
      - Forgiving a theft costs 300. The forgiven player pays it to the treasury through `Econ.Transfer`, and the forgiveness fails if they can't afford it.
    - **Upgrades:** **one** receiver `nKaiserUpgrade(targetFate)` reading a data table `{prole = 125, korpsman = 150}` (R3). It is paid from the treasury, and the bones are held in an upgrade fund that is part of the step 9 invariant. They are not destroyed.
    - **Recruit as Sanitar:** a context-menu action on a living Prole within 100 units. Validated receiver (sender is Kaiser and alive, target in range, a sanitar slot is free). The target gets a yes/no prompt; on yes they become a Sanitar at no stem-cell cost. There is no sanitar fate station.
+   - **Recruit as Korpsman:** same action and checks for a Korpsman slot (cap after 10 min = korpsmen lost this round). No stem-cell cost.
    - **XOMBOKOM:** `/xombokom <text>` (alias `/xk`), Kaiser only, max 120 characters, 30 s cooldown. Every client shows the text upper case in large red (180,0,0) at top centre for about 8 s, then it fades; a new one replaces it. A random `kidneydagger/broadcast1-7.wav` plays globally at pitch 80–120. Nothing goes to chat (original: `sh_chat.lua:1380`).
    - **On death:** the `Economy` table goes back to its defaults, with a global announcement and a 600 s cooldown for the role.
 5. **Slave**: probation for new players. It has **full parity with Prole**: build it as a variant of the Prole definition, `Fates.Define("slave", {Base = "prole", ...})`, that only overrides presentation and who may take it.
@@ -489,7 +490,7 @@ Build them in this order, so each one has something to act on.
   - **Round flow:**
     - At 10 min every `fate_station` is removed. Ghosts after that can only join as migrants.
     - Every 1 min a migrant wave spawns in the wasteland: each waiting ghost spawns as a Migrant (a Prole variant, race Outsider) carrying a `papers` item.
-    - At the city gate, a `konsole_immigration` ("Immigration Kontrol Konsole", new: the original had none) stands in the Gate Antechamber (rp_slumtown about 1409 52 91 ang 2 -90 1, offset ~40 units from the summoner there; layout entry `immigration`). Using it with `papers` swaps them for a `passport` and opens a list of city fates under their cap. The pick is permanent for the round. Korpsman cap after 10 min = korpsmen lost this round. Kaiser is never listed.
+    - At the city gate, a `konsole_immigration` ("Immigration Kontrol Konsole", new: the original had none) stands in the Gate Antechamber (rp_slumtown about 1409 52 91 ang 2 -90 1, offset ~40 units from the summoner there; layout entry `immigration`). Using it with `papers` swaps them for a `passport` and makes the migrant a Prole. There is no fate list: the only way up is the Kaiser (Recruit as Sanitar / Recruit as Korpsman, step 11.4). Kaiser is never reachable this way.
     - New players still start as Slave (step 11.5); slaves skip the migrant path.
     - Original refs: `ref_proletariat_wasteland.lua`, `ref_korpsman_wasteland.lua`, `items/list/permit_passport.lua`.
   - Only stem cells, rank and playtime carry over to the next round.
