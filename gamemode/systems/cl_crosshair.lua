@@ -10,6 +10,7 @@
 --   HUD.CrossTexts[ class ] = function( ent, ply, ct )   adds lines for an entity class; an
 --                             entity can define ENT:CrossTexts( ply, ct ) instead. A line is a
 --                             string or { text, color, font, bar = 0..1 }.
+--   GR_CrossTexts( ent, ply, ct )  hook: systems add lines to any entity's cross-texts (locks do)
 --   HUD.Corpse( ent )         the gr_corpse record of a body, or nil
 --   HUD.OwnCorpse()           the local player's body, or nil
 --
@@ -201,6 +202,7 @@ local function build( ply, ent, ct )
 	local near = ply:GetPos():DistToSqr( ent:GetPos() ) < 128 * 128
 	if fn then
 		if fn( ent, ply, ct ) == false then return false end
+		hook.Run( "GR_CrossTexts", ent, ply, ct )
 		if near and hasOptions( ply, ent ) then small( ct, "Open the context menu for options." ) end
 		return true
 	end

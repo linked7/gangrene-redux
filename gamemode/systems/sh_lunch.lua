@@ -7,10 +7,11 @@
 --                  Integrity; at 0 it bursts into CHUNKS meat_chunks (gone after CHUNK_LIFE). Whole,
 --                  it is heavy and carried like a crate; thrown, it hurts at THROWN_SCALE.
 --   water_barrel   empty, it fills over FILL_TIME s while it is in map water; full, it is carried
---                  like a crate and pours BARREL_WATER crates' worth into a boiler it touches.
+--                  like a crate and pours BARREL_WATER (half a boiler) into a boiler it touches.
 --   line_boiler    holds water. Pressure 0-100 creeps up with a wobble (falls to 0 with no water).
---                  Use on its red handle vents VALVE_STEP, on its black handle builds VALVE_STEP
---                  (the gr_valve receiver). Under GREEN_MIN the machine's panel is dark;
+--                  Holding Use on its red valve wheel vents VALVE_RATE a second, on its black one
+--                  builds VALVE_RATE a second (the gr_valve receiver starts the turn; it lasts while
+--                  Use is held on that wheel). Under GREEN_MIN the machine's panel is dark;
 --                  GREEN_MIN-GREEN_MAX it runs; GREEN_MAX-VENT_AT it runs but each correct press may
 --                  shock the presser; over VENT_AT it vents steam on everyone near and the panel stays
 --                  dark until the pressure is back under GREEN_MAX.
@@ -48,15 +49,15 @@ Lunch.BIOMASS = { meat_chunk = 1, bone_capsule = 2 }
 Lunch.BIOMASS_MAX = 50
 
 Lunch.FILL_TIME = 4
-Lunch.BARREL_WATER = 4
+Lunch.BOILER_WATER = 16      -- the most a boiler holds
+Lunch.BARREL_WATER = Lunch.BOILER_WATER / 2 -- one barrel fills half the boiler
 Lunch.BARREL_CAP = 8
 Lunch.BARREL_MASS_FULL, Lunch.BARREL_MASS_EMPTY = 30, 8
-Lunch.BOILER_WATER = 16      -- the most a boiler holds
 
 Lunch.PRESSURE_START = 55
 Lunch.GREEN_MIN, Lunch.GREEN_MAX = 40, 70
 Lunch.VENT_AT = 90
-Lunch.VALVE_STEP = 8
+Lunch.VALVE_RATE = 8          -- pressure a second while a wheel is held: 90 back to 55 in about 4 s
 Lunch.DRIFT_MIN, Lunch.DRIFT_MAX = -0.4, 1.2 -- per second; about +0.4 on average
 Lunch.DRY_DROP = 3           -- per second with no water
 Lunch.VENT_DROP = 5          -- per second while venting
@@ -378,12 +379,17 @@ function Lunch.TickBoiler( boiler, dt )
 	end
 end
 
--- One notch of the valve: "vent" lowers by VALVE_STEP, "build" raises. The turner joins the crew.
-function Lunch.TurnValve( ply, boiler, dir )
+-- Turning a valve for `amount` pressure (default one second's VALVE_RATE): "vent" lowers, "build"
+-- raises. The turner joins the crew.
+function Lunch.TurnValve( ply, boiler, dir, amount )
 	if dir ~= "vent" and dir ~= "build" then return false end
 	if not isClass( boiler, "line_boiler" ) then return false end
-	Lunch.SetPressure( boiler, boiler:GetPressure() + ( dir == "build" and Lunch.VALVE_STEP or -Lunch.VALVE_STEP ) )
-	boiler:EmitSound( "ambient/machines/squeak_" .. math.random( 8 ) .. ".wav", 60 )
+	amount = amount or Lunch.VALVE_RATE
+	Lunch.SetPressure( boiler, boiler:GetPressure() + ( dir == "build" and amount or -amount ) )
+	if CurTime() >= ( boiler.GR_NextSqueak or 0 ) then
+		boiler.GR_NextSqueak = CurTime() + 0.7
+		boiler:EmitSound( "ambient/machines/squeak_" .. math.random( 8 ) .. ".wav", 60 )
+	end
 	local machine = Lunch.MachineOf( boiler )
 	if machine and living( ply ) then Lunch.Crew( machine, ply ) end
 	return true
@@ -392,7 +398,7 @@ end
 Net.Receive( "gr_valve", { rate = 4, alive = true, target = "entity", range = 120 }, function( ply, boiler )
 	local dir = Net.ReadString( 8 )
 	if not isClass( boiler, "line_boiler" ) or ( dir ~= "vent" and dir ~= "build" ) then return end
-	Lunch.TurnValve( ply, boiler, dir )
+	Lunch.StartTurn( ply, boiler, dir )
 end )
 
 -- The machine -----------------------------------------------------------------------------------
@@ -601,8 +607,40 @@ local function touchPosts()
 end
 
 local FAST = 0.25
+
+-- A held turn: the wheel keeps turning while its turner holds Use on it (aim and reach checked
+-- every FAST tick), and stops the moment they let go or look away. One turner per boiler.
+local VALVE_REACH = 120
+function Lunch.StartTurn( ply, boiler, dir )
+	if not living( ply ) or not Lunch.TurnValve( ply, boiler, dir, Lunch.VALVE_RATE * FAST ) then return false end
+	boiler.GR_Turn = { ply = ply, dir = dir }
+	boiler:SetTurning( dir )
+	return true
+end
+
+function Lunch.StopTurn( boiler )
+	boiler.GR_Turn = nil
+	if boiler:GetTurning() ~= "" then boiler:SetTurning( "" ) end
+end
+
+local function stillTurning( boiler, t )
+	local ply = t.ply
+	if not living( ply ) or not ply:KeyDown( IN_USE ) then return false end
+	local tr = ply:GetEyeTrace()
+	return tr.Entity == boiler and tr.HitPos:Distance( ply:EyePos() ) <= VALVE_REACH and Lunch.HandleAt( boiler, tr.HitPos ) == t.dir
+end
+
+local function tickTurns()
+	for _, boiler in ipairs( Lunch.All( "line_boiler" ) ) do
+		local t = boiler.GR_Turn
+		if t then
+			if stillTurning( boiler, t ) then Lunch.TurnValve( t.ply, boiler, t.dir, Lunch.VALVE_RATE * FAST ) else Lunch.StopTurn( boiler ) end
+		end
+	end
+end
 Sched.Every( "lunch", FAST, function()
 	touchPosts()
+	tickTurns()
 	local now = CurTime()
 	for i = #pendingShocks, 1, -1 do
 		local s = pendingShocks[ i ]

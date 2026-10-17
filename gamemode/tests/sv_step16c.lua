@@ -193,7 +193,7 @@ return function( T )
 
 	boiler:SetWater( 0 )
 	T.Check( Lunch.Pour( boiler, barrel ), "a full barrel pours into the boiler" )
-	T.Equal( boiler:GetWater(), Lunch.BARREL_WATER, "four crates' worth" )
+	T.Equal( boiler:GetWater(), Lunch.BARREL_WATER, "half the boiler" )
 	T.Check( not barrel:GetFull() and not Crates.IsHeavy( barrel ), "and is empty again" )
 	T.Check( not Lunch.Pour( boiler, barrel ), "an empty barrel pours nothing" )
 	boiler:SetWater( Lunch.BOILER_WATER )
@@ -224,15 +224,17 @@ return function( T )
 	Lunch.TickBoiler( boiler, 1 )
 	T.Equal( boiler:GetPressure(), 0, "to 0" )
 
-	-- The valve: red vents 8, black builds 8; the turner joins the crew.
+	-- The valve: red vents VALVE_RATE a second, black builds it; the turner joins the crew.
 	settle( 55 )
 	fresh()
 	T.Check( Lunch.TurnValve( p2, boiler, "vent" ), "the red handle turns" )
-	T.Equal( boiler:GetPressure(), 55 - Lunch.VALVE_STEP, "down 8" )
+	T.Equal( boiler:GetPressure(), 55 - Lunch.VALVE_RATE, "down a second's turn" )
 	T.Check( Lunch.TurnValve( p2, boiler, "build" ), "the black handle turns" )
-	T.Equal( boiler:GetPressure(), 55, "up 8" )
+	T.Equal( boiler:GetPressure(), 55, "up a second's turn" )
 	T.Check( not Lunch.TurnValve( p2, boiler, "sideways" ), "no third handle" )
 	T.Check( Lunch.CrewOf( m )[ DB.Key( p2 ) ], "turning the valve puts you on the crew" )
+	T.Check( Lunch.StartTurn( p2, boiler, "vent" ) and boiler:GetTurning() == "vent", "a held turn starts on the wheel" )
+	T.WaitUntil( function() return boiler:GetTurning() == "" end, 2, "and stops when Use is not held" )
 	local recv = Net.Receivers[ "gr_valve" ]
 	T.Check( recv and recv.opts.target and recv.opts.alive and recv.opts.range and recv.opts.rate, "gr_valve is a validated, rate-limited receiver" )
 

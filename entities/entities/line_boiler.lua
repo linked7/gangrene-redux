@@ -1,6 +1,6 @@
 -- The lunch machine's boiler (step 11.1). Holds water (full barrels touching it pour in); its
--- pressure 0-100 creeps up on its own. Use on the red handle vents, on the black one builds (the
--- gr_valve receiver). Too high and it vents scalding steam (systems/sh_lunch.lua). Pressure, water
+-- pressure 0-100 creeps up on its own. Holding Use on the red valve wheel vents, on the black one
+-- builds (the gr_valve receiver). Too high and it vents scalding steam (systems/sh_lunch.lua). Pressure, water
 -- and the vent are public and drawn on it.
 AddCSLuaFile()
 
@@ -14,18 +14,58 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Float", 0, "Pressure" )
 	self:NetworkVar( "Bool", 0, "Venting" )
 	self:NetworkVar( "Int", 0, "Water" )
+	self:NetworkVar( "String", 0, "Turning" ) -- "vent", "build" or "": the wheel someone is holding
 end
 
 if CLIENT then
+	-- The two valves are real valve wheels (clientside models): red vents, black builds. A wheel
+	-- turns while someone holds Use on it (GetTurning), and stays where it was left.
+	local VALVE = "models/props_pipes/valvewheel001.mdl"
+	local VALVES = { vent = Color( 255, 255, 255 ), build = Color( 40, 40, 40 ) }
+
+	function ENT:Valve( dir )
+		self.GR_Valves = self.GR_Valves or {}
+		local m = self.GR_Valves[ dir ]
+		if not IsValid( m ) then
+			m = ClientsideModel( VALVE, RENDERGROUP_OPAQUE )
+			if not IsValid( m ) then return end
+			m:SetNoDraw( true )
+			m:SetModelScale( 0.5 )
+			m:SetColor( VALVES[ dir ] )
+			self.GR_Valves[ dir ] = m
+		end
+		return m
+	end
+
 	function ENT:Draw()
 		self:DrawModel()
-		render.SetColorMaterial()
-		local center = self:LocalToWorld( Vector( self:OBBMaxs().x - 2, 0, ( self:OBBMins().z + self:OBBMaxs().z ) / 2 ) )
-		for _, h in ipairs( { { "vent", Color( 200, 30, 30 ) }, { "build", Color( 25, 25, 25 ) } } ) do
-			local p = Lunch.HandlePos( self, h[ 1 ] )
-			render.DrawBeam( center, p, 1.5, 0, 1, Color( 90, 90, 90 ) )
-			render.DrawSphere( p, 2.5, 10, 10, h[ 2 ] )
+		self.GR_Spin = self.GR_Spin or { vent = 0, build = 0 }
+		local turning = self:GetTurning()
+		if VALVES[ turning ] then
+			self.GR_Spin[ turning ] = self.GR_Spin[ turning ] + FrameTime() * ( turning == "vent" and -240 or 240 )
 		end
+		for dir, col in pairs( VALVES ) do
+			local m = self:Valve( dir )
+			if m then
+				local ang = self:GetAngles()
+				ang:RotateAroundAxis( ang:Right(), -90 ) -- the wheel faces out of the boiler's front
+				ang:RotateAroundAxis( ang:Up(), self.GR_Spin[ dir ] )
+				m:SetPos( Lunch.HandlePos( self, dir ) )
+				m:SetAngles( ang )
+				render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
+				m:DrawModel()
+				render.SetColorModulation( 1, 1, 1 )
+			end
+		end
+	end
+
+	function ENT:OnRemove()
+		for _, m in pairs( self.GR_Valves or {} ) do if IsValid( m ) then m:Remove() end end
+	end
+
+	function ENT:CrossTexts( ply, ct )
+		table.insert( ct, { text = "Boiler" } )
+		table.insert( ct, { text = "Hold use on the red wheel to vent, the black one to build pressure.", font = HUD.Font( "LabelSmall" ) } )
 	end
 
 	function ENT:DrawTranslucent()

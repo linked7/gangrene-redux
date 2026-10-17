@@ -30,6 +30,12 @@ if CLIENT then
 	local OFF = Material( "icon16/lightbulb_off.png" )
 	local noise = Material( "effects/tvscreen_noise001a" )
 
+	-- Machines keep their state drawn on the model in 3D2D; the cross-texts only name it.
+	function ENT:CrossTexts( ply, ct )
+		table.insert( ct, { text = "Lunch Machine" } )
+		table.insert( ct, { text = "Feed it bone capsules and meat. Pull the lever, press the lit button.", font = HUD.Font( "LabelSmall" ) } )
+	end
+
 	local function lit( self ) return self:GetStatus() == "on" or self:GetStatus() == "overload" end
 
 	function ENT:Draw()
