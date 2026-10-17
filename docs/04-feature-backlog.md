@@ -16,6 +16,11 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
+| Falling boulders (`boulder`, sv_think spawner every 15-30 s) | `idea` | Recommend: yes, cheap physical hazard, one entity, layout spots. |
+| Campfire / cooker (cook raw food, warmth) | `idea` | Recommend: yes if food has a raw state; gives labor a second step without menus. |
+| Ghost haunting (Deferred 4, light slice) | `idea` | Recommend: yes, a small version only (ghosts flicker lights, knock props); keeps dead players busy in a short round. |
+| Starter quirks (Deferred 1, 3-4 quirks) | `idea` | Recommend: later; adds replay value but needs balance passes. |
+| Bell / alarm (`bell`, `alarm`) | `idea` | Recommend: yes, a physical way to call people, pairs with Sanitar Summon. |
 | Round timer starts on first Kaiser spawn | `accepted` | Step 13. |
 | Workplace accidents (from the original's machines: operator error, misuse, rust, haunting, waste spills) | `idea` | Raised 2026-10-17 by the analysis session. Proposed slice: rust plus accidents on the ration press, sanitar upkeep that pays bones. Haunting waits for ghost Suffering (Deferred 4), and the factory cards wait for the foreman (Deferred 7). Their suggestion that slaves be immune conflicts with Slave parity. Original refs: entities/entities/machine_*.lua, machine_gears.lua:681. |
 | Rank gates on fates (who may take Kaiser etc.) | `idea` | Raised 2026-10-17. User will choose later; for now no gate above Friend. |
