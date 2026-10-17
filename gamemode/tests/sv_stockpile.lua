@@ -52,7 +52,10 @@ return function( T )
 	T.Check( near, "the beer spawns at the port" )
 
 	-- Crate pay split.
-	local stockpile = ents.FindByClass( "state_stockpile" )[ 1 ]
+	local stockpile -- the layout's stockpile, without scanning entities (P2)
+	for _, e in ipairs( Layout.Entries() ) do
+		if e.class == "state_stockpile" and IsValid( Layout.Spawned( e ) ) then stockpile = Layout.Spawned( e ) end
+	end
 	local own = false
 	if not IsValid( stockpile ) then
 		stockpile = ents.Create( "state_stockpile" ) stockpile:SetPos( a:GetPos() + Vector( 300, 0, 0 ) ) stockpile:Spawn() own = true

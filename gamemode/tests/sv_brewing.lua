@@ -8,6 +8,15 @@ return function( T )
 	T.Equal( Econ.Stock( "spirits" ), 0, "spirits are not seeded" )
 	T.Equal( Config.BrewTime, 300, "brew_time defaults to 5 minutes" )
 
+	-- Items in the world, by walking ents.Iterator (no FindByClass, P2).
+	local function items()
+		local out = {}
+		for _, e in ents.Iterator() do
+			if IsValid( e ) and e:GetClass() == "gr_item" then table.insert( out, e ) end
+		end
+		return out
+	end
+
 	local function bot( name, fate )
 		local b = player.CreateNextBot( "tbrew_" .. name )
 		b:SetRank( RANK_FRIEND )
@@ -54,11 +63,11 @@ return function( T )
 	T.Check( not Brew.Open( p, barrel ), "a brewing barrel can't be opened" )
 	T.WaitUntil( function() return barrel:GetState() == Brew.DONE end, 3, "the barrel finishes" )
 	T.Check( not Brew.Open( s, barrel ), "only a prole opens it" )
-	local before = #ents.FindByClass( "gr_item" )
+	local before = #items()
 	Interact.Run( p, "brew_open", barrel )
-	T.WaitUntil( function() return #ents.FindByClass( "gr_item" ) - before >= 3 end, 5, "3 bottles fall out" )
+	T.WaitUntil( function() return #items() - before >= 3 end, 5, "3 bottles fall out" )
 	local n = 0
-	for _, e in ipairs( ents.FindByClass( "gr_item" ) ) do
+	for _, e in ipairs( items() ) do
 		if e:GetItemId() == "spirits" then n = n + 1 end
 	end
 	T.Equal( n, 3, "they are spirits" )
@@ -86,6 +95,6 @@ return function( T )
 	port:Remove()
 
 	barrel:Remove()
-	for _, e in ipairs( ents.FindByClass( "gr_item" ) ) do e:Remove() end
+	for _, e in ipairs( items() ) do e:Remove() end
 	p:Kick( "done" ) s:Kick( "done" )
 end
