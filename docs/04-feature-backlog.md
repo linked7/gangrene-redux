@@ -31,6 +31,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 |---|---|---|
 | Campfire (wood from smashed props, pile, light, feed) | `accepted` | Step 13. |
 | Rammable doors, destructible props | `accepted` | Step 7. |
+| Generator, tools machine, smithing, scrap/biofuel imports | `accepted` | Steps 9, 11. |
 | Rocket turret (optimized port) | `accepted` | Step 10. |
 | Round flow (stations gone at 10 min, migrant waves, papers → passport at the gate) | `accepted` | Step 13. |
 | Kaiser recruits sanitars (context menu); sanitar station dropped | `accepted` | Steps 4, 11.4. |
@@ -128,3 +129,4 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Imports | Anything no factory makes (coats, etc.) enters the stockpile only by Kaiser import: paid from the treasury, delivered as a crate at the gate. | User asked. |
 | 2026-10-17 | Campfire | Wood from smashed wooden props; 3+ chunks merge into a pit; lit by fire or an imported lighter; fed with wood; counts as warmth. | User asked. |
 | 2026-10-17 | Breakables | Doors rammable, never auto-repair; props destructible, never ignite on break. | User asked; matches original. |
+| 2026-10-17 | Tools machine | Generator and tools machine as original; scrap smithed into pot metal; Kaiser imports scrap and biofuel boxes; these items go to the stockpile port. | User asked. |
