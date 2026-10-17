@@ -87,7 +87,7 @@ return function( T )
 	T.Wait( 0.1 )
 	T.Equal( #living(), 0, "gm_construct's layout is cleared" )
 	local n = Layout.Spawn( SLUM )
-	T.Equal( n, 35, "every entry but the two candidates spawns" )
+	T.Equal( n, 36, "every entry but the two candidates spawns" )
 	local stockpiles, spare = 0, 0
 	for _, ent in ipairs( living() ) do
 		if ent:GetClass() == "state_stockpile" then stockpiles = stockpiles + 1 end
@@ -97,7 +97,7 @@ return function( T )
 	end
 	T.Equal( stockpiles, 1, "only the shipped stockpile, no fallback on top of it" )
 	T.Equal( spare, 0, "no candidate spawned" )
-	T.Equal( #living(), 35, "nothing else in the world" )
+	T.Equal( #living(), 36, "nothing else in the world" )
 	T.Equal( Layout.Spawn( SLUM ), 0, "a second spawn adds nothing" )
 
 	-- The flags on a fake map's json ---------------------------------------------------------------
