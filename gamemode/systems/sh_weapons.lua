@@ -203,6 +203,27 @@ hook.Add( "GR_FateEnter", "gr_weapons", function( ply )
 	ply:SetHolstered( true )
 end )
 
+-- A bot that leaves and rejoins ends up owning a second set of viewmodels and hands, and the
+-- strays live until the map changes. Keep only the ones the player's own accessors point at.
+if SERVER then
+	local function prune( ply )
+		if not IsValid( ply ) then return end
+		local keep = {}
+		for i = 0, 2 do keep[ ply:GetViewModel( i ) ] = true end
+		keep[ ply:GetHands() ] = true
+		-- Engine-made entities have no registry; one pass per join, two seconds after it.
+		for _, e in ents.Iterator() do
+			local class = e:GetClass()
+			if ( class == "predicted_viewmodel" or class == "gmod_hands" ) and e:GetOwner() == ply and not keep[ e ] then
+				e:Remove()
+			end
+		end
+	end
+	hook.Add( "PlayerInitialSpawn", "gr_weapons_vm", function( ply )
+		timer.Simple( 2, function() prune( ply ) end )
+	end )
+end
+
 function Weapons.FlashRed( ply )
 	if IsValid( ply ) and ply:IsPlayer() then ply:ScreenFade( SCREENFADE.IN, Color( 200, 0, 0, 80 ), 0.3, 0 ) end
 end
