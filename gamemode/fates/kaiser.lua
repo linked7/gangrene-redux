@@ -12,6 +12,9 @@ Fates.Define( "kaiser", {
 	Radio = { "state" },
 	RunsEconomy = true,     -- sets the Economy table, grants and fines (step 9)
 	StockpileAccess = true, -- takes from the stockpile for free
+	Sovereign = true, -- the law itself: kills by the head of state are never crimes
+	Faction = "state",
+	Authority = 3, -- leader
 	Names = function() return math.random( 100 ) == 1 and "Watch Kaiser Thule" or "Witch Kaiser Thule" end,
 	Appearance = { model = "models/player/breen.mdl", race = "gangral" },
 } )

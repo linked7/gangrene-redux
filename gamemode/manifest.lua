@@ -49,5 +49,6 @@ return {
 		"sh_worldstate.lua",
 		"sh_econ.lua",
 		"sv_econ.lua",
+		"sh_crime.lua",
 	},
 }
