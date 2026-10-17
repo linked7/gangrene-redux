@@ -175,7 +175,7 @@ return function( T )
 	-- Jumping interrupts surgery --------------------------------------------------------------------
 	v:SetHealth( 50 )
 	k:SetPos( v:GetPos() + Vector( 40, 0, 0 ) )
-	T.Check( Medicine.StartSurgery( k, v, "heal" ), "surgery starts" )
+	T.Check( Medicine.StartSurgery( k, v, "laparotomy" ), "surgery starts" )
 	Movement.JumpPressed( k )
 	T.Check( Actions.Get( k ) == nil, "jumping interrupts the surgery" )
 	Actions.Start( k, "t16f_other", v, 5 )

@@ -35,7 +35,7 @@ return function( T )
 	}
 	Medicine.REGEN_RATE = 0 -- exact health values are checked across waits
 	Medicine.BULLET_CHANCE = 0 -- a lodged bullet would cap max health too
-	local heal = Medicine.Procedure( "heal" )
+	local heal = Medicine.Procedure( "cripplement" )
 	local healSaved = { heal.duration, heal.fail }
 
 	-- Who got judged: GR_PlayerKilled is the only place a kill is judged (step 10).
@@ -126,7 +126,7 @@ return function( T )
 	heal.duration, heal.fail = 0.3, 0
 	b:SetHealth( Config.InjuredMaxHealth )
 	k:SetPos( b:GetPos() + Vector( 40, 0, 0 ) )
-	T.Check( Medicine.StartSurgery( k, b, "heal" ), "surgery is offered for an Injured body even at its capped max" )
+	T.Check( Medicine.StartSurgery( k, b, "cripplement" ), "surgery is offered for an Injured body even at its capped max" )
 	T.WaitUntil( function() return not b:GetInjured() end, 2, "the korpsman's treatment clears Injured" )
 	T.Equal( b:GetMaxHealth(), 100, "max HP is back" )
 	T.Equal( b:Health(), 100, "and the wounds are stitched" )

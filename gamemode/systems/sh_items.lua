@@ -121,12 +121,119 @@ Items.Define( "bandage", {
 	end,
 } )
 
--- Used by korpsman surgery in step 11; carrying them does nothing yet.
-Items.Define( "surgical_tools", {
-	Name = "Surgical Tools",
-	Description = "Saws, clamps and a needle. Not clean.",
-	Weight = 2,
-	Model = "models/props_lab/box01a.mdl",
+-- Surgical blades. Tags.Blade = { min, max } is the success percent of an operation with it (step 11.2).
+Items.Define( "shank", {
+	Name = "Shank",
+	Description = "A sharpened scrap. Cuts, mostly.",
+	Weight = 1,
+	Model = "models/props_c17/TrapPropeller_Blade.mdl",
+	Tags = { Blade = { 15, 50 } },
+} )
+
+Items.Define( "broken_bottle", {
+	Name = "Broken Bottle",
+	Description = "Jagged glass. You will regret this.",
+	Weight = 1,
+	Model = "models/props_junk/garbage_glassbottle003a.mdl",
+	Tags = { Blade = { 5, 5 } },
+} )
+
+Items.Define( "machete", {
+	Name = "Machete",
+	Description = "Heavy and wide. Not made for surgery.",
+	Weight = 1,
+	Model = "models/weapons/w_knife_t.mdl",
+	Tags = { Blade = { 50, 60 } },
+} )
+
+Items.Define( "knife", {
+	Name = "Knife",
+	Description = "A decent blade.",
+	Weight = 1,
+	Model = "models/weapons/w_knife_t.mdl",
+	Tags = { Blade = { 80, 80 } },
+} )
+
+Items.Define( "skinning_knife", {
+	Name = "Skinning Knife",
+	Description = "Made for peeling things.",
+	Weight = 1,
+	Model = "models/weapons/w_knife_t.mdl",
+	Tags = { Blade = { 90, 90 } },
+} )
+
+Items.Define( "lancet", {
+	Name = "Lancet",
+	Description = "A small, sharp surgical blade.",
+	Weight = 1,
+	Model = "models/weapons/w_knife_t.mdl",
+	Tags = { Blade = { 95, 95 } },
+} )
+
+Items.Define( "long_knife", {
+	Name = "Long Knife",
+	Description = "The best blade there is.",
+	Weight = 1,
+	Model = "models/weapons/w_knife_t.mdl",
+	Tags = { Blade = { 100, 100 } },
+} )
+
+-- Things surgery uses up. Tags.Seal / Tags.Blood name the procedure they feed.
+Items.Define( "suture", {
+	Name = "Suture",
+	Description = "Thread and a needle.",
+	Weight = 0.5,
+	Model = "models/props_junk/garbage_metalcan001a.mdl",
+	Tags = { Seal = true },
+} )
+
+Items.Define( "alcohol", {
+	Name = "Alcohol",
+	Description = "Stings.",
+	Weight = 0.5,
+	Model = "models/props_junk/garbage_metalcan001a.mdl",
+	Tags = { Seal = true },
+} )
+
+Items.Define( "leather", {
+	Name = "Leather Scrap",
+	Description = "Stiff, but it covers a wound.",
+	Weight = 0.5,
+	Model = "models/props_junk/garbage_metalcan001a.mdl",
+	Tags = { Seal = true },
+} )
+
+Items.Define( "bloodbag", {
+	Name = "Blood Bag",
+	Description = "Somebody's blood, in a bag.",
+	Weight = 0.5,
+	Model = "models/props_junk/garbage_metalcan001a.mdl",
+	Tags = { Blood = true },
+} )
+
+Items.Define( "heartfruit", {
+	Name = "Heartfruit",
+	Description = "Tastes of iron.",
+	Weight = 0.5,
+	Model = "models/props_junk/garbage_metalcan001a.mdl",
+	Tags = { Blood = true },
+} )
+
+-- A parasite cut out of a patient (Reload on the lovebox, parasitectomy).
+Items.Define( "parasite", {
+	Name = "Parasite",
+	Description = "Still twitching.",
+	Weight = 0.5,
+	Model = "models/props_junk/garbage_metalcan001a.mdl",
+} )
+
+-- The korpsman's reward for a first revive. See weapon_gr_lovebox.
+Items.Define( "lovebox", {
+	Name = "Lovebox",
+	Description = "Hold it near someone. They mend, and you pay.",
+	Weight = 4,
+	Model = "models/items/healthkit.mdl",
+	Weapon = "weapon_gr_lovebox",
 } )
 
 -- Weapons map to stock HL2 classes until the gamemode has its own.

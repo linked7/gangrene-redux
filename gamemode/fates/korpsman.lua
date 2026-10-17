@@ -1,5 +1,5 @@
 -- The revive and healing loop (step 11.2). The rules live in systems/sh_medicine.lua and read these
--- fields: RegenMulti, ReviveFee, Surgeon, Lovebox.
+-- fields: RegenMulti, ReviveFee, SurgeryFailChance, DeathTimer. The lovebox is earned by a first revive.
 local NAMES = { "Medic", "Doctor", "Physician", "Helix", "Haruspex", "Bachelor", "Dissector", "Surgeon", "Nurse",
 	"Practitioner", "Traumist", "Paramedic" }
 -- Boots (the original's korpsman Footstep): quiet at a walk, loud at a run.
@@ -23,12 +23,13 @@ Fates.Define( "korpsman", {
 		{ Color( 100, 100, 100 ), "Your medical codename is %name." },
 	},
 	CanRevive = true,
+	SurgeryFailChance = 10, -- percent added to (100 - blade success)
+	DeathTimer = 60,
 	ReviveFee = true, -- takes the Economy's revive_fee percent of the patient's carried bones
 	RegenMulti = 3,
 	Footstep = function( ply ) ply:EmitSound( BOOTS[ math.random( #BOOTS ) ], ply:GetVelocity():Length2D() < 150 and 35 or 75 ) end,
 	Surgeon = true,
-	Lovebox = true,   -- only once the Kaiser buys the korpsman upgrade
-	Kit = { "surgical_tools" }, -- sh_kit.lua; a revived korpsman keeps what the body held
+	Kit = { { "knife", "knife", "knife", "shank" }, "weapon_permit" }, -- sh_kit.lua; a revived korpsman keeps what the body held
 	Names = function() return NAMES[ math.random( #NAMES ) ] .. " #" .. math.random( 100 ) end,
 	Appearance = function()
 		return { model = string.format( "models/player/group03m/male_0%d.mdl", math.random( 9 ) ), race = "gangral" }
