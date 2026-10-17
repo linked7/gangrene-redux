@@ -1,7 +1,7 @@
 -- Bot soak (plan step 14): N bots live through the real systems for a while, and the server
 -- samples its own health once a minute. Inert unless started:
 --
---   data/gr_soak.txt holding "<minutes> <bots> [seed]" when the map loads (tools/soak.sh writes it), or
+--   data/gr_soak.txt holding "<minutes> <bots> [seed] [pace] [skip,list]" when the map loads (tools/soak.sh writes it), or
 --   gr_soak <minutes> <bots> [seed] in the server console
 --
 -- Bots run no client Lua, so the driver calls the same server functions the receivers call:
@@ -78,6 +78,8 @@ local function spawnAt( class, pos, yaw, kv )
 	ent:Spawn()
 	return ent
 end
+
+local function skipped( what ) return S.skip[ what ] end
 
 local function count( what ) S.counts[ what ] = ( S.counts[ what ] or 0 ) + 1 end
 
@@ -170,11 +172,12 @@ end
 -- Work ----------------------------------------------------------------------------------------
 
 local function deliver( bot, crate )
+	if skipped( "deliver" ) then return end
 	goNear( bot, crate, 40 )
 	crate:Use( bot, bot ) -- the real pickup: PickupObject, then OnPlayerPhysicsPickup
 	if Crates.HeldBy( bot ) ~= crate then Crates.Hold( bot, crate ) end
 	goNear( bot, S.stockpile, 70 )
-	if chance( 0.3 ) then
+	if chance( 0.3 ) and not skipped( "drop_on_stockpile" ) then
 		-- Through the entity's own touch path: let go above the stockpile and let it fall on it.
 		bot:DropObject()
 		Crates.Release( bot )
@@ -194,24 +197,26 @@ local function workerAct( bot )
 		local crate = pick( crates )
 		if IsValid( crate.GR_Holder ) then return end
 		if chance( 0.12 ) then
+			if skipped( "open" ) then return end
 			goNear( bot, crate, 40 )
 			if Interact.Run( bot, "crate_open", crate ) then count( "crate_opened" ) end
 			return
 		end
 		return deliver( bot, crate )
 	end
-	if chance( 0.01 ) and not bot:FateHas( "StockpileAccess" ) then
+	if chance( 0.01 ) and not bot:FateHas( "StockpileAccess" ) and not skipped( "pry" ) then
 		goNear( bot, S.stockpile, 80 )
 		if Interact.Run( bot, "stockpile_pry", S.stockpile ) then count( "pry" ) end
 		return
 	end
-	if chance( 0.004 ) and Build.CanBuild( bot ) then
+	if chance( 0.004 ) and Build.CanBuild( bot ) and not skipped( "build" ) then
 		local kind = pick( Build.ORDER )
 		bot:SetEyeAngles( Angle( 45, math.random( 360 ), 0 ) )
 		local tr = util.TraceLine( { start = bot:EyePos(), endpos = bot:EyePos() + bot:GetAimVector() * 140, filter = bot } )
 		if tr.HitWorld and Build.Place( bot, kind, tr.HitPos ) then count( "built" ) end
 		return
 	end
+	if skipped( "press" ) then return end
 	local press = pick( S.presses )
 	if Crates.Waiting( press ) >= Crates.PER_STATION then return end
 	goNear( bot, press, 80 )
@@ -411,15 +416,15 @@ local function act( bot )
 
 	local r = math.random()
 	if r < 0.5 then
-		if bot:FateHas( "RunsEconomy" ) then return kaiserAct( bot ) end
-		if bot:FateHas( "Police" ) then return policeAct( bot ) end
-		if bot:FateHas( "CanRevive" ) then return medicAct( bot ) end
+		if bot:FateHas( "RunsEconomy" ) then return not skipped( "kaiser" ) and kaiserAct( bot ) end
+		if bot:FateHas( "Police" ) then return not skipped( "police" ) and policeAct( bot ) end
+		if bot:FateHas( "CanRevive" ) then return not skipped( "medic" ) and medicAct( bot ) end
 		return workerAct( bot )
 	end
-	if r < 0.65 then return chatAct( bot ) end
-	if r < 0.75 then return violence( bot ) end
+	if r < 0.65 then return not skipped( "chat" ) and chatAct( bot ) end
+	if r < 0.75 then return not skipped( "violence" ) and violence( bot ) end
 	if r < 0.77 then return commendAct( bot ) end
-	if r < 0.9 then return itemsAct( bot ) end
+	if r < 0.9 then return not skipped( "items" ) and itemsAct( bot ) end
 	if r < 0.93 then return counter( bot, pick( { "ration", "clean_water" } ) ) end
 	if r < 0.935 then
 		bot:Kill()
@@ -666,7 +671,7 @@ function Soak.Tick()
 		Round.End( "soak" )
 	end
 
-	if now >= S.nextChurn and not S.rejoin then
+	if now >= S.nextChurn and not S.rejoin and not skipped( "churn" ) then
 		S.nextChurn = now + CHURN
 		churn()
 	end
@@ -675,14 +680,17 @@ function Soak.Tick()
 	for _, b in ipairs( soakBots() ) do
 		local name = b:SteamName()
 		if now >= ( S.nextAct[ name ] or 0 ) then
-			S.nextAct[ name ] = now + rnd( ACT_MIN, ACT_MAX )
+			S.nextAct[ name ] = now + rnd( ACT_MIN, ACT_MAX ) / S.pace
 			local ok, err = xpcall( act, debug.traceback, b )
 			if not ok then Log.Error( "soak", "bot %s: %s", name, err ) end
 		end
 	end
 end
 
-function Soak.Start( minutes, bots, seed )
+-- pace > 1 makes bots act that many times more often (for hunting crashes); skip is a set of
+-- activity names to leave out: deliver, drop_on_stockpile, open, pry, build, press, violence,
+-- items, chat, churn, police, medic, kaiser.
+function Soak.Start( minutes, bots, seed, pace, skip )
 	if S then return Log.Warn( "soak", "already running" ) end
 	seed = seed or os.time()
 	math.randomseed( seed )
@@ -694,7 +702,7 @@ function Soak.Start( minutes, bots, seed )
 
 	local now = CurTime()
 	S = {
-		minutes = minutes, botCount = bots, seed = seed, startedAt = now, endsAt = now + minutes * 60,
+		minutes = minutes, botCount = bots, seed = seed, pace = pace or 1, skip = skip or {}, startedAt = now, endsAt = now + minutes * 60,
 		nextSample = now + 5, nextChurn = now + CHURN, nextAct = {}, counts = {}, rows = {},
 		lastNet = { bytes = Net.stats.bytes, messages = Net.stats.messages }, lastSampleAt = SysTime(),
 		lastSched = {}, schedAgg = {}, maxFrame = 0,
@@ -739,7 +747,12 @@ hook.Add( "InitPostEntity", "gr_soak", function()
 	local spec = file.Read( "gr_soak.txt", "DATA" )
 	if not spec then return end
 	file.Delete( "gr_soak.txt" )
-	local minutes, bots, seed = string.match( spec, "^%s*(%d+)%s+(%d+)%s*(%d*)" )
-	if not minutes then return Log.Warn( "soak", "bad gr_soak.txt: %q", spec ) end
-	Soak.Start( tonumber( minutes ), tonumber( bots ), tonumber( seed ) )
+	local words = string.Explode( "%s+", string.Trim( spec ), true )
+	local minutes, bots = tonumber( words[ 1 ] or "" ), tonumber( words[ 2 ] or "" )
+	if not minutes or not bots then return Log.Warn( "soak", "bad gr_soak.txt: %q", spec ) end
+	local skip = {}
+	for _, w in ipairs( string.Explode( ",", words[ 5 ] or "" ) ) do
+		if w ~= "" and w ~= "-" then skip[ w ] = true end
+	end
+	Soak.Start( minutes, bots, tonumber( words[ 3 ] or "" ), tonumber( words[ 4 ] or "" ), skip )
 end )

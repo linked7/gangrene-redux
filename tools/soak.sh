@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Bot soak (plan step 14): tools/soak.sh [minutes=60] [bots=30] [seed]
+# Bot soak (plan step 14): tools/soak.sh [minutes=60] [bots=30] [seed] [pace=1] [skip,list]
+# pace and skip are for hunting crashes: bots act pace times as often; skip names activities to leave
+# out (see Soak.Start in gamemode/systems/sv_soak.lua).
 #
 # Runs gamemode/systems/sv_soak.lua on a SECOND dedicated server, so an hour-long soak never holds
 # tools/srv.sh's lock or touches the shared server's files. Two srcds instances can't share one
@@ -12,7 +14,7 @@
 # console log to ~/gmod-ds/gr-logs/soak-<stamp>/. Exits 0 only if the summary says "DONE pass" and
 # the console log has no Lua errors.
 set -u
-MINUTES=${1:-60}; BOTS=${2:-30}; SEED=${3:-$(date +%s)}
+MINUTES=${1:-60}; BOTS=${2:-30}; SEED=${3:-$(date +%s)}; PACE=${4:-1}; SKIP=${5:--}
 DS=${GR_DS:-$HOME/gmod-ds}
 SOAK=${GR_SOAK_DS:-$HOME/gmod-ds-soak}
 PORT=${GR_SOAK_PORT:-27125}
@@ -56,7 +58,7 @@ stop
 trap 'stop; exit 130' INT TERM
 
 rm -rf "$GM/data/gr_soak" "$GM/console.log"
-echo "$MINUTES $BOTS $SEED" >"$GM/data/gr_soak.txt"
+echo "$MINUTES $BOTS $SEED $PACE $SKIP" >"$GM/data/gr_soak.txt"
 ( cd "$SOAK" && exec setsid ./srcds_run -game garrysmod -norestart -console -condebug -disableluarefresh \
 	-port "$PORT" +clientport $((PORT + 1)) +tv_port $((PORT + 2)) \
 	+sv_lan 1 +sv_hibernate_think 1 +maxplayers $((BOTS + 2)) +gamemode gangreneredux +map gm_construct >/dev/null 2>&1 ) &
