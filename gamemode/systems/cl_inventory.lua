@@ -170,8 +170,8 @@ local function build()
 	end
 
 	-- Burden bars down the left, at 0.2 W from 0.1 H.
-	local frame = menu -- the rows outlive `menu` for a frame after close()
-	frame.StatusAlpha = 0
+	local m = menu -- the rows paint on through the fade-out, after `menu` is cleared
+	m.StatusAlpha = 0
 	local y = H * 0.1
 	surface.SetFont( F_BIG )
 	local _, rowH = surface.GetTextSize( "despair" )
@@ -184,8 +184,8 @@ local function build()
 		row.Paint = function( self, w, h )
 			local label, prog, col = burden( ply, CurTime() )
 			if not label then return end
-			frame.StatusAlpha = Lerp( 0.05, frame.StatusAlpha, 1 )
-			local a = frame.StatusAlpha
+			m.StatusAlpha = Lerp( 0.05, m.StatusAlpha, 1 )
+			local a = m.StatusAlpha
 			local scratch = HUD.Mat( "scratch" )
 			if scratch then surface.SetMaterial( scratch ) else draw.NoTexture() end
 			surface.SetDrawColor( 64, 64, 64, a * 128 )

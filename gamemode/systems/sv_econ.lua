@@ -127,6 +127,7 @@ function Econ.Transfer( from, to, amount, source )
 	setBalance( from, have - amount )
 	setBalance( to, theirs + amount )
 	record( from, to, amount, source )
+	hook.Run( "GR_BonesMoved", from, to, amount, source )
 	return true
 end
 

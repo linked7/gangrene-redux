@@ -83,8 +83,21 @@ end
 -- Wanted ------------------------------------------------------------------------------------
 
 -- A harsher level replaces the reason; time only ever extends.
+-- The whole city hears who is wanted (the original's SetWanted): three alarms on the criminal,
+-- one big red line to everyone, a little despair, and a word on how long to hide.
+Crime.PUNISHMENT = { "TORMENT", "JUDGMENT", "DEATH" }
+function Crime.Announce( ply, level, duration, reason )
+	for _ = 1, 3 do ply:EmitSound( "ambient/alarms/manhack_alert_pass1.wav", 0, math.random( 60, 80 ) ) end
+	Chat.Big( nil, Color( 200, 0, 0 ), string.format( "%s to %s for %s!",
+		Crime.PUNISHMENT[ level ] or Crime.PUNISHMENT[ 1 ], ply:Nick(), reason ) )
+	Needs.Add( ply, "Despair", 1, "wanted" )
+	Chat.Tell( ply, Color( 200, 0, 0 ), "You should hide for " .. string.NiceTime( duration ) .. "." )
+end
+
 function Crime.MakeWanted( ply, level, duration, reason )
 	local now = CurTime()
+	-- Only news that makes it worse is shouted: a higher level, or a longer sentence than is left.
+	local news = not ply:IsWanted() or level > ply:GetWanted() or now + duration > ply:GetWantedUntil()
 	-- One episode runs from becoming wanted until it clears, and remembers every crime in it
 	-- (a bounty is paid once per episode, step 11.3).
 	if not ply:IsWanted() or not ply.GR_WantedEpisode then ply.GR_WantedEpisode = { crimes = {} } end
@@ -94,6 +107,7 @@ function Crime.MakeWanted( ply, level, duration, reason )
 	ply:SetWanted( math.max( level, ply:GetWanted() ) )
 	ply.GR_WantedCheckedAt = now
 	Notify( ply, string.format( "You are wanted for %s.", reason ) )
+	if news then Crime.Announce( ply, level, duration, reason ) end
 	tellPolice( string.format( "%s is wanted for %s.", ply:Nick(), reason ), ply )
 	Log.Debug( "crime", "%s wanted (%d) for %s, %d s", ply:Nick(), level, reason, duration )
 end
@@ -211,6 +225,11 @@ Crime.ReportRules = {
 		when = function( ply, act, ctx ) return act == "theft" and stolen( ply, ctx ) and Crime.SeenByPolice( ply ) end },
 	{ name = "theft", crime = "theft", evidence = WANTED_TORMENT, duration = 300,
 		when = function( ply, act, ctx ) return act == "theft" and stolen( ply, ctx ) end },
+	-- Spit on the law (sh_weapons.lua): a sovereign spitter is already let off by the rule above.
+	{ name = "spit_sovereign", crime = "disrespecting the Witch Kaiser", evidence = WANTED_TORMENT, duration = 300,
+		when = function( _, act, ctx ) return act == "spit" and not ctx.victim:IsWanted() and ctx.victim:FateHas( "Sovereign" ) end },
+	{ name = "spit_police", crime = "disrespecting Sanitar Squad", evidence = WANTED_TORMENT, duration = 180,
+		when = function( _, act, ctx ) return act == "spit" and not ctx.victim:IsWanted() and ctx.victim:FateHas( "Police" ) end },
 	{ name = "lock_alarm", alarm = "state", when = function( _, act ) return act == "lock_alarm" end },
 	{ name = "break_in", crime = "breaking into the stockpile", wanted = WANTED_JUDGMENT, duration = 300,
 		when = function( _, act ) return act == "break_in" end },

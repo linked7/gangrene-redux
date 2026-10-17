@@ -1,5 +1,5 @@
 -- Step 16e: chat parity (05 §8). Muffled ranges behind a wall, the commands' formats, thoughtcrime,
--- the dead and the downed, kill sentences, AutoGrammar, fate babble and voice chat being off.
+-- the dead and the downed, AutoGrammar, fate babble and voice chat being off.
 return function( T )
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t16e_%'" )
 
@@ -183,7 +183,7 @@ return function( T )
 	Crime.ClearWanted( a )
 	say( a, "you are a chungus" )
 	T.Check( got == nil, "the banned line is not sent" )
-	T.Equal( toldTo( "a" ), "'chungus'", "the speaker sees the word echoed" )
+	T.Equal( toldTo( "a" ), "'chungus' | You should hide for 1 minute.", "the speaker sees the word echoed, then how long to hide (step 17a)" )
 	T.Check( told[ 1 ] and told[ 1 ].fx == 2 and told[ 1 ].col == "200,0,0", "in red, with a jumpscare" )
 	T.Equal( toldTo( "staff" ), a:Nick() .. " (t16e_a) wanted to say 'chungus'.", "staff are told" )
 	T.Equal( a:GetWanted(), WANTED_TORMENT, "the speaker is wanted" )
@@ -191,7 +191,7 @@ return function( T )
 	T.Check( math.abs( Crime.WantedLeft( a ) - 60 ) < 1, "for 60 seconds" )
 	Crime.ClearWanted( a )
 	say( a, "b 4 s 3 d" )
-	T.Equal( toldTo( "a" ), "'based'", "circumvented banned sentences are caught" )
+	T.Equal( toldTo( "a" ), "'based' | You should hide for 1 minute.", "circumvented banned sentences are caught" )
 	Crime.ClearWanted( a )
 	say( a, "it is based on facts" )
 	T.Check( got ~= nil and not a:IsWanted(), "a banned sentence inside a longer line is fine" )
@@ -221,11 +221,13 @@ return function( T )
 	T.Equal( got and got.mode, "whisper", "and so is a yell" )
 	say( b, "/me bleeds" )
 	T.Equal( toldTo( "b" ), "You can't do this while dead.", "no /me on the ground" )
-	say( b, "mother of death, i call on thee" )
-	T.Check( got and got.mode == "whisper" and Chat.IsDowned( b ), "the kill sentence is case-sensitive" )
-	say( b, "MOTHER OF DEATH,I CALL ON THEE" )
-	T.Equal( toldTo( "b" ), "SO BE IT", "the kill sentence is answered" )
-	T.Check( got == nil and not Chat.IsDowned( b ) and Chat.IsDead( b ), "and the body is finished" )
+	T.Check( not Corpse.GiveUp( a ), "a living player can't give up" )
+	local _, rb = Corpse.Of( b )
+	rb.down = "wounded"
+	T.Check( not Corpse.GiveUp( b ) and Chat.IsDowned( b ), "a wounded player can't give up" )
+	rb.down = "dying"
+	T.Check( Corpse.GiveUp( b ) and not Chat.IsDowned( b ) and Chat.IsDead( b ), "a dying player gives up and the body is finished" )
+	T.Check( not Corpse.GiveUp( b ), "and can't give up twice" )
 	say( b, "hello" )
 	T.Equal( toldTo( "b" ), "Your tongue has all but rotted away.", "the dead body can't say" )
 	say( b, "/y hello" )
@@ -238,8 +240,7 @@ return function( T )
 
 	s:SetPos( base + Vector( 500, 500, 0 ) )
 	s:Kill()
-	say( s, "I GIVE MY SOUL ETERNALLY" )
-	T.Check( not Chat.IsDowned( s ) and Chat.IsDead( s ), "the other kill sentence works too" )
+	T.Check( Corpse.GiveUp( s ) and Chat.IsDead( s ), "s gives up too" )
 	T.WaitUntil( function() return s:IsGhost() end, 6, "s comes back as a ghost" )
 
 	-- Babble: each fate's ChatSounds (data), at the mode's level.

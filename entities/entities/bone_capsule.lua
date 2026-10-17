@@ -8,27 +8,19 @@ ENT.Type = "anim"
 ENT.Base = "base_anim"
 ENT.PrintName = "Bone Capsule"
 ENT.Spawnable = false
-ENT.RenderGroup = RENDERGROUP_BOTH
 
 function ENT:SetupDataTables()
 	self:NetworkVar( "Int", 0, "Integrity" )
 end
 
 if CLIENT then
-	-- The cross-text, when looked at: the name and a "Blood" bar.
-	function ENT:DrawTranslucent()
-		local ply = LocalPlayer()
-		if ply:GetEyeTrace().Entity ~= self or ply:GetPos():DistToSqr( self:GetPos() ) > 400 * 400 then return end
-		local ang = Angle( 0, ply:EyeAngles().y - 90, 90 )
-		cam.Start3D2D( self:WorldSpaceCenter() + Vector( 0, 0, 20 ), ang, 0.1 )
-			draw.SimpleTextOutlined( "Bone Capsule", "Trebuchet24", 0, -30, Color( 200, 200, 200 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black )
-			surface.SetDrawColor( 0, 0, 0, 200 )
-			surface.DrawRect( -80, -12, 160, 20 )
-			surface.SetDrawColor( 150, 0, 0, 255 )
-			surface.DrawRect( -78, -10, 156 * math.Clamp( self:GetIntegrity() / Lunch.CAPSULE_INTEGRITY, 0, 1 ), 16 )
-			draw.SimpleText( "Blood", "Trebuchet18", 0, -2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-			draw.SimpleTextOutlined( "Take it to the lunch machine, or break it.", "Trebuchet18", 0, 22, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black )
-		cam.End3D2D()
+	-- The cross-texts (cl_crosshair.lua), as the original's fleshcapsule: the name and a "Blood" bar.
+	function ENT:CrossTexts( ply, ct )
+		local small = HUD.Font( "LabelSmall" )
+		table.insert( ct, { text = "Bone Capsule" } )
+		table.insert( ct, { text = "Blood", bar = math.Clamp( self:GetIntegrity() / Lunch.CAPSULE_INTEGRITY, 0, 1 ), color = Color( 150, 0, 0 ) } )
+		table.insert( ct, { text = "Take it to a lunch factory.", font = small } )
+		table.insert( ct, { text = "Alternatively, break it for resources.", font = small } )
 	end
 	return
 end

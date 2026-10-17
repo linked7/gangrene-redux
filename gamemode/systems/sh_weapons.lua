@@ -21,6 +21,7 @@ Weapons.HANDS = "weapon_gr_hands"
 Weapons.SHOVE_RANGE = 70
 Weapons.SPIT_RANGE = 200
 Weapons.SPIT_COOLDOWN = 1
+Weapons.SPIT_DESPAIR_CAP = 80 -- spit alone stops adding despair here, short of a heart attack
 Weapons.HEAD_BURST_CHANCE = 0.1
 Weapons.HEAD_BURST_DIST_SQR = 40 -- the original compares DistToSqr with 40 (about 6 units), kept as is
 
@@ -161,6 +162,7 @@ function Weapons.SetHolstered( ply, holstered )
 	ply:SetHolstered( holstered )
 	if IsValid( wep ) then wep:SetNextPrimaryFire( CurTime() + 0.6 ) end
 	Fates.ApplySpeed( ply )
+	if not holstered and IsValid( wep ) then hook.Run( "GR_Unholstered", ply, wep ) end
 end
 
 function Weapons.ToggleHolster( ply )
@@ -227,8 +229,15 @@ function Weapons.Spit( ply )
 	local victim = tr.Entity
 	if IsValid( victim ) and victim:IsPlayer() and victim:Alive() and not victim:IsGhost() then
 		Notify( ply, "Haha." )
-		Notify( victim, "Ugh! Someone spat on me!" )
-		Needs.Add( victim, "Despair", 4, "spit" )
+		Notify( victim, ply:FateHas( "SpitLine" ) or "Ugh! Someone spat on me!" )
+		-- Spit alone never pushes despair past SPIT_DESPAIR_CAP, so it can't stop a heart.
+		local add = math.min( ply:FateHas( "SpitDespair" ) or 4, Weapons.SPIT_DESPAIR_CAP - Needs.Get( victim, "Despair" ) )
+		if add > 0 then Needs.Add( victim, "Despair", add, "spit" ) end
+		if victim:IsOnFire() and math.random() < 0.05 then
+			victim:Extinguish()
+			Notify( victim, "Someone's spit extinguished me. Thank Sotla." )
+		end
+		Crime.Report( ply, "spit", { victim = victim } )
 	end
 	return "spit"
 end

@@ -14,6 +14,15 @@ Fates.Define( "kaiser", {
 	Radio = { "state" },
 	RunsEconomy = true,     -- sets the Economy table, grants and fines (step 9); no wage
 	StockpileAccess = true, -- takes from the stockpile for free
+	PainSounds = { "placenta/pain/sanitar1.wav", "placenta/pain/sanitar2.wav", "placenta/pain/sanitar3.wav", "placenta/pain/sanitar4.wav" },
+	DeathSounds = { "placenta/death/sanitar1.wav", "placenta/death/sanitar2.wav" },
+	NoFinalDeathSound = true,
+	SpitDespair = 8, -- being spat on by the head of state hurts twice as much (sh_weapons.lua)
+	SpitLine = "The Witch Kaiser spit on me!",
+	IntroTexts = {
+		{ Color( 200, 200, 0 ), "You command the laws and other various variables of our belovungure. Don't get overwhelmed, you need to be on your best alert to avoid assassinations. You can also communicate with the sanitars over your radio (/r)." },
+		{ Color( 100, 100, 100 ), "You were known now and forever as the sole Witch Kaiser of Gangrene. You can use your context menu (C by default) to sentence people to death or to forgive them.\nAs the most important position in Gangrene, abusing this role or breaking character is very likely to have you recieve a harsh punishment." },
+	},
 	Sovereign = true, -- the law itself: kills by the head of state are never crimes
 	CanSentence = true, -- sentences and forgives (sh_kaiser.lua)
 	-- Fate upgrades the Kaiser may buy, fate id -> bones from the treasury into the upgrade fund (R3).

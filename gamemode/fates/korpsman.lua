@@ -17,6 +17,11 @@ Fates.Define( "korpsman", {
 	Slots = function( pop ) return math.Clamp( 2 + math.floor( pop / 10 ), 2, 5 ) end,
 	Citizen = true,
 	Radio = { "medic" },
+	DeathSounds = { "hl1/fvox/flatline.wav" },
+	IntroTexts = {
+		{ Color( 200, 200, 0 ), "You can perform surgery via the context menu, so long as you have the right tools... Thankfully you recover faster than others. Your radio lets you talk to the other korpsmen (/r).\nYou will recieve half of the bones of any patient you revive, so prioritize those who are... valuable." },
+		{ Color( 100, 100, 100 ), "Your medical codename is %name." },
+	},
 	CanRevive = true,
 	ReviveFee = true, -- takes the Economy's revive_fee percent of the patient's carried bones
 	RegenMulti = 3,

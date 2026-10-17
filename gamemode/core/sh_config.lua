@@ -125,14 +125,12 @@ Config.UI = {
 -- were for the user to review: they mix slurs, memes and out-of-setting words.
 --   ChatBadWords      thoughtcrime if found anywhere in a line ("stop acting so *autistic*")
 --   ChatBadSentences  thoughtcrime if it is the whole line; whitespace is ignored ("among us" == "amongus")
---   ChatKillSentences said while downed, the head bursts. Case-sensitive; whitespace is ignored
 --   ChatCircumventions  applied before the checks above, so "b4sed" is "based"
 -- Thoughtcrime: the line is not sent, the speaker gets a jumpscare and the word echoed in red,
 -- wanted for ChatThoughtcrimeWanted seconds, and staff see it. Staff are exempt.
 Config.ChatThoughtcrimeWanted = 60
 Config.ChatBadWords = { "nigger", "tranny", "nigga", "kike", "autism", "autistic", "autist", "tranny", "trannies", "faggot", "fag", "fgt", "libtard", "gmyza", "poggers", "pogchamp", "prole gaming", "omegalol", "kekw", "trihard7", "ur mom", "ur mum", "bri-ish", "bri'ish", "poop", "nword", "rdm", "nlr", "failrp", "chad", "hoes mad", "yeet", "corpsed", "kek", "chungus", "pog", "fortnite", "skinwalk", "skinshift", "skin walk", "skin shift", "unbindall", "white walking", "weeb", "weeaboo", "amogus", "amog us", "pretty cringe", "that's cringe", "redpilled", "tradcath", "zoomer", "boomer", "doomer", "groyper", "bluepill", "redpill", "tradwife", "blackpill", "big chungus", "spongebob", "impostor among us", "imposter among us", "ligma", "trolled", "deez", "swag", "font", "bussin", "sussy", "bussy", "meme", "koom", "niglet", "stem cell meat", "make me butcher", "nlgger", "nlgga", "nlg", "bruh", "allah", "akbar", "alahu", "ackbar", "lifeweb", "cuck", "coom", "tryhard", "morbius", "morbin", "/advert", "skibidi", "rizz", "admin", "rizz", "gyatt", "fortnite", "begotten", "ANIV", "blaj", "<color", "д", "я", "ф", "и", "л", "ю" }
 Config.ChatBadSentences = { "based", "among us", "furry", "cringe", "gaming", "prole gaming", "cope", "seethe", "gaming", "based.", "xd", "sus" }
-Config.ChatKillSentences = { "MOTHER OF DEATH, I CALL ON THEE", "I GIVE MY SOUL ETERNALLY", "MOTHER OF DEATH I CALL ON THEE" }
 Config.ChatCircumventions = {
 	[ "$" ] = "s", [ "@" ] = "a", [ "4" ] = "a", [ "1" ] = "i", [ "0" ] = "o", [ "5" ] = "s",
 	[ "8" ] = "b", [ "7" ] = "l", [ "3" ] = "e", [ "ß" ] = "b", [ "|" ] = "l", [ "6" ] = "g",

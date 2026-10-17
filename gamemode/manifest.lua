@@ -82,5 +82,6 @@ return {
 		"cl_crosshair.lua",
 		"cl_chatbox.lua",
 		"cl_music.lua",
+		"sh_parity.lua",
 	},
 }

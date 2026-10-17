@@ -7,7 +7,13 @@ ENT.Base = "base_anim"
 ENT.PrintName = "Meat Chunk"
 ENT.Spawnable = false
 
-if CLIENT then return end
+if CLIENT then
+	function ENT:CrossTexts( ply, ct )
+		table.insert( ct, { text = "Meat Chunk" } )
+		table.insert( ct, { text = "Feed it to the lunch machine.", font = HUD.Font( "LabelSmall" ) } )
+	end
+	return
+end
 
 function ENT:Initialize()
 	self:SetModel( "models/gibs/antlion_gib_medium_2.mdl" )

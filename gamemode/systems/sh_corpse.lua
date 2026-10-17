@@ -245,6 +245,7 @@ function Corpse.Die( rag, reason )
 	rec.state = "dead"
 	rec.decayAt = CurTime() + Corpse.DECAY
 	Corpse.Sync( rag )
+	hook.Run( "GR_CorpseDied", rag, rec, reason )
 	local ply = rec.owner
 	if IsValid( ply ) and ply.GR_Corpse == rag then
 		ply.GR_Corpse = nil
@@ -267,6 +268,16 @@ function Corpse.FinishOff( rag, attacker )
 	kill( rag, rec, attacker, "finished off" )
 	return true
 end
+
+-- Giving up (plan step 7): a dying player clicks "->HERE<-" and bleeds out at once, the same death
+-- and the same judging of the downer as the timer. The only way to choose death; wounded can't.
+function Corpse.GiveUp( ply )
+	local rag, rec = Corpse.Of( ply )
+	if not rec or rec.state ~= "downed" or rec.down ~= "dying" then return false end
+	kill( rag, rec, rec.downer, "bled out" )
+	return true
+end
+Net.Receive( "gr_give_up", { rate = 1 }, function( ply ) Corpse.GiveUp( ply ) end )
 
 -- Finishing off is a short timed action on a downed body (wounded or dying), offered through Interact.
 function Corpse.StartFinishOff( ply, rag )
