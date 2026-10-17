@@ -83,6 +83,8 @@ return function( T )
 
 	-- Death: back to ghost, with this fate's cooldown.
 	g:Kill()
+	T.Check( Corpse.Of( g ) ~= nil, "dying downs the player first" )
+	Corpse.Die( Corpse.Of( g ), "test" ) -- skip the bleed-out (step 7)
 	local diedAt = CurTime()
 	T.WaitUntil( function() return g:Alive() end, 6, "dead player respawns" )
 	T.Check( g:IsGhost(), "respawns as a ghost" )

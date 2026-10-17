@@ -39,6 +39,7 @@ return function( T )
 	T.Check( string.find( p:GetModel(), "group01" ) ~= nil, "prole wears a citizen model" )
 
 	b:Kill()
+	Corpse.Die( Corpse.Of( b ), "test" ) -- skip the bleed-out (step 7)
 	T.WaitUntil( function() return b:Alive() end, 6, "respawned" )
 	T.Equal( b:GetCharName(), "", "dying clears the character name" )
 	T.Equal( b:GetModel(), "models/player/charple.mdl", "back to the ghost model" )

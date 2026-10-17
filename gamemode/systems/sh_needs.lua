@@ -143,13 +143,17 @@ function Needs.Tick( ply )
 end
 Sched.EachPlayer( "needs", 1, function( ply ) Needs.Tick( ply ) end )
 
--- Every new life starts with empty needs; ghosts have none.
-hook.Add( "GR_FateEnter", "gr_needs", function( ply, f )
+-- Every new life starts with empty needs; ghosts have none. A revive keeps the old life's needs.
+hook.Add( "GR_FateEnter", "gr_needs", function( ply, f, reason )
 	ply.GR_HeartAttackAt = nil
 	if f.index == FATE_GHOST then
 		ply.GR_Needs = nil
 		return
 	end
-	ply.GR_Needs = {}
-	for _, name in ipairs( order ) do ply.GR_Needs[ name ] = 0 end
+	if reason ~= "revive" or not ply.GR_Needs then
+		ply.GR_Needs = {}
+		for _, name in ipairs( order ) do ply.GR_Needs[ name ] = 0 end
+	end
+	for _, name in ipairs( order ) do ply[ "SetNeed_" .. name ]( ply, math.floor( ply.GR_Needs[ name ] ) ) end
+	Needs.ApplyPox( ply )
 end )

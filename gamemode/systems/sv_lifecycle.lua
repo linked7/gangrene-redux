@@ -1,6 +1,7 @@
--- Spawning and dying. Everyone spawns as a ghost; dying in a fate starts that fate's cooldown,
--- and the player comes back as a ghost a few seconds later.
--- Step 7 replaces the plain death with downed / bleed-out / revive.
+-- Spawning and dying. Everyone spawns as a ghost. A living fate that dies is downed first
+-- (sh_corpse.lua); only when that body is beyond help does the final death land here: the
+-- fate's cooldown starts and the player comes back as a ghost a moment later.
+Lifecycle = Lifecycle or {}
 local RESPAWN_DELAY = 3
 
 -- Cooldowns by DB key, so reconnecting doesn't clear a death timer.
@@ -8,6 +9,11 @@ local savedCooldowns = {}
 
 function GM:PlayerSpawn( ply )
 	ply:UnSpectate()
+	local rag = ply.GR_Reviving
+	if rag then
+		ply.GR_Reviving = nil
+		if IsValid( rag ) then return Corpse.Restore( ply, rag ) end
+	end
 	Fates.Apply( ply, FATE_GHOST, { reason = "spawn" } )
 end
 
@@ -21,9 +27,15 @@ Sched.Every( "respawn", 0.25, function()
 	end
 end )
 
+-- A ghost that dies (ply:Kill from an admin) just respawns; a downed player waits on the body.
 hook.Add( "PlayerDeath", "gr_lifecycle", function( ply )
-	ply.GR_RespawnAt = CurTime() + RESPAWN_DELAY
-	local f = ply:GetFateDef()
+	if not ply.GR_Corpse then ply.GR_RespawnAt = CurTime() + RESPAWN_DELAY end
+end )
+
+-- The life is over: start the fate's cooldown and bring the player back as a ghost.
+function Lifecycle.FinalDeath( ply, fateId )
+	ply.GR_RespawnAt = CurTime() + 1
+	local f = fateId and Fates.Get( fateId )
 	if not f or f.index == FATE_GHOST or not f.DeathCooldown then return end
 
 	local untilTime = CurTime() + f.DeathCooldown
@@ -31,7 +43,7 @@ hook.Add( "PlayerDeath", "gr_lifecycle", function( ply )
 	local saved = savedCooldowns[ DB.Key( ply ) ] or {}
 	savedCooldowns[ DB.Key( ply ) ] = saved
 	saved[ f.id ] = untilTime
-end )
+end
 
 hook.Add( "GR_PlayerLoaded", "gr_lifecycle", function( ply )
 	for id, untilTime in pairs( savedCooldowns[ DB.Key( ply ) ] or {} ) do

@@ -38,5 +38,9 @@ return {
 		"sh_ghost.lua",
 		"sh_needs.lua",
 		"cl_atmosphere.lua",
+		"sv_damage.lua",
+		"sh_actions.lua",
+		"sh_corpse.lua",
+		"sh_consciousness.lua",
 	},
 }

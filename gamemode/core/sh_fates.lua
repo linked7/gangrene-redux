@@ -146,8 +146,10 @@ local function callHook( f, name, ... )
 end
 
 -- Physical setup shared by every fate; ghosts float, pass through everything and can't be hurt.
-local function applyBody( ply, f )
+local function applyBody( ply, f, look )
 	local ghost = f.index == FATE_GHOST
+	ply:SetNoDraw( false )
+	ply:Freeze( false )
 	ply:SetMoveType( ghost and MOVETYPE_NOCLIP or MOVETYPE_WALK )
 	ply:SetNotSolid( ghost )
 	ply:SetNoTarget( ghost )
@@ -160,7 +162,7 @@ local function applyBody( ply, f )
 	ply:SetWalkSpeed( Config.WalkSpeed * speed )
 	ply:SetRunSpeed( Config.RunSpeed * speed )
 
-	local look = f.Appearance
+	look = look or f.Appearance
 	if isfunction( look ) then look = look( ply ) end
 	look = look or {}
 	ply:SetModel( look.model or "models/player/group01/male_07.mdl" )
@@ -193,6 +195,7 @@ function GM:PlayerSetHandsModel( ply, hands )
 end
 
 -- Changes `ply`'s fate in one synchronous pass. opts.reason: "spawn", "pick", "revive", "admin".
+-- opts.identity = { name, look } keeps a character's name and body (a revive) instead of rolling new ones.
 function Fates.Apply( ply, id, opts )
 	local f = byId[ id ] or list[ id ]
 	if not f then error( "Fates.Apply: unknown fate " .. tostring( id ), 2 ) end
@@ -203,8 +206,9 @@ function Fates.Apply( ply, id, opts )
 
 	State.Reset( ply )
 	ply:SetFate( f.index )
-	ply:SetCharName( pickName( ply, f ) )
-	applyBody( ply, f )
+	local identity = opts and opts.identity
+	ply:SetCharName( identity and identity.name or pickName( ply, f ) )
+	applyBody( ply, f, identity and identity.look )
 
 	ply:StripWeapons()
 	for _, class in ipairs( f.Loadout or {} ) do ply:Give( class ) end
