@@ -2,6 +2,8 @@
 --
 --   ration_press   working it is a timed action; when it ends an ent_crate of the press's good
 --                  appears beside it. At most Crates.PER_STATION crates per press wait in the world.
+--                  Any class in Crates.STATIONS works the same way (GetGood() names its good); the
+--                  prole-built factory_site joins it in sh_factory.lua.
 --   ent_crate      a ~30 kg prop carried with GMod's own +use pickup. The carrier's weapon is
 --                  holstered and they can only walk; the crate drops where it is when they are hit,
 --                  go down or jump, and it can be pushed along the ground. Touching it to a
@@ -26,6 +28,8 @@ Crates.PRY_TIME = 60
 Crates.PRY_RANGE = 150
 Crates.PRY_LOOT = 3        -- rations a finished pry drops
 Crates.THROW_GRACE = 3     -- seconds a dropped or thrown crate still counts as its carrier's delivery
+Crates.STATIONS = Crates.STATIONS or {}  -- class -> true: entities that run the work loop
+Crates.STATIONS.ration_press = true
 
 local function living( ply ) return IsValid( ply ) and ply:Alive() and not ply:IsGhost() end
 local function isClass( ent, class ) return IsValid( ent ) and ent:GetClass() == class end
@@ -182,8 +186,10 @@ local function besideStation( station, n )
 	return station:GetPos() + station:GetForward() * 50 + station:GetRight() * side + Vector( 0, 0, 30 )
 end
 
+function Crates.IsStation( ent ) return IsValid( ent ) and Crates.STATIONS[ ent:GetClass() ] == true end
+
 function Crates.Work( ply, station )
-	if not living( ply ) or not isClass( station, "ration_press" ) then return false end
+	if not living( ply ) or not Crates.IsStation( station ) then return false end
 	if Crates.Waiting( station ) >= Crates.PER_STATION then
 		Notify( ply, "Crates are piling up here. Haul some away first." )
 		return false
@@ -194,7 +200,7 @@ function Crates.Work( ply, station )
 		return false
 	end
 	local ok = Actions.Start( ply, "press", station, Crates.PRESS_TIME, {
-		label = "Pressing " .. ( Items.Get( good ) and Items.Get( good ).Name or good ),
+		label = ( station.WorkVerb or "Pressing" ) .. " " .. ( Items.Get( good ) and Items.Get( good ).Name or good ),
 		onDone = function( p, st ) Crates.FinishWork( p, st ) end,
 	} )
 	if not ok then Notify( ply, "You are busy." ) end

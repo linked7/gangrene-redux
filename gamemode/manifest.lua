@@ -68,5 +68,7 @@ return {
 		"cl_scoreboard.lua",
 		"cl_help.lua",
 		"sv_soak.lua",
+		"sh_factory.lua",
+		"sh_storage.lua",
 	},
 }
