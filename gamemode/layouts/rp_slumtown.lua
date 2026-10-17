@@ -150,4 +150,17 @@ return {
 	{ class = "summoner", pos = Vector( 1309, 2722, 163 ), ang = Angle( 3, 1, 0 ), kv = { area = "Garage" } },
 	{ class = "summoner", pos = Vector( 1790, 3535, 410 ), ang = Angle( 0, 90, 0 ), kv = { area = "Foreman's Office" } },
 	{ class = "summoner", pos = Vector( 181, 2605, -236 ), ang = Angle( 0, 90, 0 ), kv = { area = "Underground Refineries" } },
+	-- Ore boulders: Gangrene's GM.Boulders spots (maps/list/rp_slumtown.lua)
+	{ class = "boulder", pos = Vector( -281, 2772, -182 ), ang = Angle( 0, 0, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( -730, 2559, -179 ), ang = Angle( 0, 30, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( -445, 2163, -192 ), ang = Angle( 0, 60, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( -692, 1789, -177 ), ang = Angle( 0, 90, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( -110, 1798, -179 ), ang = Angle( 0, 120, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( 317, 1854, -183 ), ang = Angle( 0, 150, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( -691, 2202, -343 ), ang = Angle( 0, 180, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( -606, 1816, -362 ), ang = Angle( 0, 210, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( -359, 1967, -340 ), ang = Angle( 0, 240, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( 83, 1804, -332 ), ang = Angle( 0, 270, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( 301, 2686, -338 ), ang = Angle( 0, 300, 0 ), kv = {}, drop = true },
+	{ class = "boulder", pos = Vector( -645, 2822, -340 ), ang = Angle( 0, 330, 0 ), kv = {}, drop = true },
 }
