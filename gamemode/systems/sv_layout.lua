@@ -47,6 +47,7 @@ Layout.CLASSES = {
 	},
 	water_barrel = {},
 	capsule_spawn = {},
+	gr_shop = {}, -- the shop (systems/sh_shop.lua)
 	fate_station = {
 		fate = function( v )
 			local f = Fates.Get( v )
