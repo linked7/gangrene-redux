@@ -14,7 +14,8 @@ return function( T )
 	-- The round began on map load.
 	T.Check( Round.Number() >= 1, "a round is running: " .. Round.Number() )
 	T.Check( not Round.IsOver(), "and isn't over" )
-	T.Check( math.abs( Round.EndsAt() - CurTime() - Config.RoundLength ) < 120, "it ends round_length after map load" )
+	Round.StartClock() -- the clock starts on the first Kaiser spawn
+	T.Check( math.abs( Round.EndsAt() - CurTime() - Config.RoundLength ) < 120, "it ends round_length after the clock starts" )
 	T.Equal( Econ.Treasury(), Econ.Supply(), "Round.Start filled the treasury (Econ.ResetRound)" )
 	T.Equal( tonumber( DB.GetWorld( "round", 0 ) ), Round.Number(), "the round number is kept in the world table" )
 

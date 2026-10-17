@@ -28,7 +28,7 @@ return function( T )
 	T.Check( entries ~= nil and string.find( source or "", "layouts/rp_slumtown.lua", 1, true ) ~= nil, "Layout.Load reads the shipped file" )
 	entries = entries or {}
 	T.Equal( #entries, #raw, "no entry is skipped as invalid" )
-	T.Equal( #entries, 96, "8 purposes (no sanitar: recruited), trash piles, the machine, its boiler and 4 barrels, 12 capsule points, 4 pump spots, stockpile, sanitation, corpse washer" )
+	T.Equal( #entries, 112, "8 purposes (no sanitar: recruited), trash piles, the machine, its boiler and 4 barrels, 12 capsule points, 4 pump spots, stockpile, sanitation, corpse washer, summoner and rocketturret spots" )
 
 	local classes, fates = {}, {}
 	local enabledPumps, candidates, allDrop, validFates = 0, 0, true, true
@@ -46,7 +46,7 @@ return function( T )
 		elseif e.class == "water_pump" then
 			enabledPumps = enabledPumps + 1
 		end
-		if not e.drop and e.class ~= "capsule_spawn" and e.class ~= "autostitcher" and e.class ~= "konsole_immigration" then allDrop = false end
+		if not e.drop and e.class ~= "capsule_spawn" and e.class ~= "autostitcher" and e.class ~= "konsole_immigration" and e.class ~= "summoner" then allDrop = false end
 		if e.drop and e.class == "capsule_spawn" then allDrop = false end
 	end
 	T.Equal( classes.fate_station, 8, "7 old purposes (sanitar ones removed, commented-out proles stay out) and the slave's" )
@@ -73,7 +73,7 @@ return function( T )
 	T.Equal( candidates, 2, "the other two are candidates, and only pumps are" )
 	T.Equal( classes.state_stockpile, 1, "one stockpile" )
 	T.Equal( classes.sanitation_station, 1, "one sanitation station" )
-	T.Check( allDrop, "every converted model drops to the floor; capsule points stay where they were" )
+	T.Check( allDrop, "every converted model drops to the floor; capsule points and wall-mounted summoners stay where they were" )
 	T.Equal( entries[ 1 ].ang, Angle( 0, -178, 0 ), "angles are kept from the original" )
 	T.Equal( entries[ 1 ].pos, Vector( 1157, -427, 401 ), "and so are positions" )
 
@@ -87,7 +87,7 @@ return function( T )
 	T.Wait( 0.1 )
 	T.Equal( #living(), 0, "gm_construct's layout is cleared" )
 	local n = Layout.Spawn( SLUM )
-	T.Equal( n, 94, "every entry but the two candidates spawns" )
+	T.Equal( n, 110, "every entry but the two candidates spawns" )
 	local stockpiles, spare = 0, 0
 	for _, ent in ipairs( living() ) do
 		if ent:GetClass() == "state_stockpile" then stockpiles = stockpiles + 1 end
@@ -97,7 +97,7 @@ return function( T )
 	end
 	T.Equal( stockpiles, 1, "only the shipped stockpile, no fallback on top of it" )
 	T.Equal( spare, 0, "no candidate spawned" )
-	T.Equal( #living(), 94, "nothing else in the world" )
+	T.Equal( #living(), 110, "nothing else in the world" )
 	T.Equal( Layout.Spawn( SLUM ), 0, "a second spawn adds nothing" )
 
 	-- The flags on a fake map's json ---------------------------------------------------------------
