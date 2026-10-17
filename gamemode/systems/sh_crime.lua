@@ -270,6 +270,7 @@ function Crime.Judge( attacker, victim )
 	if attacker == victim or attacker:IsGhost() then return end
 	local out = evaluate( Crime.JudgeRules, attacker, victim )
 	if out then apply( attacker, out ) end
+	hook.Run( "GR_Judged", attacker, victim, out ) -- presentation (sh_fx.lua's scares)
 	Log.Debug( "crime", "judge %s -> %s: %s", attacker:Nick(), victim:Nick(), out and table.concat( out.rules, "," ) or "no rule" )
 	return out
 end

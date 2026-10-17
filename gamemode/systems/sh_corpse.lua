@@ -50,28 +50,17 @@ local function addInteract()
 end
 if Interact and Interact.Add then addInteract() else hook.Add( "PostGamemodeLoaded", "gr_corpse", addInteract ) end
 
-if CLIENT then
-	local function screen( text, left, col )
-		surface.SetDrawColor( 0, 0, 0, 255 )
-		surface.DrawRect( 0, 0, ScrW(), ScrH() )
-		draw.SimpleText( text, "DermaLarge", ScrW() / 2, ScrH() / 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-		draw.SimpleText( math.ceil( left ), "DermaLarge", ScrW() / 2, ScrH() / 2 + 40, Color( 90, 90, 90 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-	end
-	hook.Add( "HUDPaint", "gr_corpse", function()
-		local ply = LocalPlayer()
-		if ply:Alive() then return end
-		local bleed = ply:GetBleedoutUntil() - CurTime()
-		local wake = ply:GetWakeUntil() - CurTime()
-		if bleed > 0 then
-			screen( "You are bleeding out.", bleed, Color( 150, 20, 20 ) )
-		elseif wake > 0 then
-			screen( "You are down. You will get up.", wake, Color( 120, 120, 120 ) )
-		end
-	end )
-	return
-end
+-- Every client keeps a registry of bodies from gr_corpse (cl_crosshair.lua): the cross-texts over
+-- a body and the own-body checks read it instead of searching for ragdolls (docs/05 §6).
+Net.Pool( "gr_corpse" )
 
-Corpse.DECAY = 300       -- seconds a dead body lies before it despawns
+-- The downed screen's first line (cl_hud.lua), set when the player goes down.
+State.Field( "LastThought", "String", 0, State.OWNER, "" )
+
+Corpse.DECAY = 300       -- seconds a dead body lies before it despawns (the client's decay bar reads it too)
+
+if CLIENT then return end
+
 Corpse.REVIVE_TIME = 5   -- seconds a korpsman works on the body
 Corpse.REVIVE_HEALTH = 10
 
@@ -83,6 +72,30 @@ function Corpse.Of( ply )
 	local rag = ply.GR_Corpse
 	if IsValid( rag ) then return rag, registry[ rag ] end
 end
+
+-- Tells clients (all, or `to`) who a body is and how it is: "unconscious", "wounded", "dying" or
+-- "dead", with when that ends (the wake/bleed-out timer, or the decay). Presentation only.
+function Corpse.Sync( rag, to )
+	local rec = registry[ rag ]
+	if not rec or not IsValid( rag ) then return end
+	local look, untilTime = rec.state, 0
+	if rec.state == "downed" then
+		look, untilTime = rec.down or "dying", rec.downUntil or 0
+	elseif rec.state == "dead" then
+		untilTime = rec.decayAt
+	end
+	net.Start( "gr_corpse" )
+	net.WriteUInt( rag:EntIndex(), 16 )
+	net.WriteUInt( IsValid( rec.owner ) and rec.owner:EntIndex() or 0, 8 )
+	net.WriteString( rec.name or "" )
+	net.WriteString( look )
+	net.WriteFloat( untilTime )
+	if to then net.Send( to ) else net.Broadcast() end
+end
+
+hook.Add( "GR_PlayerReady", "gr_corpse", function( ply )
+	for rag in pairs( registry ) do Corpse.Sync( rag, ply ) end
+end )
 
 local LAST_THOUGHTS = {
 	"Not today, not ever.",
@@ -149,8 +162,10 @@ function Corpse.Create( ply, state, force )
 		decayAt = math.huge,
 	}
 	rag.GR_Corpse = rec
+	rec.rag = rag
 	registry[ rag ] = rec
 	ply.GR_Corpse = rag
+	if state ~= "downed" then Corpse.Sync( rag ) end -- a downed body syncs once setDown has run
 	return rag, rec
 end
 
@@ -170,6 +185,7 @@ local function setDown( rec, down )
 	rec.down = down
 	local untilTime = CurTime() + ( down == "dying" and Config.BleedoutTime or Config.WakeTime )
 	rec.downUntil = untilTime
+	Corpse.Sync( rec.rag )
 	if not IsValid( ply ) then return end
 	ply:SetDownState( down )
 	ply:SetBleedoutUntil( down == "dying" and untilTime or 0 )
@@ -199,7 +215,7 @@ function Corpse.Down( ply, dmg, attacker )
 	setDown( rec, overkill >= Config.LethalOverkill and "dying" or "wounded" )
 
 	ply.GR_RespawnAt = math.huge
-	Notify( ply, LAST_THOUGHTS[ math.random( #LAST_THOUGHTS ) ] )
+	ply:SetLastThought( LAST_THOUGHTS[ math.random( #LAST_THOUGHTS ) ] ) -- the downed screen's first line
 	hook.Run( "GR_PlayerDowned", ply, rag )
 	Log.Debug( "corpse", "%s is downed (%s, overkill %s)", ply:Nick(), rec.down, tostring( overkill ) )
 	-- Some deaths are outright (the despair heart attack): the body holds the inventory as usual,
@@ -228,6 +244,7 @@ function Corpse.Die( rag, reason )
 	if not rec or rec.state == "dead" then return end
 	rec.state = "dead"
 	rec.decayAt = CurTime() + Corpse.DECAY
+	Corpse.Sync( rag )
 	local ply = rec.owner
 	if IsValid( ply ) and ply.GR_Corpse == rag then
 		ply.GR_Corpse = nil

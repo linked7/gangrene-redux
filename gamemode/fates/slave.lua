@@ -5,6 +5,8 @@
 -- slave applies to a prole. The way out is Rank.Free (systems/sh_rank.lua).
 local NOUN = { "Drone", "Slave", "Servant", "Serf", "Laborer", "Captive", "Vassal", "Peon" }
 local MODELS = { 2, 4, 6, 8 }
+-- Shuffling (the original's slave Footstep): quiet at a walk, loud at a run.
+local SHUFFLE = { "npc/zombie/foot1.wav", "npc/zombie/foot2.wav", "npc/zombie/foot3.wav" }
 
 -- The barcode is the tail of the account id, so the same newcomer keeps the same number.
 local function barcode( ply )
@@ -20,6 +22,7 @@ Fates.Define( "slave", {
 	ChatSounds = { "npc/headcrab_poison/ph_talk1.wav", "npc/headcrab_poison/ph_talk2.wav", "npc/headcrab_poison/ph_talk3.wav" }, -- not the prole's
 	Cost = 0,
 	ForNewPlayers = true,
+	Footstep = function( ply ) ply:EmitSound( SHUFFLE[ math.random( #SHUFFLE ) ], ply:GetVelocity():Length2D() < 150 and 35 or 75 ) end,
 	Marker = "Newcomer", -- drawn over their head for everyone (cl_round.lua); the Fate field is public
 	Names = function( ply ) return NOUN[ math.random( #NOUN ) ] .. " #" .. barcode( ply ) end,
 	Appearance = function()

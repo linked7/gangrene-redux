@@ -1,20 +1,5 @@
--- Presentation only: a drained, grey picture and close fog. No gameplay state lives here.
-local grade = {
-	[ "$pp_colour_addr" ] = 0,
-	[ "$pp_colour_addg" ] = 0.01,
-	[ "$pp_colour_addb" ] = 0,
-	[ "$pp_colour_brightness" ] = -0.04,
-	[ "$pp_colour_contrast" ] = 1.1,
-	[ "$pp_colour_colour" ] = 0.45,
-	[ "$pp_colour_mulr" ] = 0,
-	[ "$pp_colour_mulg" ] = 0,
-	[ "$pp_colour_mulb" ] = 0,
-}
-
-hook.Add( "RenderScreenspaceEffects", "gr_atmosphere", function()
-	DrawColorModify( grade )
-end )
-
+-- Presentation only: close fog. No gameplay state lives here. The colour grade is the
+-- original's map colour filter, in cl_effects.lua (it replaced the grey grade that was here).
 local FOG_START, FOG_END, FOG_DENSITY = 200, 2500, 0.85
 local FOG_COLOR = { 70, 72, 66 }
 

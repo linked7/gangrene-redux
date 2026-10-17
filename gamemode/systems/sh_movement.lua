@@ -57,25 +57,8 @@ end
 if Interact and Interact.Add then addInteract() else hook.Add( "PostGamemodeLoaded", "gr_movement", addInteract ) end
 
 if CLIENT then
-	local third = CreateClientConVar( "cc_thirdperson", "0", true, false, "See yourself from behind." )
-	local HULL = Vector( 4, 4, 4 )
-
-	local function thirdPerson( ply )
-		return ply:Alive() and ( ply:IsGhost() or third:GetBool() )
-	end
-
-	hook.Add( "CalcView", "gr_thirdperson", function( ply, origin, angles, fov )
-		if not thirdPerson( ply ) then return end
-		local tr = util.TraceHull( {
-			start = origin, endpos = origin - angles:Forward() * 90 + angles:Right() * 15,
-			filter = ply, mins = -HULL, maxs = HULL, mask = MASK_SOLID_BRUSHONLY,
-		} )
-		return { origin = tr.HitPos, angles = angles, fov = fov, drawviewer = true }
-	end )
-
-	hook.Add( "ShouldDrawLocalPlayer", "gr_thirdperson", function( ply )
-		if thirdPerson( ply ) then return true end
-	end )
+	-- The camera itself is cl_view.lua's (HUD.ThirdPerson reads this), so only one CalcView answers.
+	CreateClientConVar( "cc_thirdperson", "0", true, false, "See yourself from behind." )
 	return
 end
 
