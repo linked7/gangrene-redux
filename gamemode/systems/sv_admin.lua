@@ -12,7 +12,10 @@
 --   noclip                                   GM:PlayerNoClip: staff only, never ghosts (they float already)
 --
 -- Each returns true, or false and why, and every action is logged under "admin".
--- Console: gr_kick, gr_ban, gr_unban, gr_setrank, gr_setfate. Chat: !kick, !ban, !unban, !setrank, !setfate.
+--   Admin.Noclip( by )                       toggle your own noclip (staff player, alive, not a ghost)
+-- Kick and ban refuse yourself and other staff when a player asks; the console may do anything.
+-- Reasons are cut to Admin.MAX_REASON characters.
+-- Console: gr_kick, gr_ban, gr_unban, gr_setrank, gr_setfate, gr_noclip. Chat: !kick, !ban, !unban, !setrank, !setfate, !noclip.
 Admin = Admin or {}
 
 Admin.MAX_BAN_MINUTES = 60 * 24 * 365 * 10
@@ -68,16 +71,28 @@ function Admin.Find( text )
 	return nil, string.format( "No player matches %q.", text )
 end
 
-local function check( by, target )
+-- `punish` (kick, ban) also refuses yourself and other staff when a player, not the console, asks.
+local function check( by, target, punish )
 	if not Admin.IsStaff( by ) then return false, "You are not staff." end
 	if not ( IsValid( target ) and target:IsPlayer() ) then return false, "No such player." end
+	if punish and IsValid( by ) then
+		if target == by then return false, "Not on yourself." end
+		if Admin.IsStaff( target ) then return false, "They are staff." end
+	end
 	return true
 end
 
+Admin.MAX_REASON = 120
+
+local function cleanReason( reason, default )
+	if reason == nil or reason == "" then return default end
+	return string.sub( tostring( reason ), 1, Admin.MAX_REASON )
+end
+
 function Admin.Kick( by, target, reason )
-	local ok, why = check( by, target )
+	local ok, why = check( by, target, true )
 	if not ok then return refuse( by, why ) end
-	reason = reason ~= nil and reason ~= "" and reason or "Kicked by staff"
+	reason = cleanReason( reason, "Kicked by staff" )
 	act( by, "kicked %s: %s", who( target ), reason )
 	target:Kick( reason )
 	return true
@@ -87,10 +102,11 @@ end
 function Admin.Ban( by, target, minutes, reason )
 	if not Admin.IsStaff( by ) then return refuse( by, "You are not staff." ) end
 	minutes = math.Clamp( math.floor( tonumber( minutes ) or 0 ), 0, Admin.MAX_BAN_MINUTES )
-	reason = reason ~= nil and reason ~= "" and reason or "Banned by staff"
+	reason = cleanReason( reason, "Banned by staff" )
 	local key, label
 	if isentity( target ) then
-		if not ( IsValid( target ) and target:IsPlayer() ) then return refuse( by, "No such player." ) end
+		local ok, why = check( by, target, true )
+		if not ok then return refuse( by, why ) end
 		key, label = DB.Key( target ), who( target )
 	else
 		local text = tostring( target or "" )
@@ -142,6 +158,16 @@ function GM:PlayerNoClip( ply, desired )
 	return true
 end
 
+-- Toggles the caller's noclip through the same gate as the engine's noclip key.
+function Admin.Noclip( by )
+	if not ( IsValid( by ) and Admin.IsStaff( by ) ) then return refuse( by, "You are not staff." ) end
+	if not by:Alive() or by:IsGhost() then return refuse( by, "Not now." ) end
+	local on = by:GetMoveType() ~= MOVETYPE_NOCLIP
+	if hook.Run( "PlayerNoClip", by, on ) == false then return refuse( by, "Not now." ) end
+	by:SetMoveType( on and MOVETYPE_NOCLIP or MOVETYPE_WALK )
+	return true
+end
+
 -- GMod's own receivers: properties are off in base-derived gamemodes (GM:CanProperty) and
 -- variable editing is admin-only (GM:CanEditVariable), but both still read messages, so they
 -- get the same rate limit as ours.
@@ -180,6 +206,11 @@ local COMMANDS = {
 			return Admin.SetRank( by, p, args[ 2 ] )
 		end,
 	},
+	noclip = {
+		usage = "noclip",
+		noargs = true,
+		run = function( by ) return Admin.Noclip( by ) end,
+	},
 	setfate = {
 		usage = "setfate <player> <fate id>",
 		run = function( by, args )
@@ -194,7 +225,7 @@ function Admin.Command( by, name, args )
 	local c = COMMANDS[ name ]
 	if not c then return false end
 	if not Admin.IsStaff( by ) then return refuse( by, "You are not staff." ) end
-	if not args[ 1 ] then return refuse( by, "usage: " .. c.usage ) end
+	if not args[ 1 ] and not c.noargs then return refuse( by, "usage: " .. c.usage ) end
 	local ok, why = c.run( by, args )
 	if ok == false and why == nil then reply( by, "usage: " .. c.usage ) end
 	return ok, why
