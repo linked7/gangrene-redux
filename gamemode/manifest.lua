@@ -1,6 +1,6 @@
 -- Load order for the whole gamemode. Every file under core/ and systems/ must be listed here.
--- core/ loads first, then fates/ (shared data, no prefix), then systems/, each in the order
--- written. In core/ and systems/ the prefix picks the realm:
+-- core/ loads first, then races/ and fates/ (shared data, no prefix), then systems/, each in
+-- the order written. In core/ and systems/ the prefix picks the realm:
 --   sv_  server only
 --   sh_  both
 --   cl_  client only (sent to clients by the server)
@@ -14,7 +14,12 @@ return {
 		"sh_state.lua",
 		"sh_fields.lua",
 		"sh_notify.lua",
+		"sh_races.lua",
 		"sh_fates.lua",
+	},
+	-- The core is Gangral-only; Outsider, Rottish, Prohladian and skinless come with later features.
+	races = {
+		"gangral.lua",
 	},
 	-- Order matters: a fate with Base must come after its base. Ghost must be first (FATE_GHOST = 1).
 	fates = {

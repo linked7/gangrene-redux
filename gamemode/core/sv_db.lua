@@ -68,7 +68,7 @@ end
 -- Bots have no SteamID, so they are keyed by name; a bot that rejoins with the same name
 -- gets its row back, which is what the persistence tests rely on.
 function DB.Key( ply )
-	if ply:IsBot() then return "bot:" .. ply:Nick() end
+	if ply:IsBot() then return "bot:" .. ply:SteamName() end
 	return ply:SteamID64()
 end
 

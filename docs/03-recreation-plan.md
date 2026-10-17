@@ -115,6 +115,10 @@
 - **Names:** random from a list of names per fate (proles get worker names, sanitars get codenames).
 - **Appearance:** body, model, skin and bodygroups come from a fate field `Appearance = {model, bodygroups, skin}`, or a function returning that table.
 - **Clothing:** if bonemerged clothing comes back, it is a PUBLIC field holding a small integer outfit id. Clients build the bonemerge locally from it. No `WriteTable` broadcast and no timers. (P8)
+- **Race:** an Appearance field (`race = "gangral"`). In the core every fate is **Gangral**, because the game is set in Gangrene.
+  - Races are data in `races/<id>.lua` (hands, skin tones and an optional speech modifier), so **Outsider**, **Rottish**, **Prohladian** and **skinless** characters can be added later without code changes. Outsider is the likely first addition, for local migrants and cultists.
+  - "No race shown" is `race = nil`, not a fake race (the original's `unimportant`).
+  - Use the lore names in code. Don't use the old `liverman`, `arrhythmian` or `kidneystani` IDs.
 - **Name validation:** one shared `ValidateName` with a correct character whitelist (B12). Only needed if players get to name themselves.
 - **Done when:** a fate change shows the right model on every client with no flicker. Test with 2 clients and lag simulated with `net_fakelag`.
 
@@ -301,7 +305,7 @@ These are ordered by how much they add to the feel compared with their cost:
 6. Dealer stocks and contraband.
 7. Foreman work orders and factories.
 8. Organs, parasites and mutations.
-9. Rot, Doom and War.
+9. Rot, Doom and War: war with Rottingham (Rottish, the Duke and the UR) and the Prohlada Union (Prohladian, the kommissars), plus refugees from both.
 10. Potentials and antagonists.
 
 ## Dropped outright

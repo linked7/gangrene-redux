@@ -10,4 +10,6 @@ Fates.Define( "kaiser", {
 	Health = 100,
 	Armor = 75,
 	Radio = { "state" },
+	Names = function() return math.random( 100 ) == 1 and "Watch Kaiser Thule" or "Witch Kaiser Thule" end,
+	Appearance = { model = "models/player/breen.mdl", race = "gangral" },
 } )

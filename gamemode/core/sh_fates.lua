@@ -22,7 +22,8 @@ local SCHEMA = {
 	Armor = { "number" },
 	Loadout = { "table" },         -- weapon classes
 	Radio = { "table" },           -- radio channel names
-	Appearance = { "table", "function" },
+	Appearance = { "table", "function" }, -- { model, skin, bodygroups = { name = value }, race = id }
+	Names = { "table", "function" }, -- list of names, or function( ply ) -> name; nil = Steam name
 	Color = { "table" },           -- for HUD and chat
 	OnEnter = { "function" },      -- ( ply, reason )
 	OnLeave = { "function" },      -- ( ply, newFate )
@@ -69,8 +70,19 @@ function Fates.All() return list end
 
 FATE_GHOST = 1
 State.Field( "Fate", "UInt", 4, State.PUBLIC, FATE_GHOST, { keep = true } )
+State.Field( "CharName", "String", 0, State.PUBLIC, "" )
 
 local meta = FindMetaTable( "Player" )
+
+-- In character, a player is called by their assigned name; SteamName() is the account name.
+meta.SteamName = meta.SteamName or meta.Nick
+function meta:Nick()
+	local name = self:GetCharName()
+	if name == "" then return self:SteamName() end
+	return name
+end
+meta.Name = meta.Nick
+meta.GetName = meta.Nick
 
 function meta:GetFateDef() return list[ self:GetFate() ] end
 function meta:IsGhost() return self:GetFate() == FATE_GHOST end
@@ -146,8 +158,34 @@ local function applyBody( ply, f )
 
 	local look = f.Appearance
 	if isfunction( look ) then look = look( ply ) end
-	ply:SetModel( look and look.model or "models/player/group01/male_07.mdl" )
+	look = look or {}
+	ply:SetModel( look.model or "models/player/group01/male_07.mdl" )
+	ply:SetSkin( look.skin or 0 )
+	for i = 0, ply:GetNumBodyGroups() - 1 do ply:SetBodygroup( i, 0 ) end
+	for name, value in pairs( look.bodygroups or {} ) do
+		local i = ply:FindBodygroupByName( name )
+		if i >= 0 then ply:SetBodygroup( i, value ) end
+	end
+	local race = look.race and Races.Get( look.race )
+	if look.race and not race then Log.Error( "fates", "%s: unknown race %s", f.id, look.race ) end
+	ply:SetRace( race and race.index or 0 )
 	ply:SetupHands()
+end
+
+local function pickName( ply, f )
+	local names = f.Names
+	if isfunction( names ) then return names( ply ) end
+	if istable( names ) then return names[ math.random( #names ) ] end
+	return ""
+end
+
+function GM:PlayerSetHandsModel( ply, hands )
+	local race = ply:GetRaceDef()
+	local info = race and race.Hands or player_manager.TranslatePlayerHands( player_manager.TranslateToPlayerModelName( ply:GetModel() ) )
+	if not info then return end
+	hands:SetModel( info.model )
+	hands:SetSkin( info.skin or 0 )
+	hands:SetBodyGroups( info.body or "0000000" )
 end
 
 -- Changes `ply`'s fate in one synchronous pass. opts.reason: "spawn", "pick", "revive", "admin".
@@ -161,6 +199,7 @@ function Fates.Apply( ply, id, opts )
 
 	State.Reset( ply )
 	ply:SetFate( f.index )
+	ply:SetCharName( pickName( ply, f ) )
 	applyBody( ply, f )
 
 	ply:StripWeapons()

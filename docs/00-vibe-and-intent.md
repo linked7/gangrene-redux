@@ -13,7 +13,7 @@ This is my reading of the gamemode from its code, fate texts, chat lines and the
   - Money is **Bones**.
   - Life force is **Stem Cells**.
   - Sanitars are paid in **Teeth**.
-  - Enemy nations are named after organ failures: **Kidneystan** and **Arrhythmia**.
+  - The rival nations are **Rottingham** and the **Prohlada Union**. Their old code names were organ failures (Arrhythmia, Kidneystan). See *The world* below.
   - Weather can be *meat weather*.
   - Corpses visibly rot through stages.
   - The state slogan voice (*"our belovungure"*) is mock-propaganda: earnest, broken and threatening.
@@ -21,6 +21,23 @@ This is my reading of the gamemode from its code, fate texts, chat lines and the
   - Fate blurbs undercut themselves: the Sanitar is *"the keeper of all things moral, safe, and clean... hopefully."*, the Kaiser has *"the most stressful job in Gangrene."*, and the Prole is *"the body and blood of our town"* but also *"an unpatriotic resident"* of *"this shithole"*.
   - Getting up from death can print *"…'s body says 'Not yet.'"*.
 - **The aesthetic is Soviet / Eastern Bloc industrial decay**, with an occult edge: ghosts, rituals, the Rot, a "Necromancer" admin rank. It sits somewhere between *Pathologic*, *Papers, Please* and a grimy HL2 RP server.
+
+## The world
+
+There are three nations, each with its own race.
+
+| Nation | System | Ruler | Race | Old code name |
+|---|---|---|---|---|
+| **Gangrene** | Authoritarian socialist | The **Witch Kaiser** | **Gangral** | Liver Failure (`LF`, `FAC_LF`, race `liverman`) |
+| **Rottingham** | Hyper-capitalist monarchy | **King Rottingham**, little more than a corpse on his throne. At the end of the war the **Duke of Rottingham** appeared in his place. The Duke leads the **UR**, Rottingham's largest paramilitary. | **Rottish** | Cardiac Arrhythmia (`arrhythmian`, `POTTYPE_ARRHYTHMIA`) |
+| **Prohlada Union** | Communist | A **council of kommissars**. It was once ruled by **Grozny the Terrible**, a winter-lich. | **Prohladian** | Kidneystan (`kidneystani`, `kidney_*` fates, `POTTYPE_KIDNEYSTAN`) |
+
+- **Other peoples** without a nation (or whose nation is undisclosed):
+  - **Outsiders:** closely related to the Gangral, but they often live outside the main city. They have no great nation to go to war with. Local migrants and cultists are Outsiders.
+  - **The skinless.**
+- `unimportant` isn't a people. It was a code placeholder meaning "no race shown".
+- **The game is set in Gangrene.** The other two nations appear as wartime enemies, refugees, dealers and soldiers (the original's `rottingham_*` and `kidney_*` fates and the `duke` and `kommissar` fates).
+- **In the remake, use the lore names in code too:** `gangrene`, `rottingham`, `prohlada`, and `gangral`, `rottish`, `prohladian`, `skinless`. The old organ-failure names were placeholders, and leaving them in code is how the naming got muddled.
 
 ## What it's meant to feel like
 

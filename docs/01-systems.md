@@ -55,7 +55,7 @@ There are two ways in:
   4. `Limit` / `DynamicLimits`
   5. the per-fate death timer
   6. CountMax
-- **`potential`** (`entities/entities/potential.lua`, `LM/potentials/`) is a timed group spawn of special fates: evil, party, refugee, gangrene, Kidneystan or Arrhythmia.
+- **`potential`** (`entities/entities/potential.lua`, `LM/potentials/`) is a timed group spawn of special fates: evil, party, refugee, gangrene, Kidneystan (Prohlada) or Arrhythmia (Rottingham).
   - It is weighted by rank, ghost count, rot level and population.
   - Ghosts browse potentials in the F2 fate menu (`sh_fatemenu.lua`), whose ENVISION button teleports them there.
   - **The remake doesn't need potentials.**
@@ -208,6 +208,21 @@ There are two ways in:
 - **`SyncAllData` / `SyncAllOtherData`** (`:205`, `:226`) send one message per field per player when someone joins.
 - **Two more systems run in parallel:** stock GMod `SetNW*` vars (used for Teeth, shroom, bleedout and upgrades) and a custom `LM/replicate` library.
 
+## 13b. Nations and races (code name → lore name)
+
+| Code | Lore |
+|---|---|
+| `FAC_LF`, "LF", "Liver Failure" | **Gangrene** (the Witch Kaiser's state) |
+| `arrhythmian`, `POTTYPE_ARRHYTHMIA`, `rottingham_*`, `duke` | **Rottingham**. Race **Rottish**. Ruled by the corpse-king King Rottingham, and after the war by the Duke of the UR paramilitary. |
+| `kidneystani`, `POTTYPE_KIDNEYSTAN`, `kidney_*`, `kommissar` | **Prohlada Union**. Race **Prohladian**. Ruled by a council of kommissars, and before that by Grozny the Terrible, a winter-lich. |
+| race `liverman` | **Gangral** |
+| race `skinless` | **Skinless** (stateless or undisclosed) |
+| race `outsider` | **Outsider**: close kin of the Gangral who often live outside the main city, with no nation. Local migrants and cultists were Outsiders. |
+| race `unimportant` | Not a race: a placeholder that shows no race |
+
+- **Race code:** races are defined in `LM/races/list/*.lua` (`RACE.Name`, hands, speech mangling via `RacialQuirks`, and accent-letter tables in `LM/races/sh_races.lua`).
+- **How fates use races:** each fate picks one from `FATE.RaceWeights`.
+
 ## 14. World simulation (out of scope for the core, recorded for completeness)
 
 - **Weather:** a cycle with night every 15 min, plus yellow and meat weather.
@@ -215,6 +230,6 @@ There are two ways in:
 - **Spawners:** about 10 resource spawners (boulders, trees, amoebas, capsules, wasteland metal…).
 - **Faction systems:**
   - **Rot / Doom:** a city decay meter with end states (`DOOM_DYING`, `DOOM_DEAD`).
-  - **War:** against Kidneystan and Arrhythmia, with ceasefires and war machines (`LM/war`).
+  - **War:** against Prohlada (code: Kidneystan) and Rottingham (code: Arrhythmia), with ceasefires and war machines (`LM/war`).
   - **Other systems:** Hogmode events, rituals, cults, gangs/unions, mutations, parasites, organs, races, objectives and the "prapor" contraband missions.
 - All of this ticks from one function, `GM:Think` in `LM/framework/sv_think.lua`. Pitfall P-PERF-1 covers it.
