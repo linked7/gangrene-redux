@@ -135,6 +135,7 @@ return function( T )
 	T.Check( p1:GetWanted() == WANTED_JUDGMENT and near( Crime.WantedLeft( p1 ), 300 ), "breaking it is judgment-wanted for 300 s" )
 	T.Equal( p1:GetWantedReason(), "breaking into the stockpile", "the break-in rule ran" )
 	T.Equal( Econ.Stock( "ration" ), stock - 3, "three rations came out of the stock" )
+	T.Wait( 0.7 ) -- Items.SpawnMany puts them down one every 0.25 s
 	local loose = 0
 	for _, e in ipairs( ents.FindInSphere( stockpile:GetPos(), 150 ) ) do
 		if e:GetClass() == "gr_item" and e:GetItemId() == "ration" then

@@ -2,7 +2,7 @@
 # Syntax check, then every scenario in order (some depend on the one before: step1a -> step1b).
 cd "$(dirname "$0")/.." || exit 1
 tools/check_syntax.sh || exit 1
-SCENARIOS=(step0 step1a step1b step2 step3 step4 step5 step6 step6b step7 step8 step9 step10 step12 step11b step11c step11d step11e step13 step11a step14a step15a step15b step16a step16b step16d step16c step16e step16f step17a step14b)
+SCENARIOS=(step0 step1a step1b step2 step3 step4 step5 step6 step6b step7 step8 step9 step10 step12 step11b step11c step11d step11e step13 step11a step14a step15a step15b step16a step16b step16d step16c step16e step16f step17a step14b spawnmany)
 failed=()
 for s in "${SCENARIOS[@]}"; do
 	if tools/srv.sh test "$s" 120 >/tmp/gr_test_$$.txt 2>&1; then
