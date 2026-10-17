@@ -168,7 +168,7 @@ return function( T )
 
 	-- A revive keeps the corpse's items however Fates.Apply and the hook are ordered.
 	Fates.Apply( a, "prole", { reason = "revive" } )
-	hook.Run( "GR_PlayerRevived", a, rag, b )
+	hook.Run( "GR_PlayerRestored", a, rag, "revive" )
 	T.Check( Inventory.Count( a, "ration" ) == 2 and Inventory.Count( a, "baton" ) == 1, "revive gives the items back" )
 	T.Equal( Inventory.Weight( a ), weight, "the weight is restored" )
 	T.Check( a:HasWeapon( "weapon_stunstick" ), "the baton is in hand again" )

@@ -70,9 +70,9 @@ function Kit.Roll( kit )
 	return out
 end
 
--- A new life gets the kit; a revived body keeps what it had instead.
+-- A new life gets the kit; a revived (or risen) body keeps what it had instead.
 hook.Add( "GR_FateEnter", "gr_kit", function( ply, f, reason )
-	if reason == "revive" or not f.Kit then return end
+	if Fates.SameLife( reason ) or not f.Kit then return end
 	for _, id in ipairs( Kit.Roll( f.Kit ) ) do
 		if not Inventory.Add( ply, id, 1, true ) then Log.Warn( "kit", "%s: could not give %s", f.id, tostring( id ) ) end
 	end

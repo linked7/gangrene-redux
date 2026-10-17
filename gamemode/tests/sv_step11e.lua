@@ -106,7 +106,7 @@ return function( T )
 	T.WaitUntil( function() return s2:GetSlaveTime() >= 3 end, 6, "slave time accumulates" )
 	s3:SetSlaveTime( 0.5 ) -- too little
 	s4:Kill()               -- downed at the end
-	T.Check( not s4:Alive() and select( 2, Corpse.Of( s4 ) ).state == "bleedout", "slave4 is downed" )
+	T.Check( not s4:Alive() and select( 2, Corpse.Of( s4 ) ).state == "downed", "slave4 is downed" )
 	s4:SetSlaveTime( 100 )
 
 	T.Check( Rank.SurvivedRound( s2 ), "slave2 survived long enough" )

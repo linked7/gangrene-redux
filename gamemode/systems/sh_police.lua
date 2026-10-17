@@ -75,7 +75,7 @@ Interact.Add( "inspect", {
 local function arrestable( ent )
 	if CLIENT then return ent:GetClass() == "prop_ragdoll" end
 	local rec = Corpse.Get( ent )
-	return rec ~= nil and IsValid( rec.owner ) and ( rec.state == "unconscious" or rec.state == "bleedout" )
+	return rec ~= nil and IsValid( rec.owner ) and ( rec.state == "unconscious" or rec.state == "downed" )
 end
 
 Interact.Add( "arrest", {

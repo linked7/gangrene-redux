@@ -5,7 +5,8 @@
 --
 -- ctx.hitgroup is the body part hit. A hook may change dmg; returning true blocks the hit.
 -- The Health stage applies non-lethal damage itself, so the engine's own armor rules never run.
--- Lethal damage goes through to the engine, which kills the player (GM:DoPlayerDeath downs them).
+-- Lethal damage goes through to the engine, which kills the player (GM:DoPlayerDeath downs them,
+-- never killing outright; see sh_corpse.lua for wounded and dying).
 Damage = Damage or {}
 Damage.STAGES = { "Scale", "Armor", "Consciousness", "Health" }
 
@@ -88,5 +89,8 @@ Damage.Add( "Health", "apply", function( ply, dmg )
 		ply:SetHealth( ply:Health() - math.ceil( amount ) )
 		return true
 	end
-	ply:SetArmor( 0 ) -- lethal: let the engine kill with this attacker and inflictor
+	-- Lethal: let the engine kill with this attacker and inflictor. GM:DoPlayerDeath downs the
+	-- player, wounded or dying by how far past 0 HP this hit went (sh_corpse.lua).
+	Corpse.NoteLethalHit( ply, amount - ply:Health(), dmg:GetAttacker() )
+	ply:SetArmor( 0 )
 end )
