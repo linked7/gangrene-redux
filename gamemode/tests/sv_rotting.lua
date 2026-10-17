@@ -60,4 +60,19 @@ return function( T )
 	-- A slave rots fast.
 	T.Equal( Fates.Get( "slave" ).DecayOverride, 30, "a slave's first stage is 30 s" )
 	b:Spawn()
+
+	-- The miasma sickens everyone but a sanitar.
+	T.Wait( 0.2 )
+	local fake = { rotStage = 2, state = "dead" }
+	cop:SetPos( Vector( 0, 0, 0 ) ); b:SetPos( Vector( 20, 0, 0 ) )
+	local copPox, bPox, copHp, bHp = Needs.Get( cop, "Pox" ), Needs.Get( b, "Pox" ), cop:Health(), b:Health()
+	Rotting.Miasma( cop, fake )
+	T.Check( Needs.Get( cop, "Pox" ) > copPox, "the miasma gives a cop the pox" )
+	T.Check( cop:Health() < copHp, "and poisons them" )
+	T.Equal( Needs.Get( b, "Pox" ), bPox, "a sanitar is not sickened" )
+	T.Equal( b:Health(), bHp, "or poisoned" )
+	cop:SetPos( Vector( 5000, 0, 0 ) )
+	copPox = Needs.Get( cop, "Pox" )
+	Rotting.Miasma( b, fake )
+	T.Equal( Needs.Get( cop, "Pox" ), copPox, "far away it does nothing" )
 end

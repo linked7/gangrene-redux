@@ -17,6 +17,9 @@ Rotting.REWARD_MIN, Rotting.REWARD_MAX, Rotting.PAY_MAX = 30, 500, 150
 Rotting.CLEAN_MIN, Rotting.CLEAN_MAX = 28, 32
 Rotting.DESPAIR = 2
 Rotting.RANGE = 120
+Rotting.MIASMA_RANGE = 250
+Rotting.MIASMA_POX = { 0.5, 1.5, 3 }   -- Pox per second by stage; the skeleton is dry and gives off nothing
+Rotting.MIASMA_DAMAGE = { 0, 1, 2 }    -- poison damage per second by stage
 
 Net.Pool( "gr_rot" )
 
@@ -32,6 +35,35 @@ if CLIENT then
 	Net.Receive( "gr_rot", nil, function()
 		local idx = net.ReadUInt( 16 )
 		Rotting.Info[ idx ] = { stage = net.ReadUInt( 3 ), start = net.ReadFloat(), finish = net.ReadFloat() }
+	end )
+
+	-- The miasma: a purple fog that thickens with the stage, seen from afar
+	local nextPuff = 0
+	hook.Add( "Think", "gr_rotting_miasma", function()
+		if CurTime() < nextPuff then return end
+		nextPuff = CurTime() + 0.25
+		local em
+		for idx, info in pairs( Rotting.Info ) do
+			local rag = Entity( idx )
+			local n = Rotting.MIASMA_POX[ info.stage ]
+			if n and IsValid( rag ) and not rag:IsDormant() and rag:GetPos():DistToSqr( EyePos() ) < 1200 * 1200 then
+				em = em or ParticleEmitter( EyePos(), false )
+				for _ = 1, info.stage do
+					local pos = rag:GetPos() + VectorRand() * 40
+					local part = em:Add( "particle/smokesprites_000" .. math.random( 1, 9 ), pos )
+					if part then
+						part:SetDieTime( math.Rand( 3, 5 ) )
+						part:SetStartAlpha( 40 + info.stage * 15 ); part:SetEndAlpha( 0 )
+						part:SetStartSize( 30 ); part:SetEndSize( 60 + info.stage * 40 )
+						part:SetColor( 110 + math.random( 0, 40 ), 20, 140 + math.random( 0, 40 ) )
+						part:SetVelocity( Vector( math.Rand( -8, 8 ), math.Rand( -8, 8 ), math.Rand( 8, 22 ) ) )
+						part:SetGravity( Vector( 0, 0, 4 ) )
+						part:SetRoll( math.Rand( 0, 360 ) )
+					end
+				end
+			end
+		end
+		if em then em:Finish() end
 	end )
 	return
 end
@@ -112,6 +144,25 @@ hook.Add( "GR_PlayerReady", "gr_rotting", function( ply )
 	end
 end )
 
+-- The miasma of a rotting body sickens everyone nearby who is not a sanitar
+function Rotting.Miasma( rag, rec )
+	local pox = rec.rotStage and Rotting.MIASMA_POX[ rec.rotStage ]
+	if not pox or rec.state ~= "dead" or not IsValid( rag ) then return end
+	local pos, r2 = rag:GetPos(), Rotting.MIASMA_RANGE ^ 2
+	for _, ply in ipairs( player.GetAll() ) do
+		local def = ply:Alive() and ply:GetFateDef()
+		if def and def.id ~= "sanitar" and ply:GetPos():DistToSqr( pos ) < r2 then
+			Needs.Add( ply, "Pox", pox, "miasma" )
+			local dmg = Rotting.MIASMA_DAMAGE[ rec.rotStage ]
+			if dmg > 0 then
+				local d = DamageInfo()
+				d:SetDamage( dmg ); d:SetDamageType( DMG_POISON ); d:SetAttacker( game.GetWorld() ); d:SetInflictor( game.GetWorld() )
+				ply:TakeDamageInfo( d )
+			end
+		end
+	end
+end
+
 Sched.Every( "rotting", 1, function()
 	local now = CurTime()
 	for rag, rec in pairs( Corpse.All() ) do
@@ -125,6 +176,7 @@ Sched.Every( "rotting", 1, function()
 		if rec.state == "dead" and rec.rotStage and rec.rotStage < #Rotting.STAGES and now >= rec.rotFinish then
 			Rotting.Advance( rag )
 		end
+		Rotting.Miasma( rag, rec )
 	end
 end )
 
