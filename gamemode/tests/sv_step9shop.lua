@@ -37,7 +37,7 @@ return function( T )
 		local fate = fates[ i ][ 1 ]
 		T.Check( b:GetFateDef() and b:GetFateDef().id == fate and Econ.CanShop( b ), fate .. " is alive and can shop" )
 		Econ.Transfer( TREASURY, b, 200, "test" )
-		for _, good in ipairs( Econ.SHOP ) do
+		for _, good in ipairs( Econ.SHOP ) do if Econ.Stock( good ) > 0 then
 			local t0, s0, b0 = Econ.Treasury(), Econ.Stock( good ), b:GetBones()
 			local price = Econ.Setting( "sell." .. good )
 			local ok, why, ent = Econ.ShopBuy( b, good )
@@ -55,7 +55,7 @@ return function( T )
 				ent:Remove()
 			end
 			if b:GetBones() < 85 then Econ.Transfer( TREASURY, b, 200, "test" ) end
-		end
+		end end
 	end
 	local p = bots[ 1 ]
 
