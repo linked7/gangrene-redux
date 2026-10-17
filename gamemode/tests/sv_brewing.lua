@@ -74,19 +74,16 @@ return function( T )
 	T.Equal( Needs.Get( p, "Despair" ), dsp, "spirit doesn't touch despair" )
 	T.Check( ( Items.Get( "fear_beer" ).Effects.Despair or 0 ) < 0, "beer lowers despair" )
 
-	-- Selling at the stockpile.
-	local pile = ents.FindByClass( "state_stockpile" )[ 1 ]
-	if not IsValid( pile ) then
-		pile = ents.Create( "state_stockpile" )
-		pile:SetPos( p:GetPos() + Vector( 0, 80, 0 ) )
-		pile:Spawn()
-	end
+	-- Selling back at a stockpile port (the port's one sell path, Shop.Sell).
+	local port = ents.Create( "stockpile_port" )
+	port:SetPos( p:GetPos() + Vector( 0, 60, 0 ) )
+	port:Spawn()
 	local bones, stock = p:GetBones(), Econ.Stock( "spirits" )
-	T.Check( Brew.Sell( p, pile, "spirits" ), "a bottle sells" )
-	T.Equal( p:GetBones(), bones + Econ.Setting( "buy.spirits" ), "for the buy price" )
+	T.Check( Shop.Sell( p, port, "spirits" ), "a bottle sells at the port" )
+	T.Equal( p:GetBones(), bones + Shop.Price( "spirits" ), "for the buy price" )
 	T.Equal( Econ.Stock( "spirits" ), stock + 1, "into the stock" )
 	T.Equal( Inventory.Count( p, "spirits" ), 0, "out of the inventory" )
-	T.Check( not Brew.Sell( p, barrel, "spirits" ), "not at a barrel" )
+	port:Remove()
 
 	barrel:Remove()
 	for _, e in ipairs( ents.FindByClass( "gr_item" ) ) do e:Remove() end

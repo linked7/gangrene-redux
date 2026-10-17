@@ -89,5 +89,6 @@ return {
 		"sh_munitionizer.lua",
 		"sh_weaponuse.lua",
 		"sh_gunpermit.lua",
+		"sh_shop.lua",
 	},
 }

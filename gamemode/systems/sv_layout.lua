@@ -47,6 +47,7 @@ Layout.CLASSES = {
 	},
 	water_barrel = {},
 	capsule_spawn = {},
+	stockpile_port = {}, -- stockpile ports (systems/sh_shop.lua)
 	fate_station = {
 		fate = function( v )
 			local f = Fates.Get( v )
