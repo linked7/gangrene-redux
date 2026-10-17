@@ -214,4 +214,4 @@ end )
 
 hook.Add( "ShutDown", "gr_db", DB.Flush )
 
-timer.Create( "gr_db_flush", DB.FLUSH_INTERVAL, 0, DB.Flush )
+Sched.Every( "db_flush", DB.FLUSH_INTERVAL, DB.Flush )

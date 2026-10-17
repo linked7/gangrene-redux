@@ -7,6 +7,7 @@ return {
 	core = {
 		"sh_log.lua",
 		"sh_net.lua",
+		"sh_sched.lua",
 		"sv_test.lua",
 		"sv_db.lua",
 		"sh_state.lua",

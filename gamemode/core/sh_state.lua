@@ -198,7 +198,7 @@ function State.NetTick()
 	dirty = {}
 end
 
-timer.Create( "gr_state_net", State.NET_INTERVAL, 0, State.NetTick )
+Sched.Every( "state_net", State.NET_INTERVAL, State.NetTick )
 
 hook.Add( "GR_PlayerReady", "gr_state_snapshot", function( ply )
 	if not ply:IsBot() then send( ply, State.Collect( ply, true ) ) end

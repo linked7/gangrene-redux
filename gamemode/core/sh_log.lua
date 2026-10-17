@@ -13,6 +13,8 @@ local colors = {
 
 local function write( level, tag, fmt, ... )
 	local msg = select( "#", ... ) > 0 and string.format( fmt, ... ) or fmt
+	-- tools/srv.sh fails a test run on any "ERROR:" line.
+	if level == "error" then msg = "ERROR: " .. msg end
 	MsgC( colors[ level ], "[gr:" .. realm .. "][" .. tag .. "] " .. msg .. "\n" )
 end
 

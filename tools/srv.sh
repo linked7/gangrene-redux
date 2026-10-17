@@ -32,7 +32,7 @@ stop_server() {
 	rm -f "$PIDFILE"
 }
 
-lua_errors() { grep -nE '\[gr\] loader:|\[ERROR\]|Lua Error|attempt to (call|index|perform|compare|concatenate)|^\s*[0-9]+\. .+ - [a-z_/]+\.lua:[0-9]+' "$1"; }
+lua_errors() { grep -nE '\] ERROR: |\[gr\] loader:|\[ERROR\]|Lua Error|attempt to (call|index|perform|compare|concatenate)|^\s*[0-9]+\. .+ - [a-z_/]+\.lua:[0-9]+' "$1"; }
 
 case "${1:-}" in
 test)
@@ -49,6 +49,11 @@ test)
 	cp "$DS/garrysmod/console.log" "$log" 2>/dev/null
 	if [ -f "$result" ]; then cat "$result"; else echo "FAIL no result after ${timeout}s (log: $log)"; fi
 	errs=$(lua_errors "$log")
+	# Drop the errors the scenario said it expects (EXPECT_ERROR lines).
+	while IFS= read -r want; do
+		errs=$(printf '%s\n' "$errs" | grep -vF -- "$want")
+	done < <(sed -n 's/^EXPECT_ERROR //p' "$result" 2>/dev/null)
+	errs=$(printf '%s' "$errs" | sed '/^$/d')
 	[ -n "$errs" ] && { echo "--- Lua errors in $log:"; echo "$errs" | head -40; }
 	grep -q '^DONE pass=[0-9]* fail=0$' "$result" 2>/dev/null && [ -z "$errs" ]
 	;;

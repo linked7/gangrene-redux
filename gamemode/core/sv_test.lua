@@ -37,6 +37,11 @@ local function newContext( r )
 		return T.Check( got == want, string.format( "%s (got %s, want %s)", msg, tostring( got ), tostring( want ) ) )
 	end
 
+	-- Log lines containing `text` are expected errors, and tools/srv.sh won't fail the run for them.
+	function T.ExpectError( text )
+		table.insert( r.lines, "EXPECT_ERROR " .. text )
+	end
+
 	function T.Note( fmt, ... )
 		table.insert( r.lines, "NOTE " .. string.format( fmt, ... ) )
 	end
