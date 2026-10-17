@@ -82,8 +82,13 @@ local function show()
 		surface.DrawText( HUD.Stutter( player.GetCount() .. " " .. title ) )
 		-- The day and its time left (the remake's rounds; kept off the HUD, which the original never had).
 		local left = Round.EndsAt() - CurTime()
-		if Round.EndsAt() > 0 and left > 0 then
-			local txt = string.format( "Day %d  %d:%02d", Round.Number(), math.floor( left / 60 ), math.floor( left % 60 ) )
+		local txt
+		if Round.Number() > 0 and not Round.ClockStarted() and not Round.IsOver() then
+			txt = string.format( "Day %d  Awaiting Kaiser", Round.Number() )
+		elseif Round.ClockStarted() and left > 0 then
+			txt = string.format( "Day %d  %d:%02d", Round.Number(), math.floor( left / 60 ), math.floor( left % 60 ) )
+		end
+		if txt then
 			surface.SetFont( HUD.Font( "LabelSmall" ) )
 			local tw = surface.GetTextSize( txt )
 			surface.SetTextColor( 150, 150, 150, 255 )
