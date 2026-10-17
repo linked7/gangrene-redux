@@ -12,6 +12,7 @@ Fates.Define( "kaiser", {
 	Health = 100,
 	Armor = 75,
 	Radio = { "state" },
+	Xombokom = true,       -- /xombokom (/xk): the red broadcast at the top of every screen
 	RunsEconomy = true,     -- sets the Economy table, grants and fines (step 9); no wage
 	StockpileAccess = true, -- takes from the stockpile for free
 	PainSounds = { "placenta/pain/sanitar1.wav", "placenta/pain/sanitar2.wav", "placenta/pain/sanitar3.wav", "placenta/pain/sanitar4.wav" },

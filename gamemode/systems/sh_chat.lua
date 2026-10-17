@@ -36,6 +36,7 @@ Chat.Modes = {
 	{ id = "radio", prefixes = { "/r", "/radio" }, radio = true, spoken = true, range = 512, muffled = 256, tag = "R", font = "ChatRadio" },
 	{ id = "admin", prefixes = { "/a" }, staff = true, ooc = true, tag = "A" },
 	{ id = "pm", prefixes = { "/pm" }, ooc = true, tag = "P" },
+	{ id = "xombokom", prefixes = { "/xombokom", "/xk" } }, -- the Kaiser's broadcast (sh_xombokom.lua); never in chat
 	{ id = "roll", prefixes = { "/roll" }, self = true },
 	{ id = "help", prefixes = { "/help" }, self = true },
 	{ id = "content", prefixes = { "/content" }, self = true },
@@ -635,6 +636,7 @@ function Chat.Handle( ply, text, teamChat )
 	end
 	if body == "" then return nil end
 	if mode.id == "pm" then return Chat.PM( ply, body ) end
+	if mode.id == "xombokom" then return Xombokom.Send( ply, body ) end
 	if mode.id == "ooc" and not oocAllowed( ply ) then return nil, "ooc" end
 
 	local to, why = Chat.Send( ply, mode, body )
