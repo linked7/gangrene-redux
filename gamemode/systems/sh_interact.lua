@@ -67,9 +67,7 @@ hook.Add( "OnContextMenuOpen", "gr_interact", function()
 	local ply = LocalPlayer()
 	local ent = ply:GetEyeTrace().Entity
 	local opts = IsValid( ent ) and Interact.For( ply, ent ) or {}
-	-- The shop (sh_econ.lua) is in every living player's menu, looking at something or not.
-	local shop = Econ and Econ.CanShop and Econ.CanShop( ply )
-	if #opts == 0 and not shop then return end
+	if #opts == 0 then return end
 	local function send( d, choice )
 		net.Start( "gr_interact" )
 		net.WriteEntity( ent )
@@ -92,7 +90,6 @@ hook.Add( "OnContextMenuOpen", "gr_interact", function()
 			menu:AddOption( label, function() send( d ) end )
 		end
 	end
-	if shop then Econ.AddShopMenu( menu ) end
 	-- At the cursor, painted by the CombineControl skin (cl_skin.lua), as the original's menus.
 	menu:Open( gui.MousePos() )
 end )

@@ -93,22 +93,6 @@ Net.Pool( "gr_port_open" )
 
 if SERVER then return end
 
--- Adds the shop's Buy submenu to an open context menu (sh_interact.lua builds the menu).
-function Econ.AddShopMenu( menu )
-	local sub = menu:AddSubMenu( "Buy" )
-	for _, good in ipairs( Econ.SHOP ) do
-		local def = Items.Get( good )
-		local n = Econ.Stock( good )
-		local text = string.format( "%s - %d bones (%s)", def and def.Name or good, Econ.Setting( "sell." .. good ),
-			n > 0 and n .. " left" or "sold out" )
-		sub:AddOption( text, function()
-			net.Start( "nShopBuy" )
-			net.WriteString( good )
-			net.SendToServer()
-		end )
-	end
-end
-
 -- Until the counter has a UI: `gr_counter <buy|take|free> [good]` while looking at a stockpile.
 local ACTIONS = { buy = Econ.COUNTER_BUY, take = Econ.COUNTER_TAKE, free = Econ.COUNTER_FREE }
 
@@ -123,18 +107,41 @@ concommand.Add( "gr_counter", function( ply, _, args )
 	net.SendToServer()
 end )
 
--- The stockpile port's panel: the materials side section, one text row per material with a
--- count slider (1 to what's in stock) and a Buy button. The server decides; this only asks.
+-- The stockpile port's panel, which is the whole shop: the dealer-style Buy list of shop goods on
+-- the left, the materials side section beside it (one text row per material with a count slider,
+-- 1 to what's in stock, and a Buy button). The server decides; this only asks.
 function Econ.OpenPort( port )
 	if IsValid( Econ.PortFrame ) then Econ.PortFrame:Remove() end
 	local f = vgui.Create( "DFrame" )
 	Econ.PortFrame = f
-	f:SetTitle( "Stockpile port: materials" )
-	f:SetSize( 460, 60 + #Econ.MATERIALS * 30 )
+	f:SetTitle( "Stockpile port" )
+	f:SetSize( 760, 60 + math.max( #Econ.MATERIALS, #Econ.SHOP ) * 30 )
 	f:Center()
 	f:MakePopup()
 	f.Think = function( self )
 		if not IsValid( port ) or LocalPlayer():GetPos():DistToSqr( port:GetPos() ) > 214 ^ 2 then self:Remove() end -- counter range plus slack
+	end
+	local shop = vgui.Create( "DScrollPanel", f )
+	shop:Dock( LEFT )
+	shop:SetWide( 280 )
+	shop:DockMargin( 0, 0, 10, 0 )
+	for _, good in ipairs( Econ.SHOP ) do
+		local def = Items.Get( good )
+		local n = Econ.Stock( good )
+		local b = shop:Add( "DButton" )
+		b:Dock( TOP )
+		b:SetTall( 26 )
+		b:DockMargin( 0, 2, 0, 2 )
+		b:SetText( string.format( "%s - %d bones (%s)", def and def.Name or good, Econ.Setting( "sell." .. good ),
+			n > 0 and n .. " left" or "sold out" ) )
+		b:SetEnabled( n > 0 )
+		b.DoClick = function()
+			net.Start( "nShopBuy" )
+			net.WriteEntity( port )
+			net.WriteString( good )
+			net.SendToServer()
+			f:Remove()
+		end
 	end
 	for _, m in ipairs( Econ.MATERIALS ) do
 		local row = vgui.Create( "DPanel", f )
@@ -175,7 +182,7 @@ function Econ.OpenPort( port )
 	end
 end
 
-net.Receive( "gr_port_open", function()
+Net.Receive( "gr_port_open", nil, function()
 	local port = net.ReadEntity()
 	if IsValid( port ) then Econ.OpenPort( port ) end
 end )

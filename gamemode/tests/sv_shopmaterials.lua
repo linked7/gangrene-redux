@@ -17,6 +17,8 @@ return function( T )
 	port:SetPos( Vector( 0, 0, -10000 ) )
 	port:Spawn()
 	local b = player.CreateNextBot( "tsm_buyer" )
+	b:SetRank( RANK_FRIEND )
+	b:SetStemCells( 10 )
 	Fates.Take( b, "prole" )
 	T.Wait( 0.5 )
 	T.Check( Econ.CanShop( b ), "the buyer can shop" )
@@ -60,12 +62,10 @@ return function( T )
 	T.Check( not ok, "only a stockpile is a port" )
 	Econ.Transfer( b, TREASURY, b:GetBones(), "test" )
 	local s0 = Econ.Stock( "scrap" )
-	ok = Econ.PortBuyMaterial( b, port, "scrap", 1 )
+	ok, _, ent = Econ.PortBuyMaterial( b, port, "scrap", 1 )
+	if IsValid( ent ) then ent:Remove() end
 	T.Check( price == 0 or not ok, "a broke buyer is refused" )
 	if price > 0 then T.Equal( Econ.Stock( "scrap" ), s0, "a refused buy leaves the stock" ) end
-	for _, e in ipairs( ents.FindByClass( "gr_item" ) ) do
-		if e:GetPos():Distance( port:WorldSpaceCenter() ) < 200 then e:Remove() end
-	end
 
 	T.Check( Net.Receivers[ "nShopBuyMaterial" ] ~= nil, "the purchase receiver is registered" )
 	T.Check( Net.Pools[ "gr_port_open" ] == true, "the port panel message is pooled" )
