@@ -46,6 +46,7 @@ Layout.CLASSES = {
 		output = function( v ) return Lunch.OUTPUTS[ v ] ~= nil end,
 	},
 	water_barrel = {},
+	konsole_immigration = {},
 	capsule_spawn = {},
 	fate_station = {
 		fate = function( v )
