@@ -23,13 +23,6 @@ Items.Define( "spirits", {
 	Effects = { Despair = -40 },
 } )
 
-Items.Define( "knife", {
-	Name = "Knife",
-	Description = "A short kitchen knife.",
-	Weight = 1,
-	Model = "models/weapons/w_knife_t.mdl",
-} )
-
 -- In menu order. `kind` picks the icon outline, as in the original.
 Shop.LIST = {
 	{ id = "ration", name = "Soylent Loaf", kind = "food", price = function() return Econ.Setting( "sell.ration" ) end },
