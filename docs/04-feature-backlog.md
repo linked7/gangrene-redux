@@ -18,7 +18,6 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 |---|---|---|
 | Maladies (random round-long threat; first: WINTER) | `accepted` | Step 13. |
 | Falling boulders (`boulder`, sv_think spawner every 15-30 s) | `idea` | Recommend: yes, cheap physical hazard, one entity, layout spots. |
-| Campfire / cooker (cook raw food, warmth) | `idea` | Original `campfire.lua` was never finished, so this is a new design, not a port. Recommend: yes, as WINTER warmth plus cooking if food gets a raw state. |
 | Ghost haunting (Deferred 4, light slice) | `idea` | Recommend: yes, a small version only (ghosts flicker lights, knock props); keeps dead players busy in a short round. |
 | Starter quirks (Deferred 1, 3-4 quirks) | `idea` | Recommend: later; adds replay value but needs balance passes. |
 | Bell / alarm (`bell`, `alarm`) | `idea` | Recommend: yes, a physical way to call people, pairs with Sanitar Summon. |
@@ -30,6 +29,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Plan location | Date |
 |---|---|---|
+| Campfire (wood from smashed props, pile, light, feed) | `accepted` | Step 13. |
 | Rocket turret (optimized port) | `accepted` | Step 10. |
 | Round flow (stations gone at 10 min, migrant waves, papers → passport at the gate) | `accepted` | Step 13. |
 | Kaiser recruits sanitars (context menu); sanitar station dropped | `accepted` | Steps 4, 11.4. |
@@ -125,3 +125,4 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Round timer start | Timer and 10 min marks count from the first Kaiser spawn, not map load. | User asked. |
 | 2026-10-17 | Maladies | Random per round, sometimes none; stages climb daily only after the Kaiser arrives. WINTER warmed by fires, indoors, burn damage, food, coats; Proles start coatless. | User asked. |
 | 2026-10-17 | Imports | Anything no factory makes (coats, etc.) enters the stockpile only by Kaiser import: paid from the treasury, delivered as a crate at the gate. | User asked. |
+| 2026-10-17 | Campfire | Wood from smashed wooden props; 3+ chunks merge into a pit; lit by fire or an imported lighter; fed with wood; counts as warmth. | User asked. |
