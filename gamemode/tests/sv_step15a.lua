@@ -26,11 +26,14 @@ return function( T )
 	local map = game.GetMap()
 	T.Equal( Layout.map, map, "the layout for this map is loaded" )
 	local entries = Layout.Entries()
-	T.Equal( #entries, 11, "gm_construct's layout has every entry" )
+	T.Equal( #entries, 17, "gm_construct's layout has every entry" )
 	local n = count( entries )
 	T.Equal( n.fate_station, #Fates.All() - 1, "one purpose per fate but ghost" )
 	T.Equal( n.state_stockpile, 1, "a stockpile" )
-	T.Equal( n.ration_press, 2, "two presses" )
+	T.Equal( n.lunch_machine, 1, "a lunch machine" )
+	T.Equal( n.line_boiler, 1, "its boiler" )
+	T.Equal( n.capsule_spawn, 4, "four capsule points" )
+	T.Equal( n.water_barrel, 2, "two water barrels" )
 	T.Equal( n.water_pump, 2, "two pumps" )
 	T.Equal( n.sanitation_station, 1, "a sanitation station" )
 	local all = true
@@ -41,16 +44,16 @@ return function( T )
 	T.Check( all, "every entry stands in the world" )
 	T.Check( not Layout.MapPlaced(), "gm_construct places none itself" )
 
-	local fates, goods = {}, {}
+	local fates, machine = {}, nil
 	for _, e in ipairs( entries ) do
 		local ent = Layout.Spawned( e )
 		if e.class == "fate_station" then fates[ ent:GetFateId() ] = ent end
-		if e.class == "ration_press" then goods[ ent:GetGood() ] = ent end
+		if e.class == "lunch_machine" then machine = ent end
 	end
 	for _, f in ipairs( Fates.All() ) do
 		if f.index ~= FATE_GHOST then T.Check( IsValid( fates[ f.id ] ), "a purpose for " .. f.id ) end
 	end
-	T.Check( IsValid( goods.ration ) and IsValid( goods.clean_water ), "a ration press and a clean water press" )
+	T.Check( IsValid( machine ) and Lunch.BoilerOf( machine ) ~= nil, "the lunch machine has its boiler in reach" )
 
 	-- On the floor: a short trace down from each base hits the world.
 	local grounded = true
@@ -101,7 +104,7 @@ return function( T )
 		if e.class == "state_stockpile" then stockpile = Layout.Spawned( e ) end
 	end
 	local stock = Econ.Stock( "ration" )
-	local crate = Crates.Spawn( "ration", stockpile:GetPos() + stockpile:GetForward() * 80 + Vector( 0, 0, 40 ), g, goods.ration )
+	local crate = Crates.Spawn( "ration", stockpile:GetPos() + stockpile:GetForward() * 80 + Vector( 0, 0, 40 ), Crates.Crew( { g } ), machine )
 	T.Check( Crates.Deliver( g, crate, stockpile ), "a crate delivered to the layout's stockpile pays" )
 	T.Equal( Econ.Stock( "ration" ), stock + 1, "and the stock rises" )
 	T.Equal( ( Econ.Audit() ), 0, "the economy holds" )
@@ -137,7 +140,7 @@ return function( T )
 	T.Check( near, "the ring stands around the first spawn" )
 	T.Check( clear, "clear of every player spawn" )
 	T.Check( floored, "on the floor" )
-	T.Equal( count( entries ).ration_press, #Econ.GOODS, "a press per good" )
+	T.Equal( count( entries ).lunch_machine, 1, "one lunch machine in the ring" )
 
 	-- Editor ----------------------------------------------------------------------------------------
 
@@ -174,7 +177,7 @@ return function( T )
 	local size = #Layout.Entries()
 	T.Check( not Layout.Add( staff, "fate_station", { "fate=ghost" } ), "no purpose for ghost" )
 	T.Check( not Layout.Add( staff, "fate_station" ), "a purpose needs a fate" )
-	T.Check( not Layout.Add( staff, "ration_press", { "good=gold" } ), "a press makes a known good" )
+	T.Check( not Layout.Add( staff, "lunch_machine", { "output=gold" } ), "a lunch machine makes a known output" )
 	T.Check( not Layout.Add( staff, "prop_physics" ), "only layout classes" )
 	T.Check( not Layout.Add( nil, "water_pump" ), "the console has no eye trace" )
 	T.Equal( #Layout.Entries(), size, "refusals add nothing" )
@@ -222,7 +225,7 @@ return function( T )
 	Layout.Clear()
 	T.Wait( 0.1 )
 	Layout.Spawn()
-	T.Equal( #Layout.Entries(), 11, "gm_construct's layout is back" )
+	T.Equal( #Layout.Entries(), 17, "gm_construct's layout is back" )
 	for _, b in ipairs( { g, staff, user } ) do b:Kick( "test" ) end
 	T.Wait( 0.3 )
 end

@@ -5,7 +5,7 @@
 --   gr_soak <minutes> <bots> [seed] in the server console
 --
 -- Bots run no client Lua, so the driver calls the same server functions the receivers call:
--- Fates.Take, Interact.Run, Econ.Counter, Crates.Deliver, the Kaiser's Econ/Kaiser functions,
+-- Fates.Take, Interact.Run, Lunch.Press / TurnValve / Feed / Pour, Econ.Counter, Crates.Deliver, the Kaiser's Econ/Kaiser functions,
 -- ply:Say for chat, TakeDamageInfo for violence. Positions are teleports next to the target.
 -- Randomness is seeded; physics and the scheduler's spread still make runs differ a little.
 --
@@ -199,6 +199,58 @@ local function deliver( bot, crate )
 	if Crates.Deliver( bot, crate, S.stockpile ) then count( "crate_delivered" ) end
 end
 
+-- The lunch machine: the same core calls its Use, touch and valve receiver make. Bots can't find
+-- map water, so a barrel fetch fills the barrel where it stands (the rest is the real pour).
+local function lunchAct( bot )
+	local m, boiler = S.machine, S.boiler
+	if not IsValid( m ) or not IsValid( boiler ) then return end
+	local p = boiler:GetPressure()
+	if boiler:GetVenting() or p > Lunch.GREEN_MAX - 5 or ( p < Lunch.GREEN_MIN + 5 and chance( 0.8 ) ) then
+		goNear( bot, boiler, 60 )
+		if Lunch.TurnValve( bot, boiler, p >= Lunch.GREEN_MIN + 5 and "vent" or "build" ) then count( "valve" ) end
+		return
+	end
+	if boiler:GetWater() < Lunch.BOILER_WATER - Lunch.BARREL_WATER and chance( 0.5 ) then
+		local barrel = pick( S.barrels )
+		if IsValid( barrel ) then
+			goNear( bot, barrel, 40 )
+			Lunch.SetBarrelFull( barrel, true )
+			if Lunch.Pour( boiler, barrel ) then count( "barrel_poured" ) end
+		end
+		return
+	end
+	if m:GetBiomass() < 2 and chance( 0.6 ) then
+		local capsules = Lunch.All( "bone_capsule" )
+		local chunks = Lunch.All( "meat_chunk" )
+		if #chunks > 0 then
+			if Lunch.Feed( m, pick( chunks ) ) then count( "fed_chunk" ) end
+		elseif #capsules > 0 then
+			local c = pick( capsules )
+			goNear( bot, c, 50 )
+			if chance( 0.5 ) then
+				if Lunch.Feed( m, c ) then count( "fed_capsule" ) end
+			elseif Lunch.Hurt( c, 40 ) then
+				count( "capsule_burst" )
+			end
+		end
+		return
+	end
+	if chance( 0.05 ) then
+		if Lunch.FlipLever( bot, m ) then count( "lever" ) end
+		return
+	end
+	goNear( bot, m, 60 )
+	local right, wrong = {}, {}
+	for k = 1, Lunch.BUTTONS do
+		local s = m:GetButton( k )
+		if s > 0 then table.insert( s == m:GetLight() and right or wrong, k ) end
+	end
+	local k = ( #wrong > 0 and chance( 0.05 ) ) and pick( wrong ) or ( #right > 0 and pick( right ) )
+	if not k then return end
+	local r = Lunch.Press( bot, m, k )
+	if r then count( "press_" .. r ) end
+end
+
 local function workerAct( bot )
 	local crates = trackedList( "ent_crate" )
 	if #crates > 0 and chance( 0.7 ) then
@@ -236,10 +288,7 @@ local function workerAct( bot )
 		return
 	end
 	if skipped( "press" ) then return end
-	local press = pick( S.presses )
-	if Crates.Waiting( press ) >= Crates.PER_STATION then return end
-	goNear( bot, press, 80 )
-	if Interact.Run( bot, "press_work", press ) then count( "press_work" ) end
+	lunchAct( bot )
 end
 
 -- Police, medicine, the Kaiser ------------------------------------------------------------------
@@ -644,12 +693,11 @@ local function setup()
 	S.base = ground( bots[ 1 ] and bots[ 1 ]:GetPos() or Vector( 0, 0, 0 ) )
 	S.stockpile = spawnAt( "state_stockpile", spot( 0, 260 ), 180 )
 	S.station = spawnAt( "sanitation_station", spot( 180, 260 ), 0 )
-	S.presses = {
-		spawnAt( "ration_press", spot( 90, 260 ), 270 ),
-		spawnAt( "ration_press", spot( 45, 300 ), 225 ),
-		spawnAt( "ration_press", spot( 135, 300 ), 315, { good = "clean_water" } ),
-		spawnAt( "ration_press", spot( 270, 260 ), 90, { good = "clean_water" } ),
-	}
+	S.machine = spawnAt( "lunch_machine", spot( 90, 260 ), 270 )
+	S.boiler = spawnAt( "line_boiler", spot( 45, 300 ), 225 )
+	S.machine.GR_Boiler = S.boiler -- not the map layout's boiler, wherever that stands
+	S.barrels = { spawnAt( "water_barrel", spot( 135, 300 ), 0 ), spawnAt( "water_barrel", spot( 270, 260 ), 0 ) }
+	S.capsulePoint = spawnAt( "capsule_spawn", spot( 315, 260 ), 0 )
 	Log.Info( "soak", "world set up around %s", tostring( S.base ) )
 	-- Ranks: two Kaiser-rank bots, about a third newcomers, the rest freed citizens.
 	for i, b in ipairs( bots ) do

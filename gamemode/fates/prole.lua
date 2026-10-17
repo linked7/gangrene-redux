@@ -1,4 +1,4 @@
--- The worker: makes the city's food at ration presses and hauls it to the stockpile (systems/sh_crates.lua),
+-- The worker: makes the city's food at the lunch machine and hauls it to the stockpile (systems/sh_crates.lua),
 -- builds with the permit tool (systems/sh_build.lua). Kit and aim are data read by systems/sh_kit.lua.
 -- Models are stock GMod placeholders until the gamemode has its own content.
 local ADJ = { "Proud", "Reliable", "Trustworthy", "Beloved", "Respected", "Diligent", "Complacent", "Happy",

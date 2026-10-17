@@ -1,4 +1,4 @@
--- Step 11.1: the prole. Kit and aim as fate data, the work loop (press -> crate -> carry ->
+-- Step 11.1: the prole. Kit and aim as fate data, the work loop (lunch machine panel -> crate -> carry ->
 -- stockpile, paid the buy price), theft of someone else's crate, opening, the 3-crate cap,
 -- and construction paid into the treasury. (The stockpile's lock is step16d.)
 return function( T )
@@ -18,14 +18,14 @@ return function( T )
 	end
 
 	local made = {}
-	hook.Add( "GR_CrateMade", "t11a", function( ply, crate ) table.insert( made, crate ) end )
+	hook.Add( "GR_CrateMade", "t11a", function( crate ) table.insert( made, crate ) end )
 	local delivered = {}
 	hook.Add( "GR_CrateDelivered", "t11a", function( ply, crate )
 		table.insert( delivered, { ply = ply, crate = crate, kind = crate.GR_Kind } )
 	end )
 
-	local saved = { press = Crates.PRESS_TIME }
-	Crates.PRESS_TIME = 0.5
+	local saved = { overload = Lunch.OVERLOAD_CHANCE }
+	Lunch.OVERLOAD_CHANCE = 0
 
 	local function bot( name, fate, rank )
 		local b = player.CreateNextBot( "t11a_" .. name )
@@ -71,11 +71,35 @@ return function( T )
 	sl:SetPos( base + Vector( 0, 60, 0 ) )
 	san:SetPos( base + Vector( 4000, 0, 0 ) )
 
-	local press = ents.Create( "ration_press" )
+	-- A lunch machine of its own, wired to its own boiler (the layout's pair stands elsewhere).
+	local press = ents.Create( "lunch_machine" )
 	press:SetPos( base + Vector( 90, 0, 0 ) )
 	press:SetAngles( Angle( 0, 180, 0 ) ) -- facing the bots: crates appear between
 	press:Spawn()
-	T.Check( IsValid( press ) and press:GetGood() == "ration", "a ration press spawns and makes rations" )
+	local boiler = ents.Create( "line_boiler" )
+	boiler:SetPos( base + Vector( 150, -150, 0 ) )
+	boiler:Spawn()
+	press.GR_Boiler = boiler
+	T.Check( IsValid( press ) and press:GetOutput() == "ration", "a lunch machine spawns and makes rations" )
+
+	-- Clears the panel with correct presses by `who` (taking turns). Returns the crate it made.
+	local function work( who, biomass )
+		Lunch.SetPressure( boiler, 55 )
+		boiler:SetWater( Lunch.BOILER_WATER )
+		press:SetBiomass( biomass or 1 )
+		local before = #made
+		for _ = 1, Lunch.BUTTONS do
+			if #made > before then break end
+			for k = 1, Lunch.BUTTONS do
+				if press:GetButton( k ) > 0 and press:GetButton( k ) == press:GetLight() then
+					local r = Lunch.Press( who[ ( k % #who ) + 1 ], press, k )
+					if r ~= "right" and r ~= "done" then return nil end
+					break
+				end
+			end
+		end
+		return #made > before and made[ #made ] or nil
+	end
 
 	local stockpile = ents.Create( "state_stockpile" )
 	stockpile:SetPos( base + Vector( -110, 0, 0 ) )
@@ -83,16 +107,12 @@ return function( T )
 
 	-- Make a crate ---------------------------------------------------------------------------------
 
-	T.Check( Interact.Get( "press_work" ).show( p1, press ), "the C menu offers Work the press" )
-	T.Check( Interact.Run( p1, "press_work", press ), "working the press through Interact" )
-	T.Equal( Actions.Get( p1 ) and Actions.Get( p1 ).kind, "press", "working is a timed action" )
-	T.Equal( Crates.Waiting( press ), 0, "no crate before the work is done" )
-	T.WaitUntil( function() return #made >= 1 end, 3, "the press makes a crate" )
-	local crate = made[ 1 ]
-	T.Check( IsValid( crate ) and crate:GetClass() == "ent_crate", "it is an ent_crate" )
+	T.Equal( Crates.Waiting( press ), 0, "no crate before the panel is cleared" )
+	local crate = work( { p1 } )
+	T.Check( IsValid( crate ) and crate:GetClass() == "ent_crate", "clearing the panel makes an ent_crate" )
 	T.Equal( crate.GR_Kind, "ration", "a ration crate" )
-	T.Equal( crate.GR_MadeBy, DB.Key( p1 ), "stamped with the maker's key" )
-	T.Check( crate:GetPos():Distance( press:GetPos() ) < 120, "beside the press" )
+	T.Check( Crates.OnCrew( crate, p1 ) and not Crates.OnCrew( crate, p2 ), "stamped with the crew: the presser only" )
+	T.Check( crate:GetPos():Distance( press:GetPos() ) < 120, "beside the machine" )
 	T.Equal( Crates.Waiting( press ), 1, "one crate waiting" )
 
 	-- Carrying: walk only, hands full, drops on a hit or a jump ------------------------------------------
@@ -135,7 +155,7 @@ return function( T )
 	T.Equal( Crates.Waiting( press ), 0, "and no longer counts against the press" )
 
 	-- The touch itself: p1 lets go above the stockpile and it falls on it.
-	crate = Crates.FinishWork( p1, press )
+	crate = work( { p1 } )
 	Crates.Hold( p1, crate )
 	Crates.Release( p1 )
 	crate:SetPos( stockpile:LocalToWorld( Vector( 0, 0, stockpile:OBBMaxs().z + 15 ) ) )
@@ -147,7 +167,7 @@ return function( T )
 
 	-- Theft ---------------------------------------------------------------------------------------------
 
-	crate = Crates.FinishWork( p1, press )
+	crate = work( { p1 } )
 	before = p2:GetBones()
 	T.Equal( Crates.Deliver( p2, crate, stockpile ), 20, "delivering someone else's crate still pays" )
 	T.Equal( p2:GetBones(), before + 20, "the thief is paid, not the maker" )
@@ -155,21 +175,21 @@ return function( T )
 	T.Check( not p2:IsWanted(), "unseen: evidence, not wanted" )
 	Crime.TakeEvidence( p2, "theft" )
 
-	crate = Crates.FinishWork( p1, press )
+	crate = work( { p1 } )
 	T.Check( Interact.Get( "crate_open" ).show( sl, crate ), "the C menu offers Open the crate" )
 	T.Check( Crates.Open( sl, crate ), "a slave opens p1's crate" )
 	T.Equal( Inventory.Count( sl, "ration" ), Crates.CONTENTS, "the contents go to the opener" )
 	T.Check( Crime.Evidence( sl ).theft ~= nil, "opening someone else's crate is theft" )
 	T.Check( not Crates.Open( p1, crate ), "a crate can only be opened once" )
 
-	crate = Crates.FinishWork( p1, press )
+	crate = work( { p1 } )
 	T.Check( Crates.Open( p1, crate ), "the maker opens their own crate" )
 	T.Check( not Crime.Evidence( p1 ).theft, "no theft" )
 
 	-- Caught in the act: the sanitar right beside the thief.
 	san:SetPos( base + Vector( 0, -160, 0 ) )
 	if Crime.SeenByPolice( p2 ) then
-		crate = Crates.FinishWork( p1, press )
+		crate = work( { p1 } )
 		Crates.Deliver( p2, crate, stockpile )
 		T.Equal( p2:GetWanted(), WANTED_TORMENT, "theft in sight of the sanitar: wanted" )
 		Crime.ClearWanted( p2 )
@@ -183,17 +203,17 @@ return function( T )
 	T.Wait( 0.1 )
 	T.Equal( Crates.Waiting( press ), 0, "nothing waiting" )
 	local three = {}
-	for i = 1, 3 do three[ i ] = Crates.FinishWork( sl, press ) end
+	for i = 1, 3 do three[ i ] = work( { sl } ) end
 	T.Equal( Crates.Waiting( press ), 3, "three crates waiting" )
-	T.Equal( Crates.FinishWork( sl, press ), nil, "a fourth is not made" )
-	T.Check( not Crates.Work( p2, press ), "and the press refuses work" )
-	T.Check( wasTold( p2, "piling up" ), "the worker is told why" )
+	T.Equal( work( { sl } ), nil, "a fourth is not made" )
+	T.Equal( Lunch.Status( press ), "full", "the panel is dark: output full" )
+	T.Equal( Lunch.Press( p2, press, 1 ), "dark", "and a press does nothing" )
 	T.Equal( Crates.Waiting( press ), 3, "still three" )
 	three[ 1 ]:Remove()
 	T.Wait( 0.1 )
 	T.Equal( Crates.Waiting( press ), 2, "hauling one away frees a slot" )
-	T.Check( Crates.Work( p2, press ), "and the press takes work again" )
-	T.WaitUntil( function() return Crates.Waiting( press ) == 3 end, 3, "the new crate fills the slot" )
+	T.Check( Lunch.Powered( press ), "and the panel lights again" )
+	T.Check( IsValid( work( { p2 } ) ) and Crates.Waiting( press ) == 3, "the new crate fills the slot" )
 	for _, c in ipairs( made ) do if IsValid( c ) then c:Remove() end end
 
 	-- The stockpile pry is gone: its lock is beaten open instead (step16d).
@@ -229,8 +249,8 @@ return function( T )
 	T.Equal( ( Econ.Audit() ), 0, "no drift after the work loop and construction" )
 
 	-- Cleanup
-	for _, e in ipairs( { box, press, stockpile } ) do if IsValid( e ) then e:Remove() end end
-	Crates.PRESS_TIME = saved.press
+	for _, e in ipairs( { box, press, boiler, stockpile } ) do if IsValid( e ) then e:Remove() end end
+	Lunch.OVERLOAD_CHANCE = saved.overload
 	hook.Remove( "GR_CrateMade", "t11a" )
 	hook.Remove( "GR_CrateDelivered", "t11a" )
 	Notify = realNotify

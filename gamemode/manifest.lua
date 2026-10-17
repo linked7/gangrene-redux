@@ -71,5 +71,7 @@ return {
 		"sh_storage.lua",
 		"sh_uitour.lua",
 		"sh_locks.lua",
+		"sh_lunch.lua",
+		"sh_givebones.lua",
 	},
 }
