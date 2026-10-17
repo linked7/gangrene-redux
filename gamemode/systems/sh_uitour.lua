@@ -17,10 +17,22 @@ if SERVER then
 			local d = ent:GetClass() == class and ent:GetPos():DistToSqr( ply:GetPos() )
 			if d and ( not bestD or d < bestD ) then best, bestD = ent, d end
 		end
+		local clearDir
 		if not IsValid( best ) and spawn then
+			-- Put it in open floor: the first of eight directions with room for the player hull and the entity.
+			local origin = ply:GetPos()
+			local mins, maxs = ply:GetHullDuck()
+			for i = 0, 7 do
+				local dir = Angle( 0, i * 45, 0 ):Forward()
+				local tr = util.TraceHull( { start = origin + Vector( 0, 0, 4 ), endpos = origin + dir * 200 + Vector( 0, 0, 4 ),
+					mins = mins, maxs = maxs, filter = ply } )
+				if not tr.Hit and not tr.StartSolid then clearDir = dir break end
+			end
+			clearDir = clearDir or ply:GetForward()
 			local e = ents.Create( class )
 			if IsValid( e ) then
-				e:SetPos( ply:GetPos() + ply:GetForward() * 200 + Vector( 0, 0, 20 ) )
+				e:SetPos( origin + clearDir * 200 + Vector( 0, 0, 20 ) )
+				e:SetAngles( Angle( 0, clearDir:Angle().y + 180, 0 ) ) -- its front faces the player
 				e:Spawn()
 				e:Activate()
 				local phys = e:GetPhysicsObject()
