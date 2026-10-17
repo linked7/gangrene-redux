@@ -160,17 +160,25 @@
   4. `Damage.Health`
   - Fates and items register hooks; nothing is inlined.
 - **Consciousness** runs 0–100. At 0 the player passes out into a ragdoll and wakes up later.
-- **Lethal damage:**
-  - The player becomes **downed**: a corpse ragdoll in the `bleedout` state that holds the player's inventory and carried bones.
-  - The player watches a dark screen with a bleed-out timer.
+- **HP reaching 0 downs the player; it doesn't kill them.** Being knocked out is usually survivable. Only severe wounds kill without a korpsman.
+  - The player becomes **downed**: a corpse ragdoll that holds the player's inventory and carried bones. They watch a dark screen with a timer.
+  - The server sets a SERVER field `DownState` from the hit that downed them:
+    - **`wounded`** (the normal case): the hit went less than `lethal_overkill` (default 30) past 0 HP.
+    - **`dying`**: the hit went `lethal_overkill` or more past 0 HP. Any damage to a body that is already wounded also makes it dying.
+  - The player who downed them is remembered (SERVER field) for judging later.
 - **Corpse registry:** add on create, remove on `EntityRemoved` (P2). Decomposition beyond "despawn after N minutes" is deferred.
 - **Leaving the downed state:**
-  - **Revive:** a korpsman uses the corpse. This is a timed action (rule 6) and calls `Fates.Apply(ply, sameFate, {reason="revive"})`.
-  - **Finish off:** someone uses a weapon on the downed body. This calls `Crime.Judge` (step 10), and the player becomes a ghost.
-  - **Bleed-out timer ends:** the player becomes a ghost.
-  - There is one revive function (R2).
+  - **Get back up (wounded only):** after `wake_time` (default 45 s) the player gets up on their own as the same fate, with 25 HP and the **`Injured`** condition.
+    - `Injured` is a PUBLIC field that caps max HP at 50. It does not wear off. A korpsman treats it (step 11.2).
+    - Getting up is its own small wake-up path (like waking from a pass-out). It isn't a revive.
+  - **Bleed out (dying only):** after `bleedout_time` (default 120 s) without a revive, the player dies and becomes a ghost. `Crime.Judge` runs against the player who downed them.
+  - **Revive (either state):** a korpsman uses the body. This is a timed action (rule 6) and calls `Fates.Apply(ply, sameFate, {reason="revive"})`. The fee comes from step 11.2. A revived player has no `Injured`. There is one revive function (R2).
+  - **Finish off (either state):** an explicit context action on a downed body (a short timed action, about 3 s), not just stray damage. It calls `Crime.Judge` (step 10), and the player becomes a ghost. This is the only instant death.
+- **Consciousness** stays separate: at 0 the player passes out into a short stun and wakes with no injury.
 - **Done when:**
-  - A bot shot down can be revived with its inventory intact, or finished off.
+  - A bot downed by a light hit gets back up after 45 s at 25 HP, `Injured`, with max HP 50. A korpsman treatment clears it.
+  - A bot downed by a hit 30 past 0 HP, or shot again while wounded, is dying, and becomes a ghost after 120 s unless revived. The downer is judged at that point.
+  - Revive works in both states with inventory intact. Finish off works in both states.
   - The corpse loop never calls `FindByClass`.
 
 ### Step 8: Inventory and items
@@ -272,7 +280,7 @@ Build them in this order, so each one has something to act on.
 2. **Korpsman**: the revive and healing loop.
    - Regenerates 3× faster.
    - Revive is the timed action from step 7. The fee is `revive_fee` percent of the patient's carried bones (default 50, set by the Kaiser in step 9).
-   - **Surgery:** a small set of 2–3 procedures (heal, cure Pox, remove a bullet). Each is a timed action with a server-rolled failure chance; `autoFail` is never read from the client (B19).
+   - **Surgery:** a small set of 2–3 procedures (heal, which also **treats `Injured`** from step 7; cure Pox; remove a bullet). Treating the injured is the korpsman's everyday work. Each is a timed action with a server-rolled failure chance; `autoFail` is never read from the client (B19).
    - `lovebox` heal tool: only after the Kaiser upgrade.
 3. **Sanitar**: enforcement.
    - Police flag, radio, codename, baton and scope.

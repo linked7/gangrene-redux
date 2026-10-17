@@ -16,7 +16,6 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Knocked out isn't death: get back up and need treatment; only severe lethal damage kills without a korpsman | `shaping` | Raised 2026-10-17 (from Rewrite's bleed-out question). Touches Step 7 and Step 11.2. |
 | Rank gates on fates (who may take Kaiser etc.) | `idea` | Raised 2026-10-17. User will choose later; for now no gate above Friend. |
 
 ## Accepted
@@ -32,6 +31,8 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | No war; several simple pressures drive player action | `accepted → Dropped` (War removed from Deferred item 9) | 2026-10-17 |
 | Slaves lose their protection: full parity with Prole, only the mark differs | `accepted → Step 11.5` (also Scope, 00-vibe Slave paragraph) | 2026-10-17 |
 | Kaiser runs the economy with a full toolkit; no clamps, no self-enrichment | `accepted → Step 9` (`Economy` table, Set/Grant/Fine/Ledger), `Step 11.2`, `11.3`, `11.4` | 2026-10-17 |
+| Knocked out isn't death: wounded get back up `Injured`; only dying (severe) bleed out to ghost | `accepted → Step 7`, `Step 11.2` | 2026-10-17 |
+| Kaiser has no rank gate for now | `accepted → Step 11.4`, `Step 13` | 2026-10-17 |
 
 ## Decisions log
 
@@ -50,5 +51,6 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Slave rules | Slave has full parity with Prole: they can fight, steal, build and be made wanted, and killing one is murder. Only the barcode name, model and PUBLIC marker differ, plus Foolish-only access and the two ways out. The zero-damage hook, `weapon_cc_slave`, wanted immunity, the building ban, 30 s corpse decay and the earlier "slaves can't steal" rule are all dropped. Survive-the-round time adds up across deaths, but the slave must be alive at the end. | User's choice: slaves lose their protection. The visible mark replaces the rule as the guard against new players killing at random. |
 | 2026-10-17 | Kaiser economic control (replaces the "Kaiser levers" row) | One PUBLIC `Economy` table with a schema: buy and sell price per good, a wage per fate, a ration limit, a reserve per good, a bread line and the revive fee. One `nKaiserEcon(key, value)` receiver, plus Grant and Fine. A ledger built from `Econ.Transfer`. Only sanity checks (never negative, never above supply). No Kaiser wage and no pocket withdrawal. The table resets each round and when the Kaiser dies. | User's choice: the Kaiser's challenge is running a working economy, so they get many tools and no checks that restrict control or invite getting rich. |
 | 2026-10-17 | Kaiser rank gate | Removed for now. Kaiser needs no rank, only stem cells and the free slot. Rank gates on fates are an open decision. | User: "don't limit access just yet"; will choose gates later. |
+| 2026-10-17 | Downed states | HP 0 downs the player. `wounded` (hit less than 30 past 0 HP): gets up after 45 s at 25 HP with `Injured` (max HP 50) until a korpsman treats it. `dying` (30 or more past 0 HP, or hit again while down): bleeds out over 120 s to a ghost unless revived, and the downer is judged then. Finish off is an explicit ~3 s action. Revive clears `Injured`. | User: being knocked out shouldn't kill you; only severe wounds without treatment do. Keeps korpsmen essential without making every fall a death. |
 | 2026-10-17 | War | Dropped. The nations stay as lore and possible races. Rot/Doom stay deferred. | The user wants several simple pressures instead of a war. |
 | 2026-10-17 | Fates kept | Kaiser, Sanitar, Prole, Korpsman, plus Slave; Ghost as the dead/lobby state | User's choice |
