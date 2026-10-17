@@ -1,6 +1,7 @@
 -- Melee for weapon_gr_base (the original's sh_melee.lua). Hold attack to charge, let go to swing;
--- held for HeavyCharge seconds it is a heavy swing (x1.5 damage, the swing sound at pitch 20).
--- Weapons with SecondaryBlock block while right-click is held out, and their holder takes x BlockMul.
+-- held for HeavyCharge seconds it is a heavy swing (the swing sound at pitch 20). Weapons with
+-- SecondaryBlock block while right-click is held out. As in the original's real behaviour (parity
+-- ruling, plan step 15), neither changes the damage: the original never applied either multiplier.
 -- Also the holstered right-click: pick up a prop up to PickupMass kg within PickupRange units.
 
 local HULL = Vector( 8, 8, 8 )
@@ -89,14 +90,12 @@ local function isFlesh( ent )
 	return IsValid( ent ) and ( ent:IsPlayer() or ent:IsNPC() or ent:GetClass() == "prop_ragdoll" )
 end
 
--- The damage this swing does to `ent` before the damage pipeline: heavy, block, resist, injury.
+-- The damage this swing does to `ent` before the damage pipeline: resist, injury. A heavy swing and
+-- a block don't change it (parity ruling).
 function SWEP:MeleeDamage( ent, heavy )
 	local owner = self:GetOwner()
 	local dam = self.Damage or 10
-	if heavy then dam = dam * 1.5 end
 	if IsValid( ent ) and ent:IsPlayer() then
-		local wep = ent:GetActiveWeapon()
-		if IsValid( wep ) and wep.IsBlocking and wep:IsBlocking() then dam = dam * ( wep.BlockMul or 1 ) end
 		local resist = ent:FateHas( "MeleeResistScale" )
 		if isnumber( resist ) and resist > 0.1 and not self.IgnoreMeleeResist then dam = dam * resist end
 	end

@@ -154,7 +154,7 @@ Config.ChatStupidMistakes = {
 
 -- OOC: seconds between one player's OOC lines (staff are exempt). ChatOOCOff or more turns OOC
 -- off for everyone but staff, as the original's 666 did. Staff change it live with gr_oocdelay.
-Config.OOCDelay = 30
+Config.OOCDelay = 666 -- off by default (plan step 12); staff turn it on with gr_oocdelay
 Config.ChatOOCOff = 666
 
 -- Talking gestures when the weapon is holstered: 1 in 3 lines, then a 5-15 s cooldown.

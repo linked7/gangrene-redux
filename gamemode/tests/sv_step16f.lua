@@ -1,7 +1,7 @@
 -- Step 16f: weapon feel, movement and controls (docs/05 §9, §12, §14). A drawn weapon halves speed
--- and stops sprinting; holstered hands lift up to 115 kg; a heavy swing does x1.5 and a block takes
--- x0.5; fists hurt on walls; the spread multiplier keeps the original's x1.5-for-any-movement bug; a
--- bullet in the leg locks jumping for 6 + 10 x Emptiness% s; reloading blocks jumping; a jump press
+-- and stops sprinting; holstered hands lift up to 115 kg; a heavy swing and a block don't change
+-- damage (parity ruling); fists hurt on walls; the spread multiplier keeps the original's x1.5-for-any-movement bug; a
+-- leg shot never stops jumping; reloading blocks jumping; a jump press
 -- cancels surgery; a dragged body snaps free past 128 units.
 local function bot( name )
 	local b = player.CreateNextBot( name )
@@ -104,7 +104,7 @@ return function( T )
 	end
 	local normal = swing( false )
 	T.Equal( normal, 20, "a baton hit does its damage" )
-	T.Equal( swing( true ), normal * 1.5, "a heavy hit does x1.5" )
+	T.Equal( swing( true ), normal, "a heavy hit does no extra damage (the original never applied it)" )
 
 	local function holdBlock( ply, cmd )
 		if ply == v then cmd:SetButtons( bit.bor( cmd:GetButtons(), IN_ATTACK2 ) ) end
@@ -114,7 +114,7 @@ return function( T )
 	T.Check( not v:GetActiveWeapon():IsBlocking(), "a holstered baton doesn't block" )
 	Weapons.SetHolstered( v, false )
 	T.WaitUntil( function() return v:GetActiveWeapon():IsBlocking() end, 2, "right-click held with the baton out blocks" )
-	T.Equal( swing( false ), normal * 0.5, "a blocked hit does x BlockMul (0.5)" )
+	T.Equal( swing( false ), normal, "a block doesn't reduce damage (the original never applied it)" )
 	hook.Remove( "StartCommand", "t16f_block" )
 	Weapons.SetHolstered( v, true )
 	T.Wait( 0.2 )
@@ -165,22 +165,12 @@ return function( T )
 	T.Check( Movement.CanJump( a ), "jumping again after the reload" )
 	Weapons.SetHolstered( a, true )
 
-	-- Leg shot --------------------------------------------------------------------------------------
-	Needs.Add( v, "Emptiness", 50 - Needs.Get( v, "Emptiness" ), "test" )
+	-- Leg shot: never stops jumping (parity ruling) ----------------------------------------------
 	v:SetHealth( 100 )
-	v.GR_LastHitGroup = HITGROUP_LEFTLEG
-	hit( v, a, 4, DMG_CLUB )
-	T.Check( Movement.JumpLockLeft( v ) == 0, "a club to the leg doesn't lock jumping" )
-	v.GR_LastHitGroup = HITGROUP_LEFTARM
-	hit( v, a, 4 )
-	T.Check( Movement.JumpLockLeft( v ) == 0, "a bullet in the arm doesn't" )
 	v.GR_LastHitGroup = HITGROUP_RIGHTLEG
 	hit( v, a, 4 )
-	local left = Movement.JumpLockLeft( v )
-	T.Check( near( left, 6 + 10 * Needs.Get( v, "Emptiness" ) / 100, 0.2 ), string.format( "a bullet in the leg: no jumping for 6 + 10 x Emptiness%% s (%.2f at 50%%)", left ) )
-	T.Check( not Movement.CanJump( v ), "leg-shot: can't jump" )
-	v:SetLegShotAt( CurTime() - 12 )
-	T.Check( Movement.CanJump( v ), "after the lock runs out you can jump" )
+	T.Check( Movement.CanJump( v ), "a bullet in the leg doesn't stop jumping" )
+	T.Check( Movement.JumpLockLeft == nil, "there is no leg-shot jump lock" )
 
 	-- Jumping interrupts surgery --------------------------------------------------------------------
 	v:SetHealth( 50 )
