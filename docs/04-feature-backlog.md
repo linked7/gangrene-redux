@@ -18,6 +18,9 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 |---|---|---|
 | Workplace accidents (from the original's machines: operator error, misuse, rust, haunting, waste spills) | `idea` | Raised 2026-10-17 by the analysis session. Proposed slice: rust plus accidents on the ration press, sanitar upkeep that pays bones. Haunting waits for ghost Suffering (Deferred 4), and the factory cards wait for the foreman (Deferred 7). Their suggestion that slaves be immune conflicts with Slave parity. Original refs: entities/entities/machine_*.lua, machine_gears.lua:681. |
 | Rank gates on fates (who may take Kaiser etc.) | `idea` | Raised 2026-10-17. User will choose later; for now no gate above Friend. |
+| Round flow: 1 h restart; fate stations removed at 10 min; migrant wave every 60 s; papers → passport at the city gates gives a one-time city fate; korpsman slots only to refill losses | `idea` | Raised 2026-10-17. Step 13 has 60-min rounds already. Needs a gate spot on rp_slumtown and a `papers`/`passport` item. Original refs: fates/list/ref_*_wasteland.lua. |
+| Kaiser recruits sanitars from proles via context menu | `idea` | Raised 2026-10-17. Replaces the sanitar station. |
+| Wasteland water: drink from any water you stand in | `idea` | Raised 2026-10-17. Original sv_context.lua:1145: needs WaterLevel>0; gulp sound, AAT "NAME drinks stagnant water.", Dryness −10, Pox +10, Urine +15, 1/6 parasite. |
 
 ## Accepted
 

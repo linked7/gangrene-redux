@@ -172,8 +172,11 @@ return function( T )
 
 	crate = work( { p1 } )
 	before = p2:GetBones()
-	T.Equal( Crates.Deliver( p2, crate, stockpile ), 20, "delivering someone else's crate still pays" )
-	T.Equal( p2:GetBones(), before + 20, "the thief is paid, not the maker" )
+	local maker0 = p1:GetBones()
+	-- Pay splits by work points: half to the crate's workers, the rest to whoever hauls it.
+	T.Equal( Crates.Deliver( p2, crate, stockpile ), 10, "delivering someone else's crate still pays the hauler's half" )
+	T.Equal( p2:GetBones(), before + 10, "the thief gets the hauler's half" )
+	T.Equal( p1:GetBones(), maker0 + 10, "and the maker keeps the workers' half" )
 	T.Check( Crime.Evidence( p2 ).theft ~= nil, "delivering someone else's crate is reported as theft" )
 	T.Check( not p2:IsWanted(), "unseen: evidence, not wanted" )
 	Crime.TakeEvidence( p2, "theft" )

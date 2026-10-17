@@ -9,6 +9,15 @@ return function( T )
 	T.Equal( Econ.Stock( "spirits" ), 0, "spirits are not seeded" )
 	T.Equal( Config.BrewTime, 300, "brew_time defaults to 5 minutes" )
 
+	-- Items in the world, by walking ents.Iterator (no FindByClass, P2).
+	local function items()
+		local out = {}
+		for _, e in ents.Iterator() do
+			if IsValid( e ) and e:GetClass() == "gr_item" then table.insert( out, e ) end
+		end
+		return out
+	end
+
 	local function bot( name, fate )
 		local b = player.CreateNextBot( "tbrew_" .. name )
 		b:SetRank( RANK_FRIEND )
