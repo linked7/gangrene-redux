@@ -32,6 +32,7 @@ function SWEP:PrimaryFirearm()
 	else
 		self:SetNextPrimaryFire( CurTime() + ( self.Primary.Delay or 0.2 ) )
 	end
+	if self.JamChance and Weapons.TryJam( self:GetOwner(), self ) then return end
 	self:ShootEffects()
 	self:TakePrimaryAmmo( 1 )
 	self:PlayFireSound( self.Primary.Sound )
@@ -166,7 +167,10 @@ function SWEP:Reload()
 	local owner = self:GetOwner()
 	if owner:KeyDown( IN_USE ) then return end -- Use + Reload checks ammo instead (sh_weapons.lua)
 	local want = math.min( self.Primary.ClipSize - self:Clip1(), owner:GetAmmoCount( self.Primary.Ammo ) )
-	if want <= 0 then return end
+	-- A jammed gun reloads even when full; the reload clears the jam (sh_weaponuse.lua).
+	local jammed = owner.GetGunJammed and owner:GetGunJammed()
+	if want <= 0 and not jammed then return end
+	if SERVER and jammed then owner:SetGunJammed( false ) end
 	local dur
 	if self.ShellReload then
 		self:SendWeaponAnim( ACT_SHOTGUN_RELOAD_START )

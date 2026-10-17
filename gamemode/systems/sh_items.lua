@@ -20,6 +20,8 @@ local SCHEMA = {
 	Effects = "table",      -- { needName = amount } applied on use; implies Consumable
 	Consumable = "boolean", -- using it uses one up
 	OnUse = "function",     -- ( ply, def ) -> false to cancel
+	OnPickup = "function",  -- ( ply, def ) -> true when the pickup used it up instead of carrying it
+	Droppable = "boolean",  -- false: stuck with you forever (the original's Droppable)
 	Tags = "table",         -- free-form flags for other systems: { Permit = true }
 }
 local REQUIRED = { "Name", "Description" }
