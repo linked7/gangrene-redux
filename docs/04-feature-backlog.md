@@ -18,6 +18,10 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 |---|---|---|
 | Workplace accidents (from the original's machines: operator error, misuse, rust, haunting, waste spills) | `idea` | Raised 2026-10-17 by the analysis session. Proposed slice: rust plus accidents on the ration press, sanitar upkeep that pays bones. Haunting waits for ghost Suffering (Deferred 4), and the factory cards wait for the foreman (Deferred 7). Their suggestion that slaves be immune conflicts with Slave parity. Original refs: entities/entities/machine_*.lua, machine_gears.lua:681. |
 | Rank gates on fates (who may take Kaiser etc.) | `idea` | Raised 2026-10-17. User will choose later; for now no gate above Friend. |
+| Round flow: stations deleted at 10 min, a migrant wave every minute, papers traded for a passport at the city gate, a permanent city job, korpsman cap = korpsmen lost | `idea` | Raised 2026-10-17. Fits Step 13 (60-min rounds already there). Need the gate location on rp_slumtown. Original refs: ref_proletariat_wasteland.lua, ref_korpsman_wasteland.lua. |
+| Kaiser recruits sanitars from proles through the context menu | `idea` | Raised 2026-10-17. Proposed: "Recruit as Sanitar" on a prole; the sanitar fate station is dropped. |
+| Deadly wasteland water | `idea` | Raised 2026-10-17. Port nDrinkWater (sv_context.lua:1145): dryness -10, pox +10, urine +15, 1/6 chance of a parasite; wading slows to x0.7/x0.55 (sh_player.lua:1316). Proposed for Step 8. |
+| Kaiser XOMBOKOM broadcast as big red text on every screen | `idea` | Raised 2026-10-17. Original was a chat line (sh_chat.lua:1380): colour 180,0,0, upper case, sound kidneydagger/broadcast1-7.wav. The user wants a centre-screen overlay instead of chat. |
 
 ## Accepted
 
