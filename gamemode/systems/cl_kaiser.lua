@@ -178,6 +178,26 @@ local function importsTab( parent )
 	return panel
 end
 
+-- Exports: the factory's metals sold abroad; the outside world (upgrade fund) pays the treasury.
+local function exportsTab( parent )
+	local panel = vgui.Create( "DScrollPanel", parent )
+	for _, good in ipairs( Exports.GOODS ) do
+		local def = Items.Get and Items.Get( good )
+		local b = vgui.Create( "DButton", panel )
+		b:Dock( TOP )
+		b:DockMargin( 0, 4, 0, 0 )
+		b:SetTall( 28 )
+		b:SetText( string.format( "Export one %s (%d bones, stock %d)", def and def.Name or good,
+			Econ.Setting( "sell." .. good ), Econ.Stock( good ) ) )
+		b.DoClick = function()
+			net.Start( "nKaiserExport" )
+			net.WriteString( good )
+			net.SendToServer()
+		end
+	end
+	return panel
+end
+
 -- Ledger ----------------------------------------------------------------------------------
 
 local function flowText( flow )
@@ -238,6 +258,7 @@ local function open()
 	sheet:AddSheet( "Citizens", citizensTab( sheet ) )
 	sheet:AddSheet( "Upgrades", upgradesTab( sheet ) )
 	sheet:AddSheet( "Imports", importsTab( sheet ) )
+	sheet:AddSheet( "Exports", exportsTab( sheet ) )
 	frame.Ledger = ledgerTab( sheet )
 	sheet:AddSheet( "Ledger", frame.Ledger )
 	requestLedger()

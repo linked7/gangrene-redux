@@ -105,5 +105,6 @@ return {
 		"sh_imports.lua",
 		"sh_breakables.lua",
 		"sh_campfire.lua",
+		"sh_toolsmachine.lua",
 	},
 }
