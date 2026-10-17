@@ -503,6 +503,13 @@ Build them in this order, so each one has something to act on.
     - At the city gate, a `konsole_immigration` ("Immigration Kontrol Konsole", new: the original had none) stands in the Gate Antechamber (rp_slumtown about 1409 52 91 ang 2 -90 1, offset ~40 units from the summoner there; layout entry `immigration`). Using it with `papers` swaps them for a `passport` and makes the migrant a Prole. There is no fate list: the only way up is the Kaiser (Recruit as Sanitar / Recruit as Korpsman, step 11.4). Kaiser is never reachable this way.
     - New players still start as Slave (step 11.5); slaves skip the migrant path.
     - Original refs: `ref_proletariat_wasteland.lua`, `ref_korpsman_wasteland.lua`, `items/list/permit_passport.lua`.
+  - **Maladies:** one round-long, city-wide threat.
+    - Rolled at `Round.Start`: each registered Malady is equally likely, and some rounds have none (`malady_none_chance`, default 25%). Each Malady is a module in `maladies/` with stages and `Needs.Modifiers` hooks.
+    - Stage 0 until the first Kaiser spawns. After that it climbs one stage per in-game day, up to stage 4.
+    - **WINTER:** adds a `cold` need that drains outdoors, faster each stage.
+      - Stage 1 chill. Stage 2 water drains cold fast. Stage 3 water is lethal within seconds. Stage 4 outdoors alone kills an unprotected player.
+      - Warmth sources stack: near a map fire (`env_fire` or fire layout spots), indoors (no sky trace up), taking burn damage, being well fed (hunger above 70%), and wearing a coat.
+      - Coat: a `coat` clothing item sold at the counter. Wearing it sets the fate model's coat bodygroup and cuts cold drain. Proles start without one (their default bodygroup has the coat off).
   - Only stem cells, rank and playtime carry over to the next round.
   - The Kaiser's fall may trigger `Round.End` later. There is no Doom or war end state.
 - **Done when:**

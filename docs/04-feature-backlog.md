@@ -16,6 +16,7 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 
 | Feature | Status | Notes |
 |---|---|---|
+| Maladies (random round-long threat; first: WINTER) | `accepted` | Step 13. |
 | Falling boulders (`boulder`, sv_think spawner every 15-30 s) | `idea` | Recommend: yes, cheap physical hazard, one entity, layout spots. |
 | Campfire / cooker (cook raw food, warmth) | `idea` | Recommend: yes if food has a raw state; gives labor a second step without menus. |
 | Ghost haunting (Deferred 4, light slice) | `idea` | Recommend: yes, a small version only (ghosts flicker lights, knock props); keeps dead players busy in a short round. |
@@ -125,3 +126,4 @@ New ideas come here first, before anything changes `03-recreation-plan.md`. The 
 | 2026-10-17 | Immigration konsole | New `konsole_immigration` at the Gate Antechamber is the papers → passport point; none existed in the original. | User asked. |
 | 2026-10-17 | Rocket turret | Re-added as an optimized port: throttled search, cached client trace, single sound. | User asked; cheap hazard that respects permits. |
 | 2026-10-17 | Round timer start | Timer and 10 min marks count from the first Kaiser spawn, not map load. | User asked. |
+| 2026-10-17 | Maladies | Random per round, sometimes none; stages climb daily only after the Kaiser arrives. WINTER warmed by fires, indoors, burn damage, food, coats; Proles start coatless. | User asked. |

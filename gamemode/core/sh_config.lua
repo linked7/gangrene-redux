@@ -261,3 +261,6 @@ Config.ChatOOCOff = 666
 -- A fate may set its own ChatGestures list.
 Config.BrewTime = 5 * 60 -- seconds a sealed brew_barrel ferments (sh_brewing.lua)
 Config.ChatGestures = { "a_gesture18", "a_gesture16" }
+
+Config.MaladyNoneChance = 0.25 -- chance a round has no malady
+Config.MaladyDayLength = 600   -- seconds per malady stage

@@ -100,5 +100,8 @@ return {
 		"sh_roundflow.lua",
 		"sh_summoner.lua",
 		"sh_rocketturret.lua",
+		"sh_maladies.lua",
+		"sh_malady_winter.lua",
+		"sh_imports.lua",
 	},
 }
