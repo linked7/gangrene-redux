@@ -10,6 +10,8 @@ Fates.Define( "sanitar", {
 	DeathCooldown = 120,
 	Slots = function( pop ) return math.Clamp( 2 + math.floor( pop / 10 ), 2, 6 ) end,
 	Police = true,
+	StockpileAccess = true, -- guarding the stockpile is part of the job
+	Wage = 40,              -- default wage.sanitar in the Economy table
 	Radio = { "state" },
 	Names = function() return NOUNS[ math.random( #NOUNS ) ] .. " #" .. math.random( 11, 99 ) end,
 	Appearance = { model = "models/player/police.mdl", race = "gangral" },

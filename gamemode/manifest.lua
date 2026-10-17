@@ -38,5 +38,8 @@ return {
 		"sh_ghost.lua",
 		"sh_needs.lua",
 		"cl_atmosphere.lua",
+		"sh_worldstate.lua",
+		"sh_econ.lua",
+		"sv_econ.lua",
 	},
 }
