@@ -5,15 +5,8 @@ Consciousness = Consciousness or {}
 State.Field( "Consciousness", "UInt", 7, State.OWNER, 100 )
 State.Field( "PassedOut", "Bool", 0, State.OWNER, false )
 
-if CLIENT then
-	hook.Add( "HUDPaint", "gr_consciousness", function()
-		if not LocalPlayer():GetPassedOut() then return end
-		surface.SetDrawColor( 0, 0, 0, 255 )
-		surface.DrawRect( 0, 0, ScrW(), ScrH() )
-		draw.SimpleText( "You are unconscious.", "DermaLarge", ScrW() / 2, ScrH() / 2, Color( 90, 90, 90 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-	end )
-	return
-end
+-- The passed-out screen and the low-consciousness blur are cl_hud.lua's layers.
+if CLIENT then return end
 
 Consciousness.WAKE_AT = 50
 Consciousness.REGEN = 1 / 0.3  -- points a second, before weakness

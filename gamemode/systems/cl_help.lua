@@ -1,4 +1,6 @@
 -- The help panel: F1 or `gr_help`. A short how-to-play; the purposes are listed from fate data.
+-- (The original's F1 opened a web page; the remake keeps an in-game panel.) It is a CombineControl
+-- frame (HUD.Frame, painted by cl_skin.lua): headings in LabelMedium, text in LabelSmall.
 local C = HUD.COLORS
 local frame
 
@@ -16,7 +18,7 @@ local function heading( parent, text, col )
 	local l = vgui.Create( "DLabel", parent )
 	l:Dock( TOP )
 	l:DockMargin( 0, HUD.S( 10 ), 0, HUD.S( 2 ) )
-	l:SetFont( "gr_hud" )
+	l:SetFont( HUD.Font( "LabelMedium" ) )
 	l:SetTextColor( col or C.warn )
 	l:SetText( text )
 	l:SizeToContentsY()
@@ -25,7 +27,7 @@ end
 local function body( parent, text )
 	local l = vgui.Create( "DLabel", parent )
 	l:Dock( TOP )
-	l:SetFont( "gr_hud_small" )
+	l:SetFont( HUD.Font( "LabelSmall" ) )
 	l:SetTextColor( C.text )
 	l:SetWrap( true )
 	l:SetAutoStretchVertical( true )
@@ -33,17 +35,9 @@ local function body( parent, text )
 end
 
 local function open()
-	frame = vgui.Create( "DFrame" )
-	frame:SetTitle( "" )
-	frame:SetSize( math.min( HUD.S( 760 ), ScrW() - 40 ), math.min( HUD.S( 820 ), ScrH() - 40 ) )
-	frame:Center()
-	frame:MakePopup()
+	frame = HUD.Frame( HUD.S( 760 ), HUD.S( 820 ), "How to live in Gangrene" )
 	frame:SetKeyboardInputEnabled( false )
-	frame:DockPadding( HUD.S( 18 ), HUD.S( 34 ), HUD.S( 18 ), HUD.S( 14 ) )
-	frame.Paint = function( self, w, h )
-		draw.RoundedBox( 6, 0, 0, w, h, C.back )
-		draw.SimpleText( "How to live in Gangrene", "gr_hud", HUD.S( 18 ), HUD.S( 8 ), C.text )
-	end
+	frame:DockPadding( HUD.S( 18 ), 30, HUD.S( 18 ), HUD.S( 14 ) )
 
 	local scroll = vgui.Create( "DScrollPanel", frame )
 	scroll:Dock( FILL )

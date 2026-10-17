@@ -8,8 +8,13 @@ if SERVER then
 		net.Send( ply )
 	end
 else
+	-- The original's notification stack (cl_hud.lua's HUD.Notify), bottom right.
 	Net.Receive( "gr_notify", nil, function()
-		chat.AddText( Color( 200, 0, 0 ), net.ReadString() )
-		surface.PlaySound( "buttons/button10.wav" )
+		local text = net.ReadString()
+		if HUD and HUD.Notify then
+			HUD.Notify( text, Color( 200, 0, 0 ) )
+		else
+			chat.AddText( Color( 200, 0, 0 ), text )
+		end
 	end )
 end

@@ -1,6 +1,8 @@
 -- Step 15b: the client UI's server side. The fate menu's gr_take_fate receiver (only ghosts get
 -- through; Fates.Request re-checks with CanTake and returns its reason), every field the HUD and
--- the menu read reaches the client, and every client file is listed and sent.
+-- the menu read reaches the client, and every client file is listed and sent. The UI parity pass
+-- (docs/05): the body registry message (Corpse.Sync), the screen-effect message (FX.Send and the
+-- GR_Judged hook that starts the scares), the downed screen's LastThought and the content pack.
 return function( T )
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t15b_%'" )
 
@@ -53,7 +55,7 @@ return function( T )
 	-- What the client can see ----------------------------------------------------------------------
 
 	local needed = { "Fate", "CharName", "Rank", "StemCells", "Bones", "Injured", "Bullet", "Wanted", "WantedUntil",
-		"WantedReason", "Teeth", "PassedOut" }
+		"WantedReason", "Teeth", "PassedOut", "LastThought", "WakeUntil", "BleedoutUntil", "Race", "Consciousness" }
 	for _, name in ipairs( Needs.All() ) do table.insert( needed, "Need_" .. name ) end
 	for _, f in ipairs( Fates.All() ) do table.insert( needed, "Cooldown_" .. f.id ) end
 	for _, name in ipairs( needed ) do
@@ -79,7 +81,45 @@ return function( T )
 			T.Check( Loader.Sent[ root .. dir .. "/" .. name ], dir .. "/" .. name .. " is sent to clients" )
 		end
 	end
-	for _, name in ipairs( { "cl_hud.lua", "cl_fates.lua", "cl_scoreboard.lua", "cl_help.lua" } ) do
+	for _, name in ipairs( { "cl_hud.lua", "cl_fates.lua", "cl_scoreboard.lua", "cl_help.lua", "cl_skin.lua", "cl_effects.lua",
+		"cl_view.lua", "cl_crosshair.lua", "cl_chatbox.lua", "sh_fx.lua" } ) do
 		T.Check( Loader.Sent[ root .. "systems/" .. name ], name .. " is sent to clients" )
 	end
+	local pos = {}
+	for i, name in ipairs( manifest.systems ) do pos[ name ] = i end
+	T.Check( pos[ "sh_fx.lua" ] and pos[ "sv_damage.lua" ] and pos[ "sh_fx.lua" ] > pos[ "sv_damage.lua" ], "sh_fx loads after the damage pipeline" )
+
+	-- UI parity (docs/05) ---------------------------------------------------------------------------
+
+	T.Equal( State.FieldByName( "LastThought" ).scope, State.OWNER, "the downed screen's last thought is the owner's" )
+	T.Equal( Config.UI.ContentWorkshop, "3067207405", "the content pack is Workshop 3067207405" )
+	for _, key in ipairs( { "cross_hover", "cross_unhover", "weapon_hover", "weapon_select", "weapon_choose", "menu_open", "button_release" } ) do
+		local pair = Config.UI.Sounds[ key ]
+		T.Check( pair and isstring( pair[ 1 ] ) and isstring( pair[ 2 ] ), "UI sound " .. key .. " has a pack path and a stock fallback" )
+	end
+	for _, name in ipairs( { "gr_corpse", "gr_fx" } ) do
+		T.Check( util.NetworkStringToID( name ) > 0, name .. " is a pooled message" )
+	end
+	T.Check( isfunction( Corpse.Sync ) and isnumber( Corpse.DECAY ), "Corpse.Sync exists and the decay time is shared" )
+	T.Check( isfunction( FX.Send ) and FX.ID.headwound and FX.ID.frighten and FX.ID.jumpscare and FX.ID.flash, "FX.Send and its four kinds" )
+	T.Check( #FX.KINDS < 8, "the kinds fit the 3-bit id" )
+	T.Check( hook.GetTable().GR_Judged and hook.GetTable().GR_Judged.gr_fx, "a judged killing starts a scare (gr_fx)" )
+	T.Check( hook.GetTable().GR_PlayerRestored and hook.GetTable().GR_PlayerRestored.gr_fx, "getting up frightens (gr_fx)" )
+
+	-- Crime.Judge fires GR_Judged with its outcome, whether or not a rule matched.
+	local seen = {}
+	hook.Add( "GR_Judged", "t15b", function( a, v, o ) table.insert( seen, { a = a, v = v, out = o } ) end )
+	local killer, victim = bot( "killer", RANK_FRIEND ), bot( "victim", RANK_FRIEND )
+	T.Wait( 0.3 )
+	Fates.Apply( killer, "prole", { reason = "admin" } )
+	Fates.Apply( victim, "prole", { reason = "admin" } )
+	local out = Crime.Judge( killer, victim )
+	hook.Remove( "GR_Judged", "t15b" )
+	T.Equal( #seen, 1, "Crime.Judge ran GR_Judged once" )
+	T.Check( seen[ 1 ] and seen[ 1 ].a == killer and seen[ 1 ].v == victim and seen[ 1 ].out == out, "with the attacker, victim and outcome" )
+	T.Check( pcall( FX.Send, killer, "jumpscare" ) and pcall( FX.Send, killer, "nonsense" ), "FX.Send skips bots and unknown kinds" )
+	T.Check( pcall( Corpse.Sync, killer ), "Corpse.Sync ignores what isn't a body" )
+	killer:Kick( "test" )
+	victim:Kick( "test" )
+	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:t15b_%'" )
 end

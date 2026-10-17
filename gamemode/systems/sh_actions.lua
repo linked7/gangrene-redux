@@ -11,23 +11,8 @@ State.Field( "ActionStart", "Float", 0, State.OWNER, 0 )
 State.Field( "ActionEnd", "Float", 0, State.OWNER, 0 )
 State.Field( "ActionLabel", "String", 0, State.OWNER, "" )
 
-if CLIENT then
-	hook.Add( "HUDPaint", "gr_actions", function()
-		local ply = LocalPlayer()
-		local finish = ply:GetActionEnd()
-		if finish <= CurTime() then return end
-		local start = ply:GetActionStart()
-		local frac = math.Clamp( ( CurTime() - start ) / math.max( finish - start, 0.01 ), 0, 1 )
-		local w, h = 300, 14
-		local x, y = ScrW() / 2 - w / 2, ScrH() * 0.7
-		draw.SimpleText( ply:GetActionLabel(), "DermaDefault", ScrW() / 2, y - 4, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
-		surface.SetDrawColor( 0, 0, 0, 200 )
-		surface.DrawRect( x, y, w, h )
-		surface.SetDrawColor( 150, 30, 30, 255 )
-		surface.DrawRect( x + 2, y + 2, ( w - 4 ) * frac, h - 4 )
-	end )
-	return
-end
+-- The bar is cl_hud.lua's "progress" layer (the original's DrawTimedProgress).
+if CLIENT then return end
 
 local DEFAULT_RANGE = 120
 
