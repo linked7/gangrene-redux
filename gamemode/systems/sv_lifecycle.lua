@@ -58,3 +58,11 @@ end )
 function GM:CanPlayerSuicide( ply )
 	return false
 end
+
+-- A new round starts everyone over as a ghost: a fate is earned by walking to a purpose in
+-- life (fate_station) and using it, never carried over. Downed players lose their body too.
+hook.Add( "GR_RoundStart", "gr_lifecycle", function()
+	for _, ply in player.Iterator() do
+		if ply:Alive() and not ply:IsGhost() then ply:Spawn() end
+	end
+end )

@@ -261,10 +261,30 @@ function Fates.Take( ply, id )
 	return true
 end
 
+-- Registry (server): every fate_station, so Request never searches the world (P2).
+Fates.Stations = Fates.Stations or {}
+Fates.STATION_REACH = 128
+
+-- Whether the player stands at a purpose in life for this fate. A fate is walked to, never
+-- picked from afar.
+function Fates.AtStation( ply, id )
+	local pos = ply:GetPos()
+	for ent in pairs( Fates.Stations ) do
+		if IsValid( ent ) and ent:GetFateId() == id
+			and ent:GetPos():DistToSqr( pos ) <= Fates.STATION_REACH ^ 2 then return true end
+	end
+	return false
+end
+
 -- The fate menu (cl_fates.lua) asks for a fate by id. It greys out what CanTake refuses, but
--- nothing the client says is trusted: the receiver only lets ghosts through and Take re-checks.
+-- nothing the client says is trusted: the receiver only lets ghosts through, the ghost must be
+-- standing at that fate's station, and Take re-checks.
 function Fates.Request( ply, id )
 	if not isstring( id ) then return false, "There is no such purpose." end
+	if Fates.CanTake( ply, id ) and not Fates.AtStation( ply, id ) then
+		Notify( ply, "Walk to that purpose in life to take it." )
+		return false, "Walk to that purpose in life to take it."
+	end
 	return Fates.Take( ply, id )
 end
 

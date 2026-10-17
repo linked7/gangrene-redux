@@ -71,6 +71,19 @@ local function newContext( r )
 		return made
 	end
 
+	-- Stands a ghost at a purpose in life for `id` (placing one if the map has none), so the
+	-- menu path (Fates.Request) lets them take it.
+	function T.AtStation( ply, id )
+		for ent in pairs( Fates.Stations ) do
+			if IsValid( ent ) and ent:GetFateId() == id then ply:SetPos( ent:GetPos() ) return ent end
+		end
+		local ent = ents.Create( "fate_station" )
+		ent:SetKeyValue( "fate", id )
+		ent:SetPos( ply:GetPos() )
+		ent:Spawn()
+		return ent
+	end
+
 	return T
 end
 
