@@ -82,6 +82,14 @@ function Net.Receive( name, opts, fn )
 	end
 
 	if not istable( opts ) then error( "Net.Receive: server receiver " .. name .. " needs an opts table", 2 ) end
+	local t = opts.target
+	if t ~= nil and t ~= false and t ~= true and t ~= "player" and t ~= "entity" and t ~= "any" then
+		error( "Net.Receive: " .. name .. " has a bad target option", 2 )
+	end
+	if opts.range and not t then error( "Net.Receive: " .. name .. " has a range without a target", 2 ) end
+	if opts.rate ~= nil and not ( isnumber( opts.rate ) and opts.rate > 0 ) then
+		error( "Net.Receive: " .. name .. " needs rate > 0", 2 )
+	end
 	Net.Pool( name )
 	local rate = opts.rate or 4
 	Net.Receivers[ name ] = { rate = rate, opts = opts }
