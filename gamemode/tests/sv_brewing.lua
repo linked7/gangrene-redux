@@ -1,15 +1,13 @@
--- Step 11 brewing: a prole seals a loaf in a brew_barrel, it ferments for Config.BrewTime, only a
--- prole opens it for 3 bottles; a sealed barrel can be smashed; spirit cures pox without touching
--- despair; bottles sell at the stockpile for the buy price; beer and spirits aren't seeded.
+-- Step 11 brewing: the brew_barrel's lever picks beer or spirits, a ration touching it is swallowed,
+-- Brew.HITS melee hits or shakes finish Brew.YIELD bottles into the stockpile (no timer); spirit
+-- cures pox without touching despair; bottles sell at the stockpile; beer and spirits aren't seeded.
 return function( T )
-	local function items() local t = {} for _, e in ipairs( ents.GetAll() ) do if e:GetClass() == "gr_item" then t[ #t + 1 ] = e end end return t end
 	DB.Query( "DELETE FROM players WHERE steamid LIKE 'bot:tbrew_%'" )
 	Econ.ResetRound()
 	T.Equal( Econ.Stock( "fear_beer" ), 0, "beer is not seeded" )
 	T.Equal( Econ.Stock( "spirits" ), 0, "spirits are not seeded" )
-	T.Equal( Config.BrewTime, 300, "brew_time defaults to 5 minutes" )
+	T.Check( Config.BrewTime == nil, "there is no brew timer" )
 
-	-- Items in the world, by walking ents.Iterator (no FindByClass, P2).
 	local function items()
 		local out = {}
 		for _, e in ents.Iterator() do
@@ -26,53 +24,60 @@ return function( T )
 		return b
 	end
 	local p = bot( "prole", "prole" )
-	local s = bot( "sanitar", "sanitar" )
 	T.Wait( 1 )
-	T.Check( p:FateHas( "Proletariat" ) and not s:FateHas( "Proletariat" ), "fates taken" )
 
 	local barrel = ents.Create( "brew_barrel" )
-	barrel:SetPos( p:GetPos() + p:GetForward() * 50 + Vector( 0, 0, 20 ) )
+	barrel:SetPos( p:GetPos() + p:GetForward() * 80 + Vector( 0, 0, 20 ) )
 	barrel:Spawn()
 	T.Wait( 0.2 )
 	T.Equal( Brew.Count(), 1, "the barrel is tracked" )
+	T.Equal( barrel:GetBrew(), 1, "the lever starts on beer" )
+	T.Check( Brew.FlipLever( barrel ), "the lever flips" )
+	T.Equal( Brew.KINDS[ barrel:GetBrew() ], "spirits", "to spirits" )
+	T.Check( Brew.OnLever( barrel, Brew.LeverPos( barrel ) ) and not Brew.OnLever( barrel, barrel:GetPos() ), "the lever is a spot on the rim" )
 
-	Inventory.Add( s, Econ.BREAD, 1, true )
-	T.Check( not Brew.Fill( s, barrel, "fear_beer" ), "a non-prole can't brew" )
-	T.Check( not Brew.Fill( p, barrel, "fear_beer" ), "a prole without a loaf can't brew" )
-	Inventory.Add( p, Econ.BREAD, 1, true )
-	T.Check( not Brew.Fill( p, barrel, "vodka" ), "an unknown brew is refused" )
-	Interact.Run( p, "brew_fill", barrel, "spirits" )
-	T.Equal( barrel:GetState(), Brew.BREWING, "the barrel is sealed" )
-	T.Equal( Inventory.Count( p, Econ.BREAD ), 0, "the loaf went in" )
+	T.Check( not Brew.Agitate( barrel ), "an empty barrel doesn't brew" )
+	local junk = Items.Spawn( "spirits", 1, barrel:GetPos() + Vector( 0, 0, 60 ) )
+	T.Check( not Brew.Feed( barrel, junk ), "only a ration is swallowed" )
+	junk:Remove()
 
-	-- Smashing a sealed barrel.
-	local other = ents.Create( "brew_barrel" )
-	other:SetPos( barrel:GetPos() + Vector( 60, 0, 0 ) )
-	other:Spawn()
-	Inventory.Add( p, Econ.BREAD, 1, true )
-	T.Check( Brew.Fill( p, other, "fear_beer" ), "a second barrel sealed" )
+	-- A ration dropped onto the barrel is swallowed by touch.
+	local loaf = Items.Spawn( Econ.BREAD, 1, barrel:GetPos() + Vector( 0, 0, 50 ) )
+	T.WaitUntil( function() return not IsValid( loaf ) end, 5, "the ration is swallowed on touch" )
+	T.Equal( barrel:GetState(), Brew.BREWING, "the barrel is brewing" )
+	local second = Items.Spawn( Econ.BREAD, 1, barrel:GetPos() + Vector( 0, 0, 200 ) )
+	T.Check( not Brew.Feed( barrel, second ), "a full barrel takes no second ration" )
+	second:Remove()
+
+	-- Melee hits.
 	local d = DamageInfo()
-	d:SetDamage( 60 ) d:SetAttacker( s ) d:SetDamageType( DMG_CLUB )
-	other:TakeDamageInfo( d )
-	T.Equal( other:GetIntegrity(), 40, "a hit takes integrity" )
-	other:TakeDamageInfo( d )
-	T.Wait( 0.2 )
-	T.Check( not IsValid( other ), "at 0 integrity the barrel bursts" )
-
-	-- Fermenting.
-	barrel:SetFinishAt( CurTime() + 0.5 )
-	T.Check( not Brew.Open( p, barrel ), "a brewing barrel can't be opened" )
-	T.WaitUntil( function() return barrel:GetState() == Brew.DONE end, 3, "the barrel finishes" )
-	T.Check( not Brew.Open( s, barrel ), "only a prole opens it" )
-	local before = #items()
-	Interact.Run( p, "brew_open", barrel )
-	T.WaitUntil( function() return #items() - before >= 3 end, 5, "3 bottles fall out" )
-	local n = 0
-	for _, e in ipairs( items() ) do
-		if e:GetItemId() == "spirits" then n = n + 1 end
-	end
-	T.Equal( n, 3, "they are spirits" )
+	d:SetDamage( 20 ) d:SetAttacker( p ) d:SetDamageType( DMG_CLUB )
+	for _ = 1, 3 do barrel:TakeDamageInfo( d ) end
+	T.Equal( barrel:GetHits(), 3, "melee hits count" )
+	d:SetDamageType( DMG_BULLET )
+	barrel:TakeDamageInfo( d )
+	T.Equal( barrel:GetHits(), 3, "bullets don't" )
+	T.Check( IsValid( barrel ), "the barrel can't be smashed" )
+	-- Shakes.
+	T.Check( not Brew.Shake( barrel, 10 ), "a soft bump doesn't count" )
+	barrel.GR_NextShake = 0
+	T.Check( Brew.Shake( barrel, 400 ), "a hard shake counts" )
+	T.Check( not Brew.Shake( barrel, 400 ), "the same bump isn't counted twice" )
+	T.Equal( barrel:GetHits(), 4, "4 of 8" )
+	local stock = Econ.Stock( "spirits" )
+	for _ = 1, Brew.HITS - 5 do Brew.Agitate( barrel ) end
+	T.Equal( Econ.Stock( "spirits" ), stock, "not done before the last hit" )
+	T.Equal( Brew.Agitate( barrel ), "spirits", "the last hit finishes the batch" )
+	T.Equal( Econ.Stock( "spirits" ), stock + 3, "3 spirits went into the stockpile" )
 	T.Equal( barrel:GetState(), Brew.IDLE, "the barrel is empty again" )
+	T.Equal( barrel:GetHits(), 0, "hits reset" )
+
+	-- A beer batch.
+	Brew.FlipLever( barrel )
+	local beer = Econ.Stock( "fear_beer" )
+	T.Check( Brew.Feed( barrel, Items.Spawn( Econ.BREAD, 1, p:GetPos() + Vector( 0, -80, 40 ) ) ), "fed again" )
+	for _ = 1, Brew.HITS do Brew.Agitate( barrel ) end
+	T.Equal( Econ.Stock( "fear_beer" ), beer + 3, "3 beers went into the stockpile" )
 
 	-- Spirit cures pox and leaves despair alone.
 	Inventory.Add( p, "spirits", 2, true )
@@ -97,5 +102,5 @@ return function( T )
 
 	barrel:Remove()
 	for _, e in ipairs( items() ) do e:Remove() end
-	p:Kick( "done" ) s:Kick( "done" )
+	p:Kick( "done" )
 end
