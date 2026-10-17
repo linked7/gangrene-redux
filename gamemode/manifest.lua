@@ -85,5 +85,6 @@ return {
 		"sh_parity.lua",
 		"sh_guns.lua",
 		"sh_munitionizer.lua",
+		"sh_weaponuse.lua",
 	},
 }

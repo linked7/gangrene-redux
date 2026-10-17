@@ -22,6 +22,7 @@ Fates.Define( "slave", {
 	ChatSounds = { "npc/headcrab_poison/ph_talk1.wav", "npc/headcrab_poison/ph_talk2.wav", "npc/headcrab_poison/ph_talk3.wav" }, -- not the prole's
 	Cost = 0,
 	ForNewPlayers = true,
+	NoItemWeapons = true, -- carries weapon items but never gets the weapon (the original's slave)
 	Footstep = function( ply ) ply:EmitSound( SHUFFLE[ math.random( #SHUFFLE ) ], ply:GetVelocity():Length2D() < 150 and 35 or 75 ) end,
 	PainSounds = {}, -- not the prole's: the plain grunts
 	DeathSounds = { "npc/zombie_poison/pz_warn1.wav", "npc/zombie_poison/pz_warn2.wav" },

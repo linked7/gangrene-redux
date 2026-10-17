@@ -55,11 +55,16 @@ Guns.WORLD_MODEL = {
 	vengeance = "models/tnb/weapons/w_mg3.mdl",
 }
 
+-- Guns that can't leave your hands once picked up (the original's SWEP.Droppable = false).
+Guns.UNDROPPABLE = { vengeance = true }
+
 for _, g in ipairs( Guns.GUNS ) do
 	local class = "weapon_gr_" .. g[ 1 ]
+	local stuck = Guns.UNDROPPABLE[ g[ 1 ] ]
 	Items.Define( g[ 1 ], {
 		Name = g[ 2 ],
-		Description = g[ 4 ],
+		Description = stuck and g[ 4 ] .. "\n It is stuck with you forever." or g[ 4 ],
+		Droppable = not stuck,
 		Weight = g[ 3 ],
 		Model = Guns.WORLD_MODEL[ g[ 1 ] ] or "models/weapons/w_" .. g[ 1 ] .. ".mdl",
 		Weapon = class,
@@ -77,6 +82,20 @@ function Guns.GiveAmmo( ply, class, clips )
 end
 
 -- The original's Bullets: three clips for the gun in hand, never more than three clips held.
+-- Picked up while holding a gun with room for them, they load straight in instead of being carried.
+Guns.BULLET_CLIPS = 3
+
+local function loadable( ply )
+	local wep = ply:GetActiveWeapon()
+	if not IsValid( wep ) or not wep.Firearm or wep.Primary.ClipSize <= 0 then return end
+	return wep, wep.Primary.ClipSize * Guns.BULLET_CLIPS, ply:GetAmmoCount( wep.Primary.Ammo )
+end
+
+local function load( ply, wep, max, have )
+	ply:EmitSound( "buttons/weapon_confirm.wav" )
+	ply:GiveAmmo( math.min( max, max - have ), wep.Primary.Ammo, true )
+end
+
 Items.Define( "pickup_ammo", {
 	Name = "Bullets",
 	Description = "These were made for you and only you.",
@@ -84,20 +103,23 @@ Items.Define( "pickup_ammo", {
 	Model = "models/Items/357ammo.mdl",
 	Consumable = true,
 	OnUse = function( ply )
-		local wep = ply:GetActiveWeapon()
-		if not IsValid( wep ) or not wep.Firearm or wep.Primary.ClipSize <= 0 then
+		local wep, max, have = loadable( ply )
+		if not wep then
 			if SERVER then Notify( ply, "Hold a gun to load it." ) end
 			return false
 		end
 		if CLIENT then return end
-		local max = wep.Primary.ClipSize * 3
-		local have = ply:GetAmmoCount( wep.Primary.Ammo )
 		if have >= max then
 			Chat.Area( ply, Color( 200, 200, 200 ), ply:Nick() .. " scatters bullets on the ground like a moron." )
 			return
 		end
-		ply:EmitSound( "buttons/weapon_confirm.wav" )
-		ply:GiveAmmo( math.min( max, max - have ), wep.Primary.Ammo, true )
+		load( ply, wep, max, have )
+	end,
+	OnPickup = function( ply )
+		local wep, max, have = loadable( ply )
+		if not wep or wep.NoMunitionizer or have >= max then return false end
+		load( ply, wep, max, have )
+		return true
 	end,
 } )
 
