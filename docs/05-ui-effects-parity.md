@@ -1,6 +1,8 @@
-# Liver Failure remake: UI and effects parity
+# Liver Failure remake: UI, effects and feel parity
 
 **Rule (decided 2026-10-17 by the user):** the remake's UI and effects must match the original Gangrene look and feel. The only exception is optimisation. An effect may be *implemented* differently, or offered as an option, if the original way is costly, but what the player sees and hears stays the same.
+
+**Scope:** §1–§7 cover the UI and screen effects. §8–§14 cover the rest of the feel: speech and chat, weapon feel, wording, sound, movement, ghosts and controls.
 
 - Paths below are relative to `gamemode/liverfailure-modules/`. Almost all of the HUD lives in `gui/cl_hud.lua` (3939 lines).
 - **When to build each item:** with the step that adds the system it shows. Example: the needs bars come with Step 6.
@@ -108,4 +110,153 @@ Every HUD string passes through `GM:Stutter` (`cl_hud.lua:1426`).
 | Step 11 | Context menu (surgery, sentence, forgive, construct, "Call Korpsman"), timed progress bars, and surgery blood. |
 | Step 12 | Chat box, fonts and radio styling. |
 | Step 13 | Scoreboard rank icons. |
-| Throughout | Crosshair, weapon select in the cross-texts, vignette, constant bloom, aberrations, Frighten, the font family and UI sounds. |
+| Step 5 (also) | Third-person option, ghost look and hearing (§13), fate footsteps and chat babble (§11). |
+| Step 7 (also) | Leg-shot no-jump, getting-up animation, body dragging (§12). |
+| Step 8 (also) | Holster, pickup and the keys in §14. |
+| Step 12 (also) | Chat ranges, commands, messages, thoughtcrime and kill sentences (§8). |
+| Weapons step | Weapon feel (§9). |
+| Throughout | Crosshair, weapon select in the cross-texts, vignette, constant bloom, aberrations, Frighten, the font family and UI sounds, and wording (§10). |
+
+## 8. Speech and chat (`framework/chat/sh_chat.lua`)
+
+**Not kept (user, 2026-10-17):** race speech modification (`GM:Accent`, `GM:RacialQuirks`). Players of every race speak exactly what they type. Quirk speech mods (`speech inspedimence`, the missing-brain symbol speech, the amoeba stutter) come back only with quirks and organs, if at all.
+
+- **Ranges.** `GetRF(range, muffled)`: if the speaker can't see the listener, the muffled range is used instead.
+
+  | Mode | Command | Range / muffled | How it shows |
+  |---|---|---|---|
+  | Say | (plain text) | 512 / 256 | `Name says, "…"`, gold (180,150,0) |
+  | Yell | `/y` | 1024 / 768 | `Name yells, "…"` in ChatBig, red |
+  | Whisper | `/w` | 128 / 0 | `Name whispers, "…"` in ChatSmall, grey |
+  | Me | `/me` | 512 / 256 | `Name …`, green (132,198,118) |
+  | LOOC | `.//`, `[[`, `/looc` | 512 / 256 | `[LOOC] name: …` |
+  | OOC | `//`, `/ooc` | global, with a cooldown, and can be disabled ("Consider using our discord or LOOC with .// instead.") | `[OOC] name: …` |
+  | Radio | `/r`, `/radio` | fates with `Radio` channels only | `Name says over the radio, "…"`, Lucida Console, grey. Nearby people hear the speaker locally. Listeners see `[CHANNEL] Name crackles, "…"`. |
+  | Admin, PM | `/a`, `/pm` | staff / one person | `[NECROMANCER] …`, orange PM |
+  | Roll | `/roll` | local | red |
+  | Help | `/help`, `/content` | self | |
+
+- **The dead and the downed:**
+  - Plain chat while bleeding out becomes a whisper.
+  - Dead with a body: *"Your tongue has all but rotted away."*
+  - Yelling while dead: *"The dead must speak quietly and politely."*
+  - Whispering while dead: *"Noone will hear your whimpers anymore."*
+  - Unconscious: *"You're unconscious. You can't talk."*
+- **Radio refusals:** *"You need a radio for this."*, *"Your radio refuses to work."*, *"Your feeble voice isn't picked up by the radio."*
+- **Kill sentences.** While bleeding out, typing `MOTHER OF DEATH, I CALL ON THEE` or `I GIVE MY SOUL ETERNALLY` (spaces ignored) gives *"SO BE IT"* and the head bursts (`config/sh_config.lua:99`).
+- **Thoughtcrime.**
+  - Typing a word from `GM.BadWords`, or a sentence from `GM.BadSentences`, means the message is not sent.
+  - The speaker gets a **Jumpscare** and their own words echoed back in red.
+  - They become wanted for 60 s for `thoughtcrime`, and staff see *"X (nick) wanted to say '…'"*.
+  - Text is de-obfuscated first (`Circumventions`).
+  - The list mixes slurs, modern memes and out-of-setting words. Keep the mechanic, but keep the list in config for the user to review: the original also bans "admin", "font" and Cyrillic letters.
+- **Auto-grammar** (`AutoGrammar`, `GM.StupidMistakes`). Common chat-speak is corrected into proper words before sending. This is not race-related, so it stays.
+- **Talking body:**
+  - Each fate's `ChatSounds` (or `ChatSoundFunc`) plays a short babble sound at pitch 80–120 on every line. For example, the korpsman uses `placenta/speech/korps*.wav` and the slave uses poison-headcrab chatter.
+  - With the weapon holstered, there is a 1-in-3 chance of a talking gesture, with a 5–15 s cooldown.
+- **Voice chat is off on dedicated servers** (`PlayerCanHearPlayersVoice` returns `not game.IsDedicated()`, `sv_player.lua:3317`). The game is text-only roleplay. Keep that.
+- **Name display:** chat uses the RP name (`VisibleRPName`), never the Steam name. The `prosopagnosia` quirk shows the fate name instead (comes back with quirks).
+
+## 9. Weapon feel (`entities/weapons/weapon_cc_base/`)
+
+- **Holstering is central.**
+  - **Keys:** `B` (or the `rp_toggleholster` bind) toggles. Use + Reload holsters and checks ammo (`cl_binds.lua:159, 280, 348`).
+  - **While holstered:** right-click picks up props up to 115 kg within 84 units (`SecondaryHolstered`).
+  - **Weapon out:** move speed ×0.5 and no sprinting (`MovementMult`, `SprintUnholstered`). Talking gestures only happen while holstered.
+- **No default sway or bob** (`SwayScale = 0`, `BobScale = 0`). The view model moves with the base's own lerped offset (`CalcIron`, `GetViewModelPosition`) and yaw/pitch drag (`dynaset`).
+- **Melee (`sh_melee.lua`):**
+  - **Hit trace:** a hull trace (8³) of the weapon's `Length`. Ghosts are skipped.
+  - **Heavy attack:** hold attack to charge, release to swing. Damage ×1.5, and the swing sound plays at pitch 20 (a deep whoosh).
+  - **Blocking:** hold right-click with a weapon out on `SecondaryBlock` weapons; the defender takes damage × `BlockMul`.
+  - **On hit:**
+    - Players and NPCs get flesh sounds and a sparks effect.
+    - The victim gets the red flash.
+    - Knockback is aim-horizontal.
+    - Fate `MeleeResistScale` applies.
+    - A hit within 40 units of a ragdoll's head has a 10% chance to burst it.
+  - **Bare fists on a wall:** they hurt you. The attacker takes the damage and gets the red flash.
+  - **On miss:** the miss animation and `MissDelay`.
+  - **Melee shove** (`MeleeShove`): a 70-unit shove with claw sounds and a big view punch for the target.
+- **Firearms (`sh_firing.lua`):**
+  - **Recoil:** a view punch scaled by `Primary.Recoil` and the fate's `RecoilMulti`, plus the view model kicking back (`RecoilZ`).
+  - **Spread:** base ×0.7, then:
+    - The fate's `AccuracyMulti` (korpsman 1.3, and proles are worse shots).
+    - ×5 in the air.
+    - Injuries add more spread: recovering ×1.3, injury 1 ×1.1, injury 2 ×1.7.
+    - Moving ×1.5.
+    - Crouched ×0.65.
+  - **Original bug:** the "moving fast ×2.5" branch can never run (`> 10` is checked before `> 80`, `sh_firing.lua:95`). Parity means ×1.5 for any movement. Don't "fix" it into ×2.5 without asking.
+  - **Aim:** right-click zooms FOV to ×0.9. Scoped weapons use `SightFOV` 20 with matching mouse sensitivity and the scope overlay.
+- **Spit** (`G`): spit on someone (`cc_spit` effect, cooldown `NextSpit`). Weapons with a special attack use G for it instead.
+- **Remake note:** the kept fates' weapons only need the base behaviour above plus their own stats. Weapon *count* is not parity; *feel* is.
+
+## 10. Wording
+
+Copy the original text word for word wherever the thing it describes is kept:
+
+- Fate descriptions:
+  - Korpsman: *"The healer of all maladies physical and pathological. Only Gangrene's finest should be treated for free."*
+  - Slave: *"An almost-worker."*
+  - Ghost: *"A dead, useless thing."*
+- Death, revive and despair lines; *"…'s body says 'Not yet.'"*; the inner voice after unjust kills; the big red crime lines.
+- Chat refusals (§8), the bleed-out lines (§2), and context-menu labels (surgery chance text, "Call Korpsman (50 Bones)").
+- Names: `the %name to the People`, and slave barcodes.
+- Small jokes that fit: the invite refusal *"Gangrene practices slavery."*
+- **Where the remake changes a system, write new lines in the same voice:** deadpan, a bit broken, state-propaganda. Don't write modern or neutral UI text.
+
+## 11. Sound
+
+- **Footsteps:**
+  - Each fate can define `Footstep(ply, foot)`. The korpsman and the slave have their own.
+  - Ghosts make no footsteps (`sh_player.lua:1161`).
+  - The material-based footstep table in the original is switched off (`if (false and …)`), so it is **not** parity.
+- **Chat babble and gestures** (§8).
+- **Per-fate looping sounds** (`CreateSound` in fate files), for the kept fates where they exist.
+- **Hits, pain and screams:** the melee sounds in §9, the scream on going down, the ghost's "become" sound, and DSP (ghost DSP 4, scare DSP 28).
+- **Music** (`framework/cl_music.lua`):
+  - A client music patch with fade-in and fade-out.
+  - Auto-plays while alive, with a gap of 5 s after each track.
+  - Volume is set with `cc_musicvolume` (default 50, 0 = off), and "Now playing …" goes to the console.
+  - The track list comes with the content pack.
+- **UI sounds:** cross-text hover and weapon hover (§2).
+
+## 12. Movement and body
+
+- **Speeds:** the remake's slower speeds are a decided change (backlog). Keep the original *modifiers*:
+  - Weapon out: no sprint, ×0.5.
+  - Leg shot: no jumping for `6 + 10 × Emptiness%` seconds.
+  - Reloading: no jumping.
+  - Frozen: no jump or crouch.
+  - Jumping during surgery interrupts it.
+- **Dragging bodies** (`PulledBy` / `Pulling`): drag a player or body behind you. If you get more than 128 units away, it snaps free with a barnacle-tongue sound.
+- **Getting up:** ragdoll while unconscious, then a getting-up animation with HeadCam (§4). First-person legs (§4).
+- **Third person:** `cc_thirdperson` client option. Ghosts are always third person. Some held items (light, cigarettes) force it.
+
+## 13. Ghosts
+
+- **Look:**
+  - Skeleton model (`models/player/skeleton.mdl`) with a glowing eye material and a render effect.
+  - Invisible to the living (`PrePlayerDraw`). Ghosts can see each other.
+- **Feel:**
+  - Muffled hearing (DSP 4).
+  - Colour grade: high contrast, breathing on a sine. Colour returns and the red tint drains as Suffering rises.
+  - Motion blur `{0.08, 0.8, 0.05}`.
+- **Talk:** the ghost radio channel "Suffering Eternal", with no radio sound. The dead-speech rules in §8 apply.
+- **Rules:** no inventory, no collision with others, spectator team, and everything (wanted, evidence, money, gang) cleared on becoming a ghost.
+
+## 14. Controls (`framework/cl_binds.lua`)
+
+| Key | Action |
+|---|---|
+| F1 | Help |
+| F2 | Fate menu (ghosts) |
+| F3 | Player menu |
+| C (hold) | Context menu |
+| B | Toggle holster |
+| Use + Reload | Holster and check ammo |
+| G | Spit / special attack |
+| Mouse wheel / slot keys | Weapon select in the cross-texts; attack confirms |
+| Use on a player | Fate- and quirk-specific use actions (robot repair, blood-sucking quirk come back with their systems) |
+| Jump | Blocked while leg-shot, reloading or frozen; interrupts surgery |
+
+Keep the same keys so returning players' muscle memory works.

@@ -8,6 +8,7 @@ Fates.Define( "sanitar", {
 	Name = "Sanitar",
 	Description = "The keeper of all things moral, safe, and clean... hopefully.",
 	Color = Color( 0, 200, 0 ),
+	ChatSounds = function( _, emit ) emit( "placenta/speech/chatter" .. math.random( 1, 15 ) .. ".ogg", 100 ) end,
 	Cost = 2,
 	DeathCooldown = 120,
 	Slots = function( pop ) return math.Clamp( 2 + math.floor( pop / 10 ), 2, 6 ) end,

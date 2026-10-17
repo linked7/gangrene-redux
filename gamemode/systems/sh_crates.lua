@@ -1,46 +1,40 @@
--- The work loop (step 11.1): food only exists because someone made it and hauled it.
+-- Crates and the stockpile (step 11.1): food only exists because someone made it and hauled it.
 --
---   ration_press   working it is a timed action; when it ends an ent_crate of the press's good
---                  appears beside it. At most Crates.PER_STATION crates per press wait in the world.
---                  Any class in Crates.STATIONS works the same way (GetGood() names its good).
---                  Only the presses the map layout places exist; players can't build production.
---   ent_crate      a ~30 kg prop carried with GMod's own +use pickup. The carrier's weapon is
---                  holstered and they can only walk; the crate drops where it is when they are hit,
---                  go down or jump, and it can be pushed along the ground. Touching it to a
---                  state_stockpile delivers it (Econ.Deliver pays the deliverer the buy price);
---                  opening it puts its contents in the opener's inventory. Either one, done to a
---                  crate someone else made, is reported as theft (Crime.Report).
---   stockpile pry  anyone without StockpileAccess can pry the stockpile: a long action that alarms
---                  the state radio when it starts and drops rations from the stock when it ends.
+--   ent_crate      made by the lunch machine (systems/sh_lunch.lua) and stamped with its crew: everyone
+--                  who pressed a correct panel button or turned the boiler's valve while its panel was
+--                  cleared. A ~30 kg prop carried with GMod's own +use pickup. The carrier's weapon is
+--                  holstered and they can only walk; the crate drops where it is when they are hit, go
+--                  down or jump, and it can be pushed along the ground. A full water_barrel and a whole
+--                  bone_capsule are carried the same way.
+--                  Touching a crate to a state_stockpile delivers it. A crew member's delivery splits
+--                  the buy price evenly across the crew (Econ.Deliver); anyone else is paid the whole
+--                  price but reported for theft (Crime.Report). Opening it puts its contents in the
+--                  opener's inventory, and opening a crate you didn't crew is theft too.
+--                  At most Crates.PER_STATION crates per machine wait in the world.
+--   The stockpile's lock is beaten open, not pried (sh_locks.lua).
 --
 -- Server API (other systems rely on it):
---   Crates.HeldBy( ply ) -> crate or nil         the crate `ply` is carrying
---   crate.GR_MadeBy  (DB.Key of the maker), crate.GR_Kind  (the good)
+--   Crates.HeldBy( ply ) -> crate or nil         the crate (or full barrel) `ply` is carrying
+--   crate.GR_Crew  (set of DB.Keys, SERVER only), crate.GR_Kind  (the good)
+--   Crates.Crew( { ply, ... } ) -> set, Crates.OnCrew( crate, ply ), Crates.Stolen( crate, ply )
 --   hook GR_CrateDelivered( ply, crate )          before the delivered crate is removed
---   hook GR_CrateMade( ply, crate, station )      a press finished a crate
---   Crates.Spawn( kind, pos, maker, station ), Crates.Work, Crates.Deliver, Crates.Open, Crates.StartPry
+--   Crates.Spawn( kind, pos, crew, station ), Crates.Waiting( station ), Crates.Deliver, Crates.Open
 Crates = Crates or {}
 
-Crates.PRESS_TIME = 30     -- seconds of work per crate
-Crates.PER_STATION = 3     -- crates a press may have waiting in the world
+Crates.PER_STATION = 3     -- crates a machine may have waiting in the world
 Crates.CONTENTS = 2        -- items in an opened crate
-Crates.PRY_TIME = 60
-Crates.PRY_RANGE = 150
-Crates.PRY_LOOT = 3        -- rations a finished pry drops
 Crates.THROW_GRACE = 3     -- seconds a dropped or thrown crate still counts as its carrier's delivery
-Crates.STATIONS = Crates.STATIONS or {}  -- class -> true: entities that run the work loop
-Crates.STATIONS.ration_press = true
 
 local function living( ply ) return IsValid( ply ) and ply:Alive() and not ply:IsGhost() end
 local function isClass( ent, class ) return IsValid( ent ) and ent:GetClass() == class end
 
--- Context-menu options. show() runs on both realms, run() on the server.
-Interact.Add( "press_work", {
-	label = "Work the press",
-	show = function( ply, ent ) return isClass( ent, "ration_press" ) and not ply:IsGhost() end,
-	run = function( ply, ent ) Crates.Work( ply, ent ) end,
-} )
+-- Heavy things are carried like crates: a crate, a whole bone capsule, or a barrel full of water.
+function Crates.IsHeavy( ent )
+	if isClass( ent, "ent_crate" ) or isClass( ent, "bone_capsule" ) then return true end
+	return isClass( ent, "water_barrel" ) and ent:GetFull()
+end
 
+-- Context-menu options. show() runs on both realms, run() on the server.
 Interact.Add( "crate_open", {
 	label = "Open the crate",
 	range = 100,
@@ -48,21 +42,12 @@ Interact.Add( "crate_open", {
 	run = function( ply, ent ) Crates.Open( ply, ent ) end,
 } )
 
-Interact.Add( "stockpile_pry", {
-	label = "Pry the stockpile open",
-	range = Crates.PRY_RANGE,
-	show = function( ply, ent )
-		return isClass( ent, "state_stockpile" ) and not ply:IsGhost() and not ply:FateHas( "StockpileAccess" )
-	end,
-	run = function( ply, ent ) Crates.StartPry( ply, ent ) end,
-} )
-
 if CLIENT then return end
 
 -- Walk only while carrying: no slowdown multiplier, just no running (step 5).
 Fates.SpeedMods.crate = function( ply ) return 1, IsValid( ply.GR_HeldCrate ) end
 
--- Registry: press -> { crate = true }, so the cap never searches the world (P2).
+-- Registry: machine -> { crate = true }, so the cap never searches the world (P2).
 local waiting = setmetatable( {}, { __mode = "k" } )
 
 function Crates.Waiting( station )
@@ -73,12 +58,30 @@ function Crates.Waiting( station )
 	return n
 end
 
--- Makes a crate of `kind` at `pos`, stamped with `maker`'s key and counted against `station`.
-function Crates.Spawn( kind, pos, maker, station )
+-- The crew stamp for a list of players: { [DB.Key] = true }.
+function Crates.Crew( players )
+	local crew = {}
+	for _, p in ipairs( players or {} ) do
+		if IsValid( p ) and p:IsPlayer() then crew[ DB.Key( p ) ] = true end
+	end
+	return crew
+end
+
+function Crates.OnCrew( crate, ply )
+	return crate.GR_Crew ~= nil and IsValid( ply ) and crate.GR_Crew[ DB.Key( ply ) ] == true
+end
+
+-- A stamped crate that `ply` didn't crew. An unstamped one (spawned by staff) belongs to nobody.
+function Crates.Stolen( crate, ply )
+	return crate.GR_Crew ~= nil and not Crates.OnCrew( crate, ply )
+end
+
+-- Makes a crate of `kind` at `pos`, stamped with `crew` (a Crates.Crew set) and counted against `station`.
+function Crates.Spawn( kind, pos, crew, station )
 	local crate = ents.Create( "ent_crate" )
 	if not IsValid( crate ) then return end
 	crate.GR_Kind = kind
-	crate.GR_MadeBy = IsValid( maker ) and DB.Key( maker ) or nil
+	crate.GR_Crew = crew and table.Copy( crew ) or nil
 	crate.GR_Station = station
 	crate:SetKind( kind )
 	crate:SetPos( pos )
@@ -135,7 +138,7 @@ function Crates.Drop( ply )
 end
 
 hook.Add( "OnPlayerPhysicsPickup", "gr_crates", function( ply, ent )
-	if isClass( ent, "ent_crate" ) then Crates.Hold( ply, ent ) end
+	if Crates.IsHeavy( ent ) then Crates.Hold( ply, ent ) end
 end )
 hook.Add( "OnPlayerPhysicsDrop", "gr_crates", function( ply, ent )
 	if ply.GR_HeldCrate == ent then Crates.Release( ply ) end
@@ -155,7 +158,8 @@ function Crates.Deliverer( crate )
 	if living( last ) and CurTime() - ( crate.GR_LetGoAt or 0 ) <= Crates.THROW_GRACE then return last end
 end
 
--- Removing a crate (delivered, opened, cleaned up) frees its carrier and its press slot.
+-- Removing a crate (delivered, opened, cleaned up) frees its carrier and its machine slot.
+-- A barrel uses it too when it empties or goes away.
 function Crates.Forget( crate )
 	local holder = crate.GR_Holder
 	if IsValid( holder ) and holder.GR_HeldCrate == crate then Crates.Release( holder ) end
@@ -166,70 +170,38 @@ end
 -- Theft -------------------------------------------------------------------------------------
 
 local function reportTheft( ply, crate )
-	local madeBy = crate.GR_MadeBy
-	if madeBy and madeBy ~= DB.Key( ply ) then
-		Crime.Report( ply, "theft", { madeBy = madeBy, crate = crate } )
+	if Crates.Stolen( crate, ply ) then
+		Crime.Report( ply, "theft", { crew = crate.GR_Crew, crate = crate } )
 	end
 end
 
 local function take( crate )
 	if not IsValid( crate ) or crate.GR_Taken then return false end
 	crate.GR_Taken = true -- Remove is deferred; stop a second taker in the same tick
-	Crates.Forget( crate ) -- and free the carrier and the press slot now, not at removal
+	Crates.Forget( crate ) -- and free the carrier and the machine slot now, not at removal
 	return true
-end
-
--- Working the press ---------------------------------------------------------------------------
-
-local function besideStation( station, n )
-	local side = ( n % 3 - 1 ) * 30
-	return station:GetPos() + station:GetForward() * 50 + station:GetRight() * side + Vector( 0, 0, 30 )
-end
-
-function Crates.IsStation( ent ) return IsValid( ent ) and Crates.STATIONS[ ent:GetClass() ] == true end
-
-function Crates.Work( ply, station )
-	if not living( ply ) or not Crates.IsStation( station ) then return false end
-	if Crates.Waiting( station ) >= Crates.PER_STATION then
-		Notify( ply, "Crates are piling up here. Haul some away first." )
-		return false
-	end
-	local good = station:GetGood()
-	if not Econ.GOOD_DEFAULTS[ good ] then
-		Log.Error( "crates", "press %d makes unknown good %s", station:EntIndex(), tostring( good ) )
-		return false
-	end
-	local ok = Actions.Start( ply, "press", station, Crates.PRESS_TIME, {
-		label = "Pressing " .. ( Items.Get( good ) and Items.Get( good ).Name or good ),
-		onDone = function( p, st ) Crates.FinishWork( p, st ) end,
-	} )
-	if not ok then Notify( ply, "You are busy." ) end
-	return ok
-end
-
--- The press's action ended: the crate appears, if there is still room for it.
-function Crates.FinishWork( ply, station )
-	if not IsValid( station ) then return end
-	local n = Crates.Waiting( station )
-	if n >= Crates.PER_STATION then
-		Notify( ply, "Crates are piling up here. Your work went to waste." )
-		return
-	end
-	local crate = Crates.Spawn( station:GetGood(), besideStation( station, n ), ply, station )
-	if crate then hook.Run( "GR_CrateMade", ply, crate, station ) end
-	return crate
 end
 
 -- Delivering and opening ------------------------------------------------------------------------
 
--- `ply` brings `crate` to `stockpile`: the stock rises and the deliverer is paid the buy price.
--- Returns the bones paid, or false if it wasn't a delivery.
+-- Who a delivery by `ply` pays: the living crew when `ply` crewed the crate (deliverer first), else `ply` alone.
+function Crates.Payees( ply, crate )
+	if not Crates.OnCrew( crate, ply ) then return { ply } end
+	local out = { ply }
+	for _, p in player.Iterator() do
+		if p ~= ply and living( p ) and crate.GR_Crew[ DB.Key( p ) ] then table.insert( out, p ) end
+	end
+	return out
+end
+
+-- `ply` brings `crate` to `stockpile`: the stock rises and the buy price is paid, split evenly
+-- across the crew when `ply` crewed it. Returns the bones paid, or false if it wasn't a delivery.
 function Crates.Deliver( ply, crate, stockpile )
 	if not living( ply ) or not isClass( crate, "ent_crate" ) or not isClass( stockpile, "state_stockpile" ) then return false end
 	if crate.GR_Taken or not Econ.GOOD_DEFAULTS[ crate.GR_Kind ] then return false end
 	take( crate )
 	reportTheft( ply, crate )
-	local paid = Econ.Deliver( ply, crate.GR_Kind )
+	local paid = Econ.Deliver( ply, crate.GR_Kind, Crates.Payees( ply, crate ) )
 	hook.Run( "GR_CrateDelivered", ply, crate )
 	crate:Remove()
 	return paid
@@ -248,36 +220,4 @@ function Crates.Open( ply, crate )
 		Notify( ply, "You can't carry all of it." )
 	end
 	return true
-end
-
--- Prying the stockpile --------------------------------------------------------------------------
-
-function Crates.StartPry( ply, stockpile )
-	if not living( ply ) or not isClass( stockpile, "state_stockpile" ) then return false end
-	if ply:FateHas( "StockpileAccess" ) then
-		Notify( ply, "You have a key. Use the counter." )
-		return false
-	end
-	local ok = Actions.Start( ply, "pry", stockpile, Crates.PRY_TIME, {
-		label = "Prying the stockpile open",
-		range = Crates.PRY_RANGE,
-		cancelOnDamage = true,
-		onDone = function( p, st ) Crates.FinishPry( p, st ) end,
-	} )
-	if not ok then
-		Notify( ply, "You are busy." )
-		return false
-	end
-	Crime.Report( ply, "pry_start", { pos = stockpile:GetPos() } )
-	return true
-end
-
--- The pry ended: up to PRY_LOOT rations tumble out of the stock, and it is a break-in.
-function Crates.FinishPry( ply, stockpile )
-	local n = Econ.TakeStock( Econ.BREAD, Crates.PRY_LOOT )
-	local base = stockpile:GetPos() + stockpile:GetForward() * 40 + Vector( 0, 0, 20 )
-	for i = 1, n do Items.Spawn( Econ.BREAD, 1, base + Vector( 0, ( i - 2 ) * 12, 0 ) ) end
-	if n == 0 then Notify( ply, "The stockpile is empty." ) end
-	Crime.Report( ply, "pry_done", { pos = stockpile:GetPos() } )
-	return n
 end

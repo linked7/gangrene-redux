@@ -46,7 +46,7 @@ Items.Define( "shotgun", {
 	Description = "For clearing a room of filth.",
 	Weight = 4,
 	Model = "models/weapons/w_shotgun.mdl",
-	Weapon = "weapon_shotgun",
+	Weapon = "weapon_gr_shotgun",
 } )
 
 Items.Define( "smg", {
@@ -54,7 +54,7 @@ Items.Define( "smg", {
 	Description = "The state's answer to a crowd.",
 	Weight = 3,
 	Model = "models/weapons/w_smg1.mdl",
-	Weapon = "weapon_smg1",
+	Weapon = "weapon_gr_smg",
 } )
 
 local function isPolice( ply ) return IsValid( ply ) and ply:IsPlayer() and ply:Alive() and ply:FateHas( "Police" ) end
@@ -151,7 +151,7 @@ table.insert( Crime.ReportRules, INSPECT_RULE )
 -- The crate `ply` is carrying, if someone else made it. Crates (step 11.1) may not be loaded.
 function Police.StolenCrate( ply )
 	local crate = Crates and Crates.HeldBy and Crates.HeldBy( ply )
-	if crate and crate.GR_MadeBy and crate.GR_MadeBy ~= DB.Key( ply ) then return crate end
+	if crate and Crates.Stolen( crate, ply ) then return crate end
 end
 
 -- Returns { stolenCrate, evidence, wanted } and tells the inspector. Interact has already

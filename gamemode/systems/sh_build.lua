@@ -1,9 +1,10 @@
 -- Construction (step 11.1). Anyone carrying an item tagged Builds (the permit tool) can hold C
--- while looking at open ground and pick Build: a storage crate. The price goes to the treasury
--- through Econ.Transfer, and the server checks the spot is in reach and in sight. Players can't
--- build production: the only presses are the ones the map layout places (sv_layout.lua).
+-- while looking at open ground and pick Build: a storage crate or a water barrel. The price goes to
+-- the treasury through Econ.Transfer, and the server checks the spot is in reach and in sight.
+-- Players can't build production: the only lunch machine is the one the map layout places
+-- (sv_layout.lua). Water barrels are capped across the world (cap, count()).
 --
---   Build.KINDS[ kind ] = { name, cost, class }
+--   Build.KINDS[ kind ] = { name, cost, class, cap?, count? () -> n, stand? (base on the floor) }
 --   Build.Place( ply, kind, pos ) -> ent, or false and why     (the `gr_build` receiver calls it)
 --   Build.IsBuilder( ply, ent )   shared: did `ply` build `ent` (ent:GetBuiltBy() is the DB.Key)
 --   Built things belong to one round: GR_RoundStart removes them (ent.GR_RoundReset is set first,
@@ -13,8 +14,12 @@ Build = Build or {}
 
 Build.KINDS = {
 	storage_crate = { name = "Storage crate", cost = 35, class = "storage_crate" },
+	water_barrel = {
+		name = "Water barrel", cost = 15, class = "water_barrel", stand = true,
+		cap = 8, count = function() return Lunch.BarrelCount() end,
+	},
 }
-Build.ORDER = { "storage_crate" }
+Build.ORDER = { "storage_crate", "water_barrel" }
 Build.RANGE = 150 -- from the builder's eyes to the spot
 
 -- Built entities network their builder's key as the "BuiltBy" string. Clients only ever ask about
@@ -95,6 +100,9 @@ function Build.Place( ply, kind, pos )
 	-- The spot must be in sight: nothing between the builder's eyes and it.
 	local tr = util.TraceLine( { start = ply:EyePos(), endpos = pos, filter = ply, mask = MASK_SOLID } )
 	if tr.HitPos:DistToSqr( pos ) > 16 * 16 then return refuse( "You can't reach there." ) end
+	if k.cap and k.count() >= k.cap then
+		return refuse( string.format( "There are already %d %ss.", k.cap, string.lower( k.name ) ) )
+	end
 
 	if not Econ.Transfer( ply, Econ.TREASURY, k.cost, "construction" ) then
 		return refuse( string.format( "A %s costs %d bones.", string.lower( k.name ), k.cost ) )
@@ -104,6 +112,7 @@ function Build.Place( ply, kind, pos )
 	ent:SetAngles( Angle( 0, ply:EyeAngles().y + 180, 0 ) )
 	ent.GR_BuiltBy = DB.Key( ply )
 	ent:Spawn() -- the entity copies GR_BuiltBy into its networked BuiltBy
+	if k.stand then ent:SetPos( pos + Vector( 0, 0, 2 - ent:OBBMins().z ) ) end
 	built[ ent ] = kind
 	Log.Debug( "build", "%s built a %s for %d", ply:Nick(), kind, k.cost )
 	return ent

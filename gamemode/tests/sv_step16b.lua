@@ -1,5 +1,5 @@
 -- Step 16b: rp_slumtown's shipped layout, checked on gm_construct (the test server has no
--- rp_slumtown). The file loads with nothing skipped; the purposes, presses and pump spots match the
+-- rp_slumtown). The file loads with nothing skipped; the purposes, the lunch machine, capsule points and pumps match the
 -- conversion from the original map file; every fate id is a real, takeable fate; only two pumps
 -- are enabled and the rest are candidates that never spawn; nothing is topped up from the default
 -- set (no fallback stockpile), only warned about. Then the `drop` and `candidate` flags on a
@@ -27,9 +27,9 @@ return function( T )
 	T.Check( entries ~= nil and string.find( source or "", "layouts/rp_slumtown.lua", 1, true ) ~= nil, "Layout.Load reads the shipped file" )
 	entries = entries or {}
 	T.Equal( #entries, #raw, "no entry is skipped as invalid" )
-	T.Equal( #entries, 20, "12 purposes, 4 presses, 4 pump spots" )
+	T.Equal( #entries, 30, "12 purposes, the machine and its boiler, 12 capsule points, 4 pump spots" )
 
-	local classes, fates, goods = {}, {}, {}
+	local classes, fates = {}, {}
 	local enabledPumps, candidates, allDrop, validFates = 0, 0, true, true
 	for _, e in ipairs( entries ) do
 		classes[ e.class ] = ( classes[ e.class ] or 0 ) + 1
@@ -38,14 +38,15 @@ return function( T )
 			if not f or f.index == FATE_GHOST then validFates = false T.Note( "bad fate %s", tostring( e.kv.fate ) ) end
 			fates[ e.kv.fate ] = ( fates[ e.kv.fate ] or 0 ) + 1
 		end
-		if e.class == "ration_press" then goods[ e.kv.good ] = ( goods[ e.kv.good ] or 0 ) + 1 end
+
 		if e.candidate then
 			candidates = candidates + 1
 			if e.class ~= "water_pump" then T.Note( "%s is a candidate", e.class ) end
 		elseif e.class == "water_pump" then
 			enabledPumps = enabledPumps + 1
 		end
-		if not e.drop then allDrop = false end
+		if not e.drop and e.class ~= "capsule_spawn" then allDrop = false end
+		if e.drop and e.class == "capsule_spawn" then allDrop = false end
 	end
 	T.Equal( classes.fate_station, 12, "12 purposes (the commented-out proles stay out)" )
 	T.Check( validFates, "every purpose names a takeable fate" )
@@ -54,21 +55,29 @@ return function( T )
 	T.Equal( fates.korpsman, 1, "korpsman -> one korpsman purpose" )
 	T.Equal( fates.prole, 5, "proletariat -> five prole purposes" )
 	T.Equal( fates.slave, nil, "no slave purpose: staff place it" )
-	T.Equal( classes.ration_press, 4, "machine_lunch -> four presses (the commented-out two stay out)" )
-	T.Equal( goods.ration, 2, "two make rations" )
-	T.Equal( goods.clean_water, 2, "two make clean water" )
+	T.Equal( classes.ration_press, nil, "no ration_press is left" )
+	T.Equal( classes.lunch_machine, 1, "machine_lunch -> one lunch machine" )
+	T.Equal( classes.line_boiler, 1, "and its boiler" )
+	T.Equal( classes.capsule_spawn, 12, "GM.Capsules -> 12 capsule points" )
+	T.Equal( classes.water_barrel, nil, "no water barrels: staff place them" )
+	local machinePos, boilerPos
+	for _, e in ipairs( entries ) do
+		if e.class == "lunch_machine" then machinePos = e.pos end
+		if e.class == "line_boiler" then boilerPos = e.pos end
+	end
+	T.Check( machinePos and boilerPos and machinePos:Distance( boilerPos ) < Lunch.RANGE, "the boiler is in reach of the machine" )
 	T.Equal( classes.water_pump, 4, "faucet -> four pump spots (the commented-out one stays out)" )
 	T.Equal( enabledPumps, 2, "two pumps enabled (step 8: one or two per map)" )
 	T.Equal( candidates, 2, "the other two are candidates, and only pumps are" )
 	T.Equal( classes.state_stockpile, nil, "no stockpile: staff place it" )
 	T.Equal( classes.sanitation_station, nil, "no sanitation station: staff place it" )
-	T.Check( allDrop, "every converted entry drops to the floor" )
+	T.Check( allDrop, "every converted model drops to the floor; capsule points stay where they were" )
 	T.Equal( entries[ 1 ].ang, Angle( 0, -178, 0 ), "angles are kept from the original" )
 	T.Equal( entries[ 1 ].pos, Vector( 1157, -427, 401 ), "and so are positions" )
 
 	local missing = Layout.WarnMissing( entries, SLUM )
 	table.sort( missing )
-	T.Equal( table.concat( missing, "," ), "fate_station:slave,sanitation_station,state_stockpile", "the missing ones are warned about" )
+	T.Equal( table.concat( missing, "," ), "fate_station:slave,sanitation_station,state_stockpile,water_barrel", "the missing ones are warned about" )
 
 	-- Spawning it: no fallback stockpile, candidates stay out --------------------------------------
 
@@ -76,7 +85,7 @@ return function( T )
 	T.Wait( 0.1 )
 	T.Equal( #living(), 0, "gm_construct's layout is cleared" )
 	local n = Layout.Spawn( SLUM )
-	T.Equal( n, 18, "every entry but the two candidates spawns" )
+	T.Equal( n, 28, "every entry but the two candidates spawns" )
 	local stockpiles, spare = 0, 0
 	for _, ent in ipairs( living() ) do
 		if ent:GetClass() == "state_stockpile" then stockpiles = stockpiles + 1 end
@@ -86,7 +95,7 @@ return function( T )
 	end
 	T.Equal( stockpiles, 0, "no fallback stockpile on top of a shipped layout" )
 	T.Equal( spare, 0, "no candidate spawned" )
-	T.Equal( #living(), 18, "nothing else in the world" )
+	T.Equal( #living(), 28, "nothing else in the world" )
 	T.Equal( Layout.Spawn( SLUM ), 0, "a second spawn adds nothing" )
 
 	-- The flags on a fake map's json ---------------------------------------------------------------
@@ -133,5 +142,5 @@ return function( T )
 	Layout.Clear()
 	T.Wait( 0.1 )
 	Layout.Spawn()
-	T.Equal( #Layout.Entries(), 11, "gm_construct's layout is back" )
+	T.Equal( #Layout.Entries(), 17, "gm_construct's layout is back" )
 end

@@ -1,5 +1,6 @@
 -- The map layout (step 15a): where the world entities stand when the map doesn't place them.
--- No map ships state_stockpile, ration_press, water_pump, sanitation_station or fate_station, so
+-- No map ships state_stockpile, the lunch machine (lunch_machine, line_boiler), capsule_spawn
+-- points, water_barrel, water_pump, sanitation_station or fate_station, so
 -- the gamemode places them itself at Round.Start, before the economy resets.
 --
 --   Layout source, first found wins:
@@ -9,7 +10,7 @@
 --     a ring around the first info_player_start (Layout.Ring), with a warning in the log
 --   If the map places any of these classes itself, nothing is spawned. A loaded layout is never
 --   topped up from the default set: a class or fate it lacks (rp_slumtown ships without a stockpile,
---   a slave purpose and a sanitation station) is only warned about, for staff to place and save.
+--   a slave purpose, a sanitation station and water barrels) is only warned about, for staff to place and save.
 --
 --   Optional entry flags:
 --     candidate = true   listed but not spawned: a spot staff may switch on (rp_slumtown's spare
@@ -38,9 +39,13 @@ Layout.CLASSES = {
 	state_stockpile = {},
 	water_pump = {},
 	sanitation_station = {},
-	ration_press = {
-		good = function( v ) return table.HasValue( Econ.GOODS, v ) end,
+	-- The lunch machine (systems/sh_lunch.lua): it works with the nearest boiler.
+	line_boiler = {},
+	lunch_machine = {
+		output = function( v ) return Lunch.OUTPUTS[ v ] ~= nil end,
 	},
+	water_barrel = {},
+	capsule_spawn = {},
 	fate_station = {
 		fate = function( v )
 			local f = Fates.Get( v )
@@ -117,15 +122,18 @@ local function cleanList( list, source )
 	return out
 end
 
--- The default set for a map with no layout: one purpose per takeable fate, a stockpile, a press
--- per good, two pumps and a sanitation station.
+-- The default set for a map with no layout: one purpose per takeable fate, a stockpile, a
+-- lunch machine and its boiler, three capsule spawn points, two water barrels, two pumps and a
+-- sanitation station.
 function Layout.DefaultSet()
 	local set = {}
 	for _, f in ipairs( Fates.All() ) do
 		if f.index ~= FATE_GHOST then table.insert( set, { class = "fate_station", kv = { fate = f.id } } ) end
 	end
 	table.insert( set, { class = "state_stockpile", kv = {} } )
-	for _, good in ipairs( Econ.GOODS ) do table.insert( set, { class = "ration_press", kv = { good = good } } ) end
+	for _, class in ipairs( { "lunch_machine", "line_boiler", "capsule_spawn", "capsule_spawn", "capsule_spawn", "water_barrel", "water_barrel" } ) do
+		table.insert( set, { class = class, kv = {} } )
+	end
 	table.insert( set, { class = "water_pump", kv = {} } )
 	table.insert( set, { class = "water_pump", kv = {} } )
 	table.insert( set, { class = "sanitation_station", kv = {} } )

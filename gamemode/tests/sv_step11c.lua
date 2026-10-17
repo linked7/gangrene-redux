@@ -31,7 +31,7 @@ return function( T )
 	T.Check( table.HasValue( s:FateHas( "Radio" ), "state" ), "the sanitar is on the state radio" )
 	T.Check( string.match( s:Nick(), "^%a+ #%d%d$" ) ~= nil, "codename: " .. s:Nick() )
 	T.Check( Inventory.Count( s, "baton" ) == 1 and Inventory.Count( s, "scope" ) == 1, "kit: baton and scope" )
-	T.Check( s:HasWeapon( "weapon_stunstick" ), "the baton is in hand" )
+	T.Check( s:HasWeapon( "weapon_gr_baton" ), "the baton is in hand" )
 	T.Equal( Inventory.Count( p1, "baton" ), 0, "proles get no baton" )
 	T.Equal( s:GetTeeth(), 0, "teeth start at 0" )
 
@@ -69,7 +69,7 @@ return function( T )
 	T.Check( not Crime.SeenByPolice( p1 ), "the thief is out of sight" )
 	Crime.Report( p1, "theft", { madeBy = DB.Key( p2 ) } )
 	T.Check( Crime.Evidence( p1 ).theft and not p1:IsWanted(), "unseen theft leaves evidence only" )
-	carried[ p1 ] = { GR_MadeBy = DB.Key( p2 ) }
+	carried[ p1 ] = { GR_Crew = { [ DB.Key( p2 ) ] = true } }
 
 	-- Out of range, then a non-police inspector: both refused, nothing changes.
 	at( p1, 150 )
@@ -89,7 +89,7 @@ return function( T )
 	T.Check( not Crime.Evidence( p1 ).theft, "the evidence is used up" )
 
 	-- Own crate, no evidence: nothing to find.
-	carried[ p1 ] = { GR_MadeBy = DB.Key( p1 ) }
+	carried[ p1 ] = { GR_Crew = { [ DB.Key( p1 ) ] = true } }
 	Crime.ClearWanted( p1 )
 	r = Police.Inspect( s, p1 )
 	T.Check( not r.stolenCrate and r.evidence == "" and not p1:IsWanted(), "an honest worker inspects clean" )
@@ -161,7 +161,7 @@ return function( T )
 	T.Check( not Interact.Run( p2, "station_pistol", st ), "a prole can't shop at the station" )
 	T.Check( Interact.Run( s, "station_pistol", st ), "the sanitar buys a pistol" )
 	T.Equal( s:GetTeeth(), 0, "the pistol costs 2 teeth" )
-	T.Check( Inventory.Count( s, "pistol" ) == 1 and s:HasWeapon( "weapon_pistol" ), "the pistol is in hand" )
+	T.Check( Inventory.Count( s, "pistol" ) == 1 and s:HasWeapon( "weapon_gr_pistol" ), "the pistol is in hand" )
 	local ok = Police.Buy( s, "pistol" )
 	T.Check( not ok and Inventory.Count( s, "pistol" ) == 1 and s:GetTeeth() == 0, "no teeth, no sale" )
 	s:SetTeeth( 10 )

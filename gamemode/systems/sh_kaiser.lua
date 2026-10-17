@@ -43,7 +43,7 @@ Items.Define( "novoluger", {
 	Description = "The Kaiser's own pistol. Polished, loaded, rarely needed.",
 	Weight = 2,
 	Model = "models/weapons/w_pistol.mdl",
-	Weapon = "weapon_pistol",
+	Weapon = "weapon_gr_pistol",
 } )
 
 Items.Define( "strategy_book", {

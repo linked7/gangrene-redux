@@ -261,18 +261,33 @@ local function dispense( ply, good, how )
 end
 
 -- A crate of `good` reached the stockpile: the count goes up and the deliverer is paid the buy
--- price, if the treasury can cover it. Returns the bones paid, or false for an unknown good.
-function Econ.Deliver( ply, good )
+-- price, if the treasury can cover it. `payees` (default { ply }) split the price evenly; the
+-- first of them (the deliverer) also gets what doesn't divide. Returns the bones paid in all, or
+-- false for an unknown good.
+function Econ.Deliver( ply, good, payees )
 	if not isGood( good ) then return false end
 	addStock( good, 1 )
 	local price = Econ.Setting( "buy." .. good )
 	if not IsValid( ply ) then return 0 end
-	if Econ.Transfer( Econ.TREASURY, ply, price, "delivery" ) then return price end
-	Notify( ply, EMPTY .. " Your delivery was not paid for." )
-	return 0
+	local list = {}
+	for _, p in ipairs( payees or { ply } ) do
+		if IsValid( p ) then table.insert( list, p ) end
+	end
+	if #list == 0 then list = { ply } end
+	if Econ.Treasury() < price then
+		Notify( ply, EMPTY .. " Your delivery was not paid for." )
+		return 0
+	end
+	local share = math.floor( price / #list )
+	local paid = 0
+	for i, p in ipairs( list ) do
+		local amount = share + ( i == 1 and price - share * #list or 0 )
+		if amount > 0 and Econ.Transfer( Econ.TREASURY, p, amount, "delivery" ) then paid = paid + amount end
+	end
+	return paid
 end
 
--- Takes up to `n` of a good out of the stock without paying (a stockpile pry, step 11.1).
+-- Takes up to `n` of a good out of the stock without paying (a stockpile break-in, step 11.1).
 -- Returns how many were taken.
 function Econ.TakeStock( good, n )
 	if not isGood( good ) then return 0 end

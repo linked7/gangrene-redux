@@ -119,7 +119,7 @@ return function( T )
 
 	-- Weapons follow the count ----------------------------------------------------------------
 	Inventory.Add( a, "pistol", 1 )
-	T.Check( a:HasWeapon( "weapon_pistol" ), "carrying a pistol item gives the weapon" )
+	T.Check( a:HasWeapon( "weapon_gr_pistol" ), "carrying a pistol item gives the weapon" )
 	T.Check( Inventory.Use( a, "pistol" ) and Inventory.Count( a, "pistol" ) == 1, "using a weapon draws it, not consumes it" )
 
 	-- Drop and pick up ------------------------------------------------------------------------
@@ -127,12 +127,12 @@ return function( T )
 	T.Wait( 0.2 )
 	local ent = Inventory.Drop( a, "pistol" )
 	T.Check( IsValid( ent ) and ent:GetClass() == "gr_item", "dropping makes a gr_item" )
-	T.Check( not a:HasWeapon( "weapon_pistol" ), "dropping the pistol takes the weapon" )
+	T.Check( not a:HasWeapon( "weapon_gr_pistol" ), "dropping the pistol takes the weapon" )
 	T.Equal( Inventory.Count( a, "pistol" ), 0, "the pistol left the inventory" )
 	T.Check( ent:GetItemId() == "pistol" and ent:GetCount() == 1, "the entity holds the pistol" )
 	ent:Use( b, b )
 	T.Equal( Inventory.Count( b, "pistol" ), 1, "using the entity picks it up" )
-	T.Check( b:HasWeapon( "weapon_pistol" ), "the new owner has the weapon" )
+	T.Check( b:HasWeapon( "weapon_gr_pistol" ), "the new owner has the weapon" )
 	T.WaitUntil( function() return not IsValid( ent ) end, 2, "the picked-up entity is removed" )
 
 	Inventory.Remove( a, "scrap", Inventory.Count( a, "scrap" ) )
@@ -162,7 +162,7 @@ return function( T )
 	hook.Run( "GR_PlayerDowned", a, rag )
 	T.Equal( next( Inventory.Items( a ) ), nil, "downing empties the player's inventory" )
 	T.Equal( Inventory.Weight( a ), 0, "and its weight" )
-	T.Check( not a:HasWeapon( "weapon_stunstick" ), "the baton went with it" )
+	T.Check( not a:HasWeapon( "weapon_gr_baton" ), "the baton went with it" )
 	local held = rag.GR_Corpse.inventory
 	T.Check( held.ration == 2 and held.baton == 1 and held.sack == 1, "the corpse holds the items" )
 
@@ -171,11 +171,11 @@ return function( T )
 	hook.Run( "GR_PlayerRestored", a, rag, "revive" )
 	T.Check( Inventory.Count( a, "ration" ) == 2 and Inventory.Count( a, "baton" ) == 1, "revive gives the items back" )
 	T.Equal( Inventory.Weight( a ), weight, "the weight is restored" )
-	T.Check( a:HasWeapon( "weapon_stunstick" ), "the baton is in hand again" )
+	T.Check( a:HasWeapon( "weapon_gr_baton" ), "the baton is in hand again" )
 	T.Equal( next( held ), nil, "the corpse is empty after the revive" )
 	Fates.Apply( a, "prole", { reason = "revive" } )
 	T.Equal( Inventory.Count( a, "ration" ), 2, "a revive fate entry keeps the inventory" )
-	T.Check( a:HasWeapon( "weapon_stunstick" ), "and gives item weapons back after the strip" )
+	T.Check( a:HasWeapon( "weapon_gr_baton" ), "and gives item weapons back after the strip" )
 
 	-- GiveAll ignores the limit; TakeAll returns a map.
 	Inventory.GiveAll( a, { scrap = 50 } )

@@ -17,6 +17,7 @@ Fates.Define( "slave", {
 	Name = "Slave",
 	Description = "An almost-worker. Survive the day, or earn a free citizen's word, to be freed.",
 	Color = Color( 120, 120, 100 ),
+	ChatSounds = { "npc/headcrab_poison/ph_talk1.wav", "npc/headcrab_poison/ph_talk2.wav", "npc/headcrab_poison/ph_talk3.wav" }, -- not the prole's
 	Cost = 0,
 	ForNewPlayers = true,
 	Marker = "Newcomer", -- drawn over their head for everyone (cl_round.lua); the Fate field is public

@@ -7,6 +7,7 @@ Fates.Define( "korpsman", {
 	Name = "Korpsman",
 	Description = "The healer of all maladies physical and pathological. Only Gangrene's finest should be treated for free.",
 	Color = Color( 200, 200, 200 ),
+	ChatSounds = { "placenta/speech/korps1.wav", "placenta/speech/korps2.wav", "placenta/speech/korps3.wav", "placenta/speech/korps4.wav" },
 	Cost = 1,
 	DeathCooldown = 60,
 	Slots = function( pop ) return math.Clamp( 2 + math.floor( pop / 10 ), 2, 5 ) end,

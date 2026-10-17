@@ -3,18 +3,22 @@
 -- sway while downed, head-wounded or a ghost, the ghost's over-the-shoulder camera, and the
 -- weapon FOV lerp.
 --
---   HUD.ThirdPerson( ply )  true when the camera sits behind the player: ghosts always (§13).
---                           The cc_thirdperson option and the held-item cases are §12's; they
---                           extend this function rather than adding a second CalcView.
+--   HUD.ThirdPerson( ply )  true when the camera sits behind the player: ghosts always (§13), and
+--                           anyone with cc_thirdperson 1 (§12, created in sh_movement.lua). This
+--                           is the only CalcView that answers; other systems feed into it (the
+--                           /roll lean is Chat.ViewRoll) rather than adding their own.
 local noHeadBob = CreateClientConVar( "cc_noheadbob", "0", true, false, "Turn off the head bob." )
 local noViewRoll = CreateClientConVar( "cc_noviewroll", "0", true, false, "Turn off the strafe and ghost view roll." )
+local thirdOpt -- cc_thirdperson, looked up on first use
 
 local CT = CurTime
 local dyn = { roll = 0, bob = 0, fov = nil }
 local third = { pos = nil, ang = nil }
 
 function HUD.ThirdPerson( ply )
-	return ply:IsGhost()
+	if ply:IsGhost() then return true end
+	thirdOpt = thirdOpt or GetConVar( "cc_thirdperson" )
+	return thirdOpt ~= nil and thirdOpt:GetBool()
 end
 
 -- GM:ShouldDoThirdPerson: never while scoped, in noclip or looking through another entity.

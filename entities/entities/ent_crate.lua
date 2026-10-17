@@ -1,6 +1,6 @@
--- A crate of one good, made at a ration_press (step 11.1). Use picks it up (physics carry, which
+-- A crate of one good, made by the lunch machine (step 11.1, systems/sh_lunch.lua). Use picks it up (physics carry, which
 -- slows the carrier); touching it to a state_stockpile delivers it; "Open the crate" in the C menu
--- breaks it open. Server-only fields: GR_Kind (the good), GR_MadeBy (the maker's DB.Key).
+-- breaks it open. Server-only fields: GR_Kind (the good), GR_Crew (the crew's DB.Keys), GR_Station (the machine).
 AddCSLuaFile()
 
 ENT.Type = "anim"

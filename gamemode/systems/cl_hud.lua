@@ -512,19 +512,15 @@ HUD.Layer( 60, "healthbars", function( ply )
 	end
 end )
 
--- Ammo: shown while reloading or for two seconds after pressing reload, as the original's ammo check.
-local ammoCheck = 0
-hook.Add( "PlayerBindPress", "gr_hud_ammo", function( _, bind, pressed )
-	if pressed and string.find( bind, "+reload", 1, true ) then ammoCheck = CT() + 2 end
-end )
-
+-- Ammo: for two seconds after the original's ammo check (Use + Reload, sh_weapons.lua sets
+-- Weapons.ammoCheckUntil), fading over the last two.
 HUD.Layer( 70, "ammo", function( ply )
 	if not ply:Alive() or ply:IsGhost() or ply:InVehicle() then return end
 	local wep = ply:GetActiveWeapon()
 	if not IsValid( wep ) or wep.DrawAmmo == false then return end
 	local max = wep.Primary and wep.Primary.ClipSize or wep:GetMaxClip1()
 	if not max or max <= 0 then return end
-	local left = ammoCheck - CT()
+	local left = ( Weapons and Weapons.ammoCheckUntil or 0 ) - CT()
 	if left <= 0 then return end
 	local alpha = 180 * math.min( left / 2, 1 )
 	local clip, reserve = wep:Clip1(), ply:GetAmmoCount( wep:GetPrimaryAmmoType() )

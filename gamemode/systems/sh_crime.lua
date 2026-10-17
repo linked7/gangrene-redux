@@ -2,7 +2,8 @@
 -- data instead of nested ifs (R12):
 --
 --   Crime.Judge( attacker, victim )   a kill; the corpse system calls it via GR_PlayerKilled
---   Crime.Report( ply, act, ctx )     everything else: "theft" (ctx.madeBy), "pry_start" (ctx.pos), "pry_done"
+--   Crime.Report( ply, act, ctx )     everything else: "theft" (ctx.crew or ctx.madeBy), "lock_alarm" (ctx.pos),
+--                                     "break_in" (the stockpile's lock beaten off, sh_locks.lua)
 --
 -- Each rule is { name, when = fn, crime, wanted | evidence, duration, stem, despair, teeth, alarm, say }.
 -- Rules are checked in order and the first match ends the scan, unless it says `fallthrough`;
@@ -197,7 +198,12 @@ Crime.JudgeRules = {
 		when = function( _, v ) return v:FateHas( "Citizen" ) end },
 }
 
-local function stolen( ply, ctx ) return ctx.madeBy ~= nil and ctx.madeBy ~= DB.Key( ply ) end
+-- A crate is stolen when its crew (a set of DB keys) lacks the player; a built thing, when
+-- someone else built it (ctx.madeBy).
+local function stolen( ply, ctx )
+	if ctx.crew ~= nil then return not ctx.crew[ DB.Key( ply ) ] end
+	return ctx.madeBy ~= nil and ctx.madeBy ~= DB.Key( ply )
+end
 
 Crime.ReportRules = {
 	{ name = "sovereign", when = function( ply ) return ply:FateHas( "Sovereign" ) end },
@@ -205,9 +211,9 @@ Crime.ReportRules = {
 		when = function( ply, act, ctx ) return act == "theft" and stolen( ply, ctx ) and Crime.SeenByPolice( ply ) end },
 	{ name = "theft", crime = "theft", evidence = WANTED_TORMENT, duration = 300,
 		when = function( ply, act, ctx ) return act == "theft" and stolen( ply, ctx ) end },
-	{ name = "pry_alarm", alarm = "state", when = function( _, act ) return act == "pry_start" end },
+	{ name = "lock_alarm", alarm = "state", when = function( _, act ) return act == "lock_alarm" end },
 	{ name = "break_in", crime = "breaking into the stockpile", wanted = WANTED_JUDGMENT, duration = 300,
-		when = function( _, act ) return act == "pry_done" end },
+		when = function( _, act ) return act == "break_in" end },
 }
 
 local FIELDS = { "crime", "wanted", "evidence", "duration", "stem", "despair", "teeth", "alarm", "say" }
