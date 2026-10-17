@@ -2,6 +2,7 @@
 # A LAN play server for real-client checks: a snapshot of this checkout on a shadow install
 # (like tools/soak.sh, so it never touches srv.sh's lock or files), no bots, no soak.
 # Usage: tools/play.sh [start|stop|log] [map=gm_construct]. Clients connect to <deck-ip>:$PORT.
+# Extra server args via GR_PLAY_ARGS, e.g. GR_PLAY_ARGS="+gr_uitour 1" for the hands-free UI tour.
 set -u
 CMD=${1:-start}; MAP=${2:-gm_construct}
 DS=${GR_DS:-$HOME/gmod-ds}
@@ -48,6 +49,6 @@ stop
 rm -f "$GM/console.log"
 ( cd "$PLAY" && exec setsid ./srcds_run -game garrysmod -norestart -console -condebug \
 	-port "$PORT" +clientport $((PORT + 1)) +tv_port $((PORT + 2)) \
-	+sv_lan 1 +maxplayers 8 +gamemode gangreneredux +map "$MAP" >/dev/null 2>&1 ) &
+	+sv_lan 1 +maxplayers 8 ${GR_PLAY_ARGS:-} +gamemode gangreneredux +map "$MAP" >/dev/null 2>&1 ) &
 echo $! >"$PIDFILE"
 echo "play server: $MAP on port $PORT, log $GM/console.log"

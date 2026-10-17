@@ -137,7 +137,7 @@
 - **Appearance:** body, model, skin and bodygroups come from a fate field `Appearance = {model, bodygroups, skin}`, or a function returning that table.
 - **Clothing:** if bonemerged clothing comes back, it is a PUBLIC field holding a small integer outfit id. Clients build the bonemerge locally from it. No `WriteTable` broadcast and no timers. (P8)
 - **Race:** an Appearance field (`race = "gangral"`). In the core every fate is **Gangral**, because the game is set in Gangrene.
-  - Races are data in `races/<id>.lua` (hands, skin tones and an optional speech modifier), so **Outsider**, **Rottish**, **Prohladian** and **skinless** characters can be added later without code changes. Outsider is the likely first addition, for local migrants and cultists.
+  - Races are data in `races/<id>.lua` (hands and skin tones; races never change speech, by user decision), so **Outsider**, **Rottish**, **Prohladian** and **skinless** characters can be added later without code changes. Outsider is the likely first addition, for local migrants and cultists.
   - "No race shown" is `race = nil`, not a fake race (the original's `unimportant`).
   - Use the lore names in code. Don't use the old `liverman`, `arrhythmian` or `kidneystani` IDs.
 - **Name validation:** one shared `ValidateName` with a correct character whitelist (B12). Only needed if players get to name themselves.
@@ -406,7 +406,7 @@ Build them in this order, so each one has something to act on.
 - **Local chat:** say, yell, whisper, `/me` and OOC, with ranges from one table.
 - **Radio:** `/r` reaches everyone whose fate's `Radio` channel list shares a channel with yours (e.g. `"state"` for Kaiser and Sanitar, `"medic"` for Korpsman). Fate names are never hard-coded (R9).
 - **Dead players:** ghosts talk only to ghosts.
-- Defer speech mangling (`ModifySpeech`, `AutoGrammar`, racial quirks) until the core feels right.
+- Race speech mangling (`Accent`, `RacialQuirks`) is dropped (user decision). `AutoGrammar`, chat ranges, babble sounds, thoughtcrime and kill sentences are parity items (05 §8).
 - **Done when:** radio reaches exactly the right people and ranges hold.
 
 ### Step 13: Meta-progression
