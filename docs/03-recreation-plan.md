@@ -37,6 +37,10 @@
 6. **Long actions are state, not timers.**
    - Surgery, reviving and building are `ply.Action = {kind, target, startedAt, duration}` records, checked by the scheduler and cancelled when someone moves away, dies or changes fate. (D3)
 7. Each step ends with something you can run on a listen server with bots. Don't start step N+1 until step N's "done when" holds.
+8. **UI and effects match the original.**
+   - The HUD, menus, fonts, sounds and screen effects look and behave like Gangrene's. `05-ui-effects-parity.md` has the inventory.
+   - The only exception is optimisation: an element may be built differently, or a costly pass made optional, but what the player sees stays the same (05 §6).
+   - Each step's UI items are part of its "done when" (05 §7).
 
 ## The steps
 
@@ -423,7 +427,13 @@ Built alongside steps 11–13. It must hold before step 14's playtest with peopl
 - **TAB scoreboard:** grouped by fate. Only admins see Steam names.
 - **F1 help.**
 - **The Kaiser's economy panel** (step 9).
-- **Done when:** every element works in a real client, not only with bots, including over `net_fakelag`.
+- **Parity pass** (ground rule 8): bring what is already built up to the original's look, following `05-ui-effects-parity.md`.
+  - The HUD bars, crosshair, cross-texts with weapon select, Stutter, vignette, notifications and big event lines.
+  - The bleed-out screen, damage and scare effects, constant bloom and aberrations.
+  - The F3 player menu, the C context menu, the chat box, and the scoreboard rank icons.
+  - Fonts (Smash), the Derma skin and UI sounds from the original content.
+  - Use the optimisation exceptions in 05 §6: cached Stutter, entity registries instead of `ents.GetAll`, no leaked globals, values read from the state cache, and a `gr_lowfx` option.
+- **Done when:** every element works in a real client, not only with bots, including over `net_fakelag`. Side-by-side screenshots against the original match, and the HUD costs under 1 ms a frame with 30 players.
 
 ### Step 14: Hardening and playtest
 
