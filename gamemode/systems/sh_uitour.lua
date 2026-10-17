@@ -38,6 +38,8 @@ if SERVER then
 				local phys = e:GetPhysicsObject()
 				if IsValid( phys ) then phys:EnableMotion( false ) end
 				best = e
+				spawned = origin
+				ply:Flashlight( true ) -- spawned props sit in unlit floor; the torch lights the shot
 				print( "[gr:uitour] spawned a " .. class )
 			end
 		end
@@ -46,9 +48,13 @@ if SERVER then
 			return
 		end
 		local target = aim and aim( best ) or best:WorldSpaceCenter()
-		local spot = best:GetPos() + best:GetForward() * ( dist or 70 )
-		spot.z = best:GetPos().z
-		ply:SetPos( spot )
+		if spawned then
+			ply:SetPos( spawned )
+		else
+			local spot = best:GetPos() + best:GetForward() * ( dist or 70 )
+			spot.z = best:GetPos().z
+			ply:SetPos( spot )
+		end
 		ply:SetEyeAngles( ( target - ply:EyePos() ):Angle() )
 	end
 
